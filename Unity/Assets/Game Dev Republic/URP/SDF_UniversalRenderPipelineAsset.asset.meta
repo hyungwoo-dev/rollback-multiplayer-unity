@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1145fb21269cff040aaa419b12d032c7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170055
+  packageName: Fighting Game Character - Ryunosuke
+  packageVersion: 2.0
+  assetPath: Assets/Game Dev Republic/URP/SDF_UniversalRenderPipelineAsset.asset
+  uploadId: 443392

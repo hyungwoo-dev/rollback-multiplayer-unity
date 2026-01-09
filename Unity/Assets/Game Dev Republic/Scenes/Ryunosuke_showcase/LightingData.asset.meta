@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fd9432005018e9640a1e36e85d188939
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170055
+  packageName: Fighting Game Character - Ryunosuke
+  packageVersion: 2.0
+  assetPath: Assets/Game Dev Republic/Scenes/Ryunosuke_showcase/LightingData.asset
+  uploadId: 443392

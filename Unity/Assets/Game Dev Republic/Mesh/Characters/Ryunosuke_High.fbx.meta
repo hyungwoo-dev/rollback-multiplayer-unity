@@ -1,0 +1,910 @@
+fileFormatVersion: 2
+guid: 29aa834bf91ec014892647da73bf8423
+ModelImporter:
+  serializedVersion: 19301
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lambert2
+    second: {fileID: 2100000, guid: 187256ffdb68d3a408d5e6d93f40540e, type: 2}
+  materials:
+    materialImportMode: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 3
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 0
+    importLights: 0
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 0
+  humanDescription:
+    serializedVersion: 3
+    human:
+    - boneName: SDF:Hips
+      humanName: Hips
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftUpLeg
+      humanName: LeftUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightUpLeg
+      humanName: RightUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftLeg
+      humanName: LeftLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightLeg
+      humanName: RightLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftFoot
+      humanName: LeftFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightFoot
+      humanName: RightFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:Spine
+      humanName: Spine
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:Spine1
+      humanName: Chest
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:Neck
+      humanName: Neck
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:Head
+      humanName: Head
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftShoulder
+      humanName: LeftShoulder
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightShoulder
+      humanName: RightShoulder
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftArm
+      humanName: LeftUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightArm
+      humanName: RightUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftForeArm
+      humanName: LeftLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightForeArm
+      humanName: RightLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHand
+      humanName: LeftHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHand
+      humanName: RightHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftToeBase
+      humanName: LeftToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightToeBase
+      humanName: RightToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandThumb1
+      humanName: Left Thumb Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandThumb2
+      humanName: Left Thumb Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandThumb3
+      humanName: Left Thumb Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandIndex1
+      humanName: Left Index Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandIndex2
+      humanName: Left Index Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandIndex3
+      humanName: Left Index Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandMiddle1
+      humanName: Left Middle Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandMiddle2
+      humanName: Left Middle Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandMiddle3
+      humanName: Left Middle Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandRing1
+      humanName: Left Ring Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandRing2
+      humanName: Left Ring Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandRing3
+      humanName: Left Ring Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandPinky1
+      humanName: Left Little Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandPinky2
+      humanName: Left Little Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:LeftHandPinky3
+      humanName: Left Little Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandThumb1
+      humanName: Right Thumb Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandThumb2
+      humanName: Right Thumb Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandThumb3
+      humanName: Right Thumb Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandIndex1
+      humanName: Right Index Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandIndex2
+      humanName: Right Index Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandIndex3
+      humanName: Right Index Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandMiddle1
+      humanName: Right Middle Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandMiddle2
+      humanName: Right Middle Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandMiddle3
+      humanName: Right Middle Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandRing1
+      humanName: Right Ring Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandRing2
+      humanName: Right Ring Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandRing3
+      humanName: Right Ring Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandPinky1
+      humanName: Right Little Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandPinky2
+      humanName: Right Little Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:RightHandPinky3
+      humanName: Right Little Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: SDF:Spine2
+      humanName: UpperChest
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    skeleton:
+    - name: Ryunosuke_High(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ribbon
+      parentName: Ryunosuke_High(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ryunosuke
+      parentName: Ryunosuke_High(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:Hips
+      parentName: Ryunosuke_High(Clone)
+      position: {x: -0, y: 0.6218519, z: 0.027828967}
+      rotation: {x: -0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:Spine
+      parentName: SDF:Hips
+      position: {x: -0, y: 0.11023712, z: 0.003262844}
+      rotation: {x: 0.014794371, y: -0, z: -0, w: 0.99989057}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:Spine1
+      parentName: SDF:Spine
+      position: {x: -0, y: 0.12866625, z: 3.9792097e-11}
+      rotation: {x: -0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:Spine2
+      parentName: SDF:Spine1
+      position: {x: -0, y: 0.14704725, z: -7.9308095e-11}
+      rotation: {x: -0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:RightShoulder
+      parentName: SDF:Spine2
+      position: {x: 0.07452717, y: 0.14441226, z: 0.00037339973}
+      rotation: {x: 0.5667323, y: 0.4236791, z: -0.56387585, w: 0.4258575}
+      scale: {x: 0.9999999, y: 1.0000001, z: 1.0000002}
+    - name: SDF:RightArm
+      parentName: SDF:RightShoulder
+      position: {x: -3.5269097e-11, y: 0.14857125, z: 5.579943e-10}
+      rotation: {x: 0.104589075, y: -0.0040001865, z: 0.010862946, w: -0.9944482}
+      scale: {x: 1.0000002, y: 1.0000002, z: 1.0000002}
+    - name: SDF:RightForeArm
+      parentName: SDF:RightArm
+      position: {x: 7.816598e-10, y: 0.2058112, z: -2.5204458e-10}
+      rotation: {x: 0.0706312, y: 0.006395501, z: -0.029244656, w: -0.9970532}
+      scale: {x: 1.0000001, y: 1.0000001, z: 0.99999994}
+    - name: SDF:RightHand
+      parentName: SDF:RightForeArm
+      position: {x: -4.830336e-10, y: 0.27800733, z: -1.2388881e-11}
+      rotation: {x: -0.005129173, y: 0.020633087, z: 0.040485654, w: -0.99895394}
+      scale: {x: 1.0000007, y: 1.0000006, z: 1.0000006}
+    - name: SDF:RightHandIndex1
+      parentName: SDF:RightHand
+      position: {x: -0.068507865, y: 0.16377394, z: -0.0019904822}
+      rotation: {x: -0.05152655, y: -0.0017670612, z: -0.03422923, w: -0.9980833}
+      scale: {x: 1, y: 1.0000004, z: 1.0000007}
+    - name: SDF:RightHandIndex2
+      parentName: SDF:RightHandIndex1
+      position: {x: -0.000010343096, y: 0.044444434, z: -2.0911371e-10}
+      rotation: {x: -0.0023556498, y: -0.000000021071171, z: 0.000000035186527, w: 0.99999726}
+      scale: {x: 1.0000001, y: 0.9999996, z: 0.9999996}
+    - name: SDF:RightHandIndex3
+      parentName: SDF:RightHandIndex2
+      position: {x: -0.0000014524812, y: 0.040133152, z: 2.6086822e-10}
+      rotation: {x: -0.03989738, y: -0.000006104173, z: 0.00009899972, w: 0.99920374}
+      scale: {x: 1.0000006, y: 1.0000005, z: 1.0000001}
+    - name: SDF:RightHandIndex4
+      parentName: SDF:RightHandIndex3
+      position: {x: 0.000011795234, y: 0.03032469, z: 4.8429313e-11}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:RightHandMiddle1
+      parentName: SDF:RightHand
+      position: {x: -0.020968933, y: 0.18019348, z: 0.00028284898}
+      rotation: {x: 0.005949833, y: -0.000015506519, z: -0.0026165072, w: 0.9999789}
+      scale: {x: 1, y: 1, z: 1.0000006}
+    - name: SDF:RightHandMiddle2
+      parentName: SDF:RightHandMiddle1
+      position: {x: -0.000018903209, y: 0.04824402, z: -2.2919123e-11}
+      rotation: {x: 0.035676677, y: 0.00000004202411, z: -0.000000037397054, w: 0.99936336}
+      scale: {x: 1.0000007, y: 1.0000004, z: 1.0000005}
+    - name: SDF:RightHandMiddle3
+      parentName: SDF:RightHandMiddle2
+      position: {x: 0.000002594224, y: 0.04331042, z: 2.804667e-10}
+      rotation: {x: 0.04075974, y: 0.000004903913, z: -0.000066483226, w: -0.999169}
+      scale: {x: 0.99999994, y: 1.0000005, z: 1}
+    - name: SDF:RightHandMiddle4
+      parentName: SDF:RightHandMiddle3
+      position: {x: 0.000016308653, y: 0.031280305, z: 3.4566197e-11}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:RightHandRing1
+      parentName: SDF:RightHand
+      position: {x: 0.023149535, y: 0.181419, z: -0.0015562624}
+      rotation: {x: 0.03587539, y: 0.00082056224, z: 0.022853067, w: 0.99909467}
+      scale: {x: 1.0000002, y: 1.0000002, z: 1.000001}
+    - name: SDF:RightHandRing2
+      parentName: SDF:RightHandRing1
+      position: {x: 0.000025705776, y: 0.036740232, z: -2.118132e-10}
+      rotation: {x: 0.012533347, y: -0.000000073341624, z: -0.00000006609478, w: 0.99992144}
+      scale: {x: 1.0000005, y: 1.0000001, z: 0.99999994}
+    - name: SDF:RightHandRing3
+      parentName: SDF:RightHandRing2
+      position: {x: 0.000015693517, y: 0.036153693, z: -1.580976e-10}
+      rotation: {x: 0.037208255, y: -0.000051236366, z: 0.0007058355, w: -0.99930733}
+      scale: {x: 1.0000006, y: 1.0000001, z: 1.0000005}
+    - name: SDF:RightHandRing4
+      parentName: SDF:RightHandRing3
+      position: {x: -0.000041399282, y: 0.02661231, z: -2.8356992e-10}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:RightHandPinky1
+      parentName: SDF:RightHand
+      position: {x: 0.06632727, y: 0.17085642, z: -0.00072035793}
+      rotation: {x: -0.027542196, y: -0.0010490825, z: -0.038048003, w: -0.9988957}
+      scale: {x: 1.0000002, y: 1.0000004, z: 1.0000005}
+    - name: SDF:RightHandPinky2
+      parentName: SDF:RightHandPinky1
+      position: {x: 0.00013408187, y: 0.03270146, z: -3.4344225e-11}
+      rotation: {x: 0.00061882095, y: -0.00000005133915, z: 0.00000006010122, w: 0.9999998}
+      scale: {x: 0.9999998, y: 0.9999996, z: 0.99999994}
+    - name: SDF:RightHandPinky3
+      parentName: SDF:RightHandPinky2
+      position: {x: 0.0000065886975, y: 0.030915111, z: -2.4048857e-10}
+      rotation: {x: -0.034118313, y: 0.0005025413, z: -0.00281627, w: 0.99941367}
+      scale: {x: 1.0000005, y: 1.0000004, z: 1.0000005}
+    - name: SDF:RightHandPinky4
+      parentName: SDF:RightHandPinky3
+      position: {x: -0.00014067067, y: 0.021131827, z: 8.606662e-11}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:RightHandThumb1
+      parentName: SDF:RightHand
+      position: {x: -0.051515386, y: 0.03147006, z: 0.024217064}
+      rotation: {x: -0.05305817, y: -0.08624583, z: -0.5690081, w: -0.8160737}
+      scale: {x: 1, y: 1.0000002, z: 1.0000002}
+    - name: SDF:RightHandThumb2
+      parentName: SDF:RightHandThumb1
+      position: {x: 0.013387804, y: 0.0502831, z: -6.4919675e-10}
+      rotation: {x: 0.02083234, y: 0.009735993, z: -0.18911003, w: 0.9816866}
+      scale: {x: 1, y: 1.0000006, z: 1.0000006}
+    - name: SDF:RightHandThumb3
+      parentName: SDF:RightHandThumb2
+      position: {x: -0.006160247, y: 0.03802564, z: -9.0650387e-10}
+      rotation: {x: 0.02878507, y: -0.002054661, z: -0.011034352, w: 0.9995226}
+      scale: {x: 1, y: 1.0000002, z: 1.0000007}
+    - name: SDF:RightHandThumb4
+      parentName: SDF:RightHandThumb3
+      position: {x: -0.007227553, y: 0.029213127, z: -0.000000002554529}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:Neck
+      parentName: SDF:Spine2
+      position: {x: -0, y: 0.1654281, z: 7.0999334e-10}
+      rotation: {x: -0.014794371, y: -0, z: -0, w: 0.99989057}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:Head
+      parentName: SDF:Neck
+      position: {x: -0, y: 0.05936302, z: 0.005828266}
+      rotation: {x: -0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:HeadTop_End
+      parentName: SDF:Head
+      position: {x: -0, y: 0.6779122, z: 0.06655749}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HeadBand_Joint_Root
+      parentName: SDF:HeadTop_End
+      position: {x: 0.071702495, y: -0.27059507, z: -0.3315871}
+      rotation: {x: -0.3411245, y: -0.6193821, z: 0.3411245, w: 0.619382}
+      scale: {x: 1.0000001, y: 1.0000001, z: 1.0000001}
+    - name: HeadBand_Joint1_L
+      parentName: HeadBand_Joint_Root
+      position: {x: -0.11924291, y: 0.024909457, z: 0.10371161}
+      rotation: {x: 0.000000029802322, y: 0.000000029802322, z: 0.1856783, w: 0.98261064}
+      scale: {x: 1.0000004, y: 1.0000004, z: 1.0000005}
+    - name: HeadBand_Joint2_L
+      parentName: HeadBand_Joint1_L
+      position: {x: -0.116678625, y: 0.019296063, z: 0.023254186}
+      rotation: {x: 0.99436563, y: 0.10600504, z: -0.0000000038246717, w: 0.0000000023214903}
+      scale: {x: 1.0000006, y: 1.0000002, z: 1.0000004}
+    - name: HeadBand_Joint3_L
+      parentName: HeadBand_Joint2_L
+      position: {x: -0.14578816, y: -0.031097604, z: -0.017251592}
+      rotation: {x: -0.99956095, y: -0.029629674, z: 0.0000000010916724, w: 6.067023e-10}
+      scale: {x: 0.9999997, y: 0.99999994, z: 0.9999996}
+    - name: HeadBand_JointEnd_L
+      parentName: HeadBand_Joint3_L
+      position: {x: -0.16987944, y: -2.1316282e-16, z: -1.7763568e-17}
+      rotation: {x: 0.49059018, y: 0.509236, z: -0.49059018, w: 0.509236}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HeadBand_Joint1_R
+      parentName: HeadBand_Joint_Root
+      position: {x: -0.098379284, y: -0.017639257, z: -0.11579025}
+      rotation: {x: 0.000000029802322, y: 0.000000029802322, z: 0.1856783, w: 0.98261064}
+      scale: {x: 1.0000004, y: 1.0000004, z: 1.0000005}
+    - name: HeadBand_Joint2_R
+      parentName: HeadBand_Joint1_R
+      position: {x: -0.12226694, y: 0.004072006, z: -0.040497568}
+      rotation: {x: 0.99436563, y: 0.10600504, z: -0.0000000038246717, w: 0.0000000023214903}
+      scale: {x: 1.0000006, y: 1.0000002, z: 1.0000004}
+    - name: HeadBand_Joint3_R
+      parentName: HeadBand_Joint2_R
+      position: {x: -0.15714446, y: -0.032117885, z: 0.043705244}
+      rotation: {x: -0.9997657, y: -0.021648398, z: -0.000000051962267, w: 0.000000031919758}
+      scale: {x: 0.99999994, y: 0.99999994, z: 0.9999997}
+    - name: HeadBand_JointEnd_R
+      parentName: HeadBand_Joint3_R
+      position: {x: -0.15837756, y: -1.4210854e-16, z: -7.105427e-17}
+      rotation: {x: 0.49464023, y: 0.5053029, z: -0.49464023, w: 0.5053029}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:LeftShoulder
+      parentName: SDF:Spine2
+      position: {x: -0.07452717, y: 0.14442696, z: 0.00087024196}
+      rotation: {x: 0.56860965, y: -0.42222127, z: 0.56189597, w: 0.42741695}
+      scale: {x: 0.9999999, y: 0.9999998, z: 0.99999994}
+    - name: SDF:LeftArm
+      parentName: SDF:LeftShoulder
+      position: {x: 4.3494496e-12, y: 0.14857125, z: 5.589392e-10}
+      rotation: {x: -0.103821576, y: -0.004322111, z: 0.01849976, w: 0.99441457}
+      scale: {x: 1.0000004, y: 1.0000006, z: 1.0000002}
+    - name: SDF:LeftForeArm
+      parentName: SDF:LeftArm
+      position: {x: -3.151581e-10, y: 0.20583597, z: 8.926994e-10}
+      rotation: {x: -0.07105447, y: 0.006309576, z: -0.027895335, w: 0.9970624}
+      scale: {x: 1.0000008, y: 1.0000011, z: 1.0000007}
+    - name: SDF:LeftHand
+      parentName: SDF:LeftForeArm
+      position: {x: -5.098175e-12, y: 0.27795768, z: -2.8298074e-12}
+      rotation: {x: 0.0053957235, y: 0.0147950305, z: 0.043349903, w: 0.9989358}
+      scale: {x: 1.0000004, y: 1.0000004, z: 1.0000002}
+    - name: SDF:LeftHandIndex1
+      parentName: SDF:LeftHand
+      position: {x: 0.06732853, y: 0.15358019, z: -0.001739159}
+      rotation: {x: 0.030837443, y: -0.0017604677, z: -0.05696517, w: 0.99789834}
+      scale: {x: 1.0000005, y: 1.0000005, z: 1.0000005}
+    - name: SDF:LeftHandIndex2
+      parentName: SDF:LeftHandIndex1
+      position: {x: 0.0000051098677, y: 0.045337312, z: 3.6258355e-10}
+      rotation: {x: 0.010228554, y: -0.00000003085005, z: -0.000000034749963, w: 0.9999477}
+      scale: {x: 1.0000002, y: 1.0000004, z: 1}
+    - name: SDF:LeftHandIndex3
+      parentName: SDF:LeftHandIndex2
+      position: {x: 0.000003973527, y: 0.044178933, z: -3.9347225e-10}
+      rotation: {x: -0.04049987, y: 0.0000019333906, z: -0.00006141241, w: 0.99917954}
+      scale: {x: 1.0000002, y: 1.0000002, z: 1.0000004}
+    - name: SDF:LeftHandIndex4
+      parentName: SDF:LeftHandIndex3
+      position: {x: -0.000009083015, y: 0.035042524, z: 1.7278267e-11}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:LeftHandMiddle1
+      parentName: SDF:LeftHand
+      position: {x: 0.02055403, y: 0.17255007, z: 0.0006637451}
+      rotation: {x: 0.005776928, y: -0.00021854133, z: -0.037787765, w: 0.9992691}
+      scale: {x: 1.0000002, y: 1.0000005, z: 1.0000004}
+    - name: SDF:LeftHandMiddle2
+      parentName: SDF:LeftHandMiddle1
+      position: {x: -0.0000003731832, y: 0.048033867, z: 2.0543069e-11}
+      rotation: {x: 0.01254712, y: 0.000000032043307, z: 0.0000000114296155, w: 0.99992126}
+      scale: {x: 1.0000002, y: 1.0000001, z: 1.0000001}
+    - name: SDF:LeftHandMiddle3
+      parentName: SDF:LeftHandMiddle2
+      position: {x: -0.0000002156089, y: 0.04777576, z: 8.476391e-11}
+      rotation: {x: 0.040041152, y: 0.00000016027599, z: 0.0000047271556, w: 0.999198}
+      scale: {x: 1.0000005, y: 1.0000007, z: 1.0000007}
+    - name: SDF:LeftHandMiddle4
+      parentName: SDF:LeftHandMiddle3
+      position: {x: 0.0000005886339, y: 0.03561185, z: -4.3472495e-10}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:LeftHandRing1
+      parentName: SDF:LeftHand
+      position: {x: -0.022940818, y: 0.17842682, z: -0.0013776179}
+      rotation: {x: 0.033830028, y: -0.0010477693, z: -0.030937923, w: 0.9989481}
+      scale: {x: 1.0000006, y: 1.0000002, z: 1.0000001}
+    - name: SDF:LeftHandRing2
+      parentName: SDF:LeftHandRing1
+      position: {x: 0.000000113124855, y: 0.03933721, z: -2.3715642e-11}
+      rotation: {x: 0.012457368, y: -0.000000056461417, z: -0.00000005895707, w: 0.9999224}
+      scale: {x: 1.0000005, y: 1.0000008, z: 1.0000007}
+    - name: SDF:LeftHandRing3
+      parentName: SDF:LeftHandRing2
+      position: {x: -0.00000069331026, y: 0.036349557, z: -1.0218528e-10}
+      rotation: {x: -0.017192451, y: 0.000000014404243, z: 0.000000079438166, w: 0.9998522}
+      scale: {x: 1.0000008, y: 1.0000004, z: 1.0000008}
+    - name: SDF:LeftHandRing4
+      parentName: SDF:LeftHandRing3
+      position: {x: 0.0000005802524, y: 0.027819315, z: -1.2873486e-10}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:LeftHandPinky1
+      parentName: SDF:LeftHand
+      position: {x: -0.06494174, y: 0.16317512, z: -0.0017943302}
+      rotation: {x: 0.042847496, y: -0.0006242635, z: -0.014553133, w: 0.99897546}
+      scale: {x: 1.0000004, y: 1.0000001, z: 1.0000002}
+    - name: SDF:LeftHandPinky2
+      parentName: SDF:LeftHandPinky1
+      position: {x: -0.0000022430686, y: 0.038085867, z: 4.5652682e-10}
+      rotation: {x: -0.0075812927, y: -0.000000021711456, z: 0.00000012383133, w: 0.9999713}
+      scale: {x: 1, y: 1.0000004, z: 1.0000005}
+    - name: SDF:LeftHandPinky3
+      parentName: SDF:LeftHandPinky2
+      position: {x: -0.0000003726462, y: 0.03258657, z: -2.7107375e-10}
+      rotation: {x: -0.01908092, y: -0.000000044294136, z: -0.00000007316451, w: 0.9998179}
+      scale: {x: 1, y: 1.0000002, z: 0.99999994}
+    - name: SDF:LeftHandPinky4
+      parentName: SDF:LeftHandPinky3
+      position: {x: 0.0000026158377, y: 0.025021572, z: 1.2123678e-10}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:LeftHandThumb1
+      parentName: SDF:LeftHand
+      position: {x: 0.052269246, y: 0.030839793, z: 0.024241228}
+      rotation: {x: 0.04836862, y: -0.08095467, z: -0.56096655, w: 0.82244956}
+      scale: {x: 1.0000004, y: 1.0000006, z: 1.0000001}
+    - name: SDF:LeftHandThumb2
+      parentName: SDF:LeftHandThumb1
+      position: {x: -0.0121752145, y: 0.050843637, z: -2.1524144e-10}
+      rotation: {x: 0.019935315, y: -0.004283718, z: 0.1887174, w: 0.9818197}
+      scale: {x: 0.99999994, y: 1.0000001, z: 1}
+    - name: SDF:LeftHandThumb3
+      parentName: SDF:LeftHandThumb2
+      position: {x: 0.0071656476, y: 0.03779723, z: 7.451236e-10}
+      rotation: {x: 0.028753258, y: -0.0000001786937, z: -0.00000023706478, w: 0.9995865}
+      scale: {x: 1.0000004, y: 1.0000004, z: 1.0000002}
+    - name: SDF:LeftHandThumb4
+      parentName: SDF:LeftHandThumb3
+      position: {x: 0.0050095627, y: 0.028893251, z: 8.3973134e-10}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:RightUpLeg
+      parentName: SDF:Hips
+      position: {x: 0.14848694, y: -0.06130119, z: 0.007090039}
+      rotation: {x: -0.0005140583, y: -0.010691361, z: 0.9987889, w: -0.048023414}
+      scale: {x: 1.000001, y: 1.0000005, z: 1}
+    - name: SDF:RightLeg
+      parentName: SDF:RightUpLeg
+      position: {x: -0.0000000012147425, y: 0.29838502, z: 1.7980299e-10}
+      rotation: {x: -0.0093275355, y: 0.00018109346, z: -0.019410446, w: 0.99976814}
+      scale: {x: 1.0000007, y: 1.0000007, z: 1}
+    - name: SDF:RightFoot
+      parentName: SDF:RightLeg
+      position: {x: -1.7462227e-10, y: 0.20383838, z: -1.467957e-10}
+      rotation: {x: 0.6004268, y: 0.14131169, z: -0.108843595, w: 0.77953315}
+      scale: {x: 1.0000011, y: 1.000001, z: 0.99999994}
+    - name: SDF:RightToeBase
+      parentName: SDF:RightFoot
+      position: {x: -0.05994894, y: 0.16146496, z: -0.009264944}
+      rotation: {x: 0.13165586, y: 0.012861697, z: 0.09637498, w: 0.98651576}
+      scale: {x: 1.0000004, y: 1.0000008, z: 1}
+    - name: SDF:RightToe_End
+      parentName: SDF:RightToeBase
+      position: {x: -0.015927685, y: 0.0982538, z: -0.0016864256}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: SDF:LeftUpLeg
+      parentName: SDF:Hips
+      position: {x: -0.14848694, y: -0.06130119, z: 0.0028439926}
+      rotation: {x: -0.00011130357, y: 0.0023143818, z: 0.9988429, w: 0.048036497}
+      scale: {x: 1.0000002, y: 1.0000002, z: 1}
+    - name: SDF:LeftLeg
+      parentName: SDF:LeftUpLeg
+      position: {x: -2.1997376e-10, y: 0.29832044, z: -3.7760146e-11}
+      rotation: {x: -0.03230558, y: -0.0006267097, z: 0.019385578, w: 0.9992899}
+      scale: {x: 1.000001, y: 1.0000012, z: 0.9999999}
+    - name: SDF:LeftFoot
+      parentName: SDF:LeftLeg
+      position: {x: -4.759623e-10, y: 0.20403944, z: 4.233426e-11}
+      rotation: {x: 0.6099668, y: -0.13737102, z: 0.10841773, w: 0.7728618}
+      scale: {x: 1.0000011, y: 1.0000007, z: 1.0000006}
+    - name: SDF:LeftToeBase
+      parentName: SDF:LeftFoot
+      position: {x: 0.05766014, y: 0.1656818, z: -0.008278226}
+      rotation: {x: 0.130034, y: -0.012086511, z: -0.091757, w: 0.98718077}
+      scale: {x: 1.000001, y: 1.0000008, z: 0.9999998}
+    - name: SDF:LeftToe_End
+      parentName: SDF:LeftToeBase
+      position: {x: 0.014126068, y: 0.098322436, z: -0.0013536585}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 1
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 3
+  humanoidOversampling: 1
+  avatarSetup: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170055
+  packageName: Fighting Game Character - Ryunosuke
+  packageVersion: 2.0
+  assetPath: Assets/Game Dev Republic/Mesh/Characters/Ryunosuke_High.fbx
+  uploadId: 443392

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8e59c4b873ffe4941ba0ff3e7306197b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170055
+  packageName: Fighting Game Character - Ryunosuke
+  packageVersion: 2.0
+  assetPath: Assets/Game Dev Republic/Scripts/BlinkScript.cs
+  uploadId: 443392

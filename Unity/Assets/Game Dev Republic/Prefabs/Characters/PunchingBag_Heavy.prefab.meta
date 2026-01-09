@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b880a5588d582cd48a85ec96e5f78d98
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170055
+  packageName: Fighting Game Character - Ryunosuke
+  packageVersion: 2.0
+  assetPath: Assets/Game Dev Republic/Prefabs/Characters/PunchingBag_Heavy.prefab
+  uploadId: 443392
