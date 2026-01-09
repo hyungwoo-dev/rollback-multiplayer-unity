@@ -183,33 +183,33 @@ namespace SourceGenerator
                     sb.AppendLine();
                 }
 
-
+                var name = field.AssociatedSymbol is IPropertySymbol propertySymbol ? propertySymbol.Name : field.Name;
                 if (IsManagedState(field.Type))
                 {
-                    sb.AppendLine("        if (" + field.Name + " != null)");
+                    sb.AppendLine("        if (" + name + " != null)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            " + field.Name + ".Release();");
+                    sb.AppendLine("            " + name + ".Release();");
                     sb.AppendLine("        }");
                 }
                 else if (IsList(field.Type))
                 {
-                    sb.AppendLine("        for (int i = 0; i < " + field.Name + ".Count; i++)");
+                    sb.AppendLine("        for (int i = 0; i < " + name + ".Count; i++)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            " + field.Name + "[i].Release();");
+                    sb.AppendLine("            " + name + "[i].Release();");
                     sb.AppendLine("        }");
-                    sb.AppendLine("        " + field.Name + ".Clear();");
+                    sb.AppendLine("        " + name + ".Clear();");
                 }
                 else if (IsIndexedCollection(field))
                 {
-                    sb.AppendLine("        " + field.Name + ".Clear();");
+                    sb.AppendLine("        " + name + ".Clear();");
                 }
                 else if (IsString(field.Type))
                 {
-                    sb.AppendLine("        " + field.Name + " = System.String.Empty;");
+                    sb.AppendLine("        " + name + " = System.String.Empty;");
                 }
                 else if (IsValueType(field.Type))
                 {
-                    sb.AppendLine("        " + field.Name + " = default(" + field.Type.ToDisplayString() + ");");
+                    sb.AppendLine("        " + name + " = default(" + field.Type.ToDisplayString() + ");");
                 }
             }
 
@@ -217,7 +217,7 @@ namespace SourceGenerator
             {
                 sb.AppendLine();
             }
-            
+
             sb.AppendLine("        OnRelease();");
             sb.AppendLine("    }");
         }
@@ -250,38 +250,39 @@ namespace SourceGenerator
                     sb.AppendLine();
                 }
 
+                var name = field.AssociatedSymbol is IPropertySymbol propertySymbol ? propertySymbol.Name : field.Name;
                 if (IsList(field.Type))
                 {
-                    sb.AppendLine("        " + field.Name + ".Clear();");
-                    sb.AppendLine("        for (int i = 0; i < other." + field.Name + ".Count; i++)");
+                    sb.AppendLine("        " + name + ".Clear();");
+                    sb.AppendLine("        for (int i = 0; i < other." + name + ".Count; i++)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            var clone = other." + field.Name + "[i].Clone();");
-                    sb.AppendLine("            " + field.Name + ".Add(clone);");
+                    sb.AppendLine("            var clone = other." + name + "[i].Clone();");
+                    sb.AppendLine("            " + name + ".Add(clone);");
                     sb.AppendLine("        }");
                 }
                 else if (IsDictionary(field.Type) && TryGetManagedDictionary(field, out var dictioanryBacking, out var key))
                 {
-                    sb.AppendLine("        " + field.Name + ".Clear();");
+                    sb.AppendLine("        " + name + ".Clear();");
                     sb.AppendLine("        for (int i = 0; i < " + dictioanryBacking + ".Count; i++)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            " + field.Name + ".Add(" + dictioanryBacking + "[i]." + key + ", " + dictioanryBacking + "[i]);");
+                    sb.AppendLine("            " + name + ".Add(" + dictioanryBacking + "[i]." + key + ", " + dictioanryBacking + "[i]);");
                     sb.AppendLine("        }");
                 }
                 else if (IsHashSet(field.Type) && TryGetManagedHashSet(field, out var hashSetBacking))
                 {
-                    sb.AppendLine("        " + field.Name + ".Clear();");
+                    sb.AppendLine("        " + name + ".Clear();");
                     sb.AppendLine("        for (int i = 0; i < " + hashSetBacking + ".Count; i++)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            " + field.Name + ".Add(" + hashSetBacking + "[i]);");
+                    sb.AppendLine("            " + name + ".Add(" + hashSetBacking + "[i]);");
                     sb.AppendLine("        }");
                 }
                 else if (IsString(field.Type) || IsValueType(field.Type))
                 {
-                    sb.AppendLine("        " + field.Name + " = other." + field.Name + ";");
+                    sb.AppendLine("        " + name + " = other." + name + ";");
                 }
                 else if (IsUserDefinedClass(field.Type))
                 {
-                    sb.AppendLine("        " + field.Name + " = " + "other." + field.Name + " != null ? " + "other." + field.Name + ".Clone() : null;");
+                    sb.AppendLine("        " + name + " = " + "other." + name + " != null ? " + "other." + name + ".Clone() : null;");
                 }
             }
 
