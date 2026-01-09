@@ -55,7 +55,7 @@ namespace SourceGenerator
                 if (type == null)
                     continue;
 
-                if (!HasManagedStateAttribute(type))
+                if (!HasManagedStateAttribute(type) || HasManagedStateIgnoreAttribute(type))
                     continue;
 
                 ValidatePoolMethods(context, type);
@@ -67,30 +67,12 @@ namespace SourceGenerator
         static void ValidatePoolMethods(GeneratorExecutionContext ctx, INamedTypeSymbol type)
         {
             bool hasNew = false;
-            bool hasOnRelease = false;
-            bool hasUnsupportedType = false;
             foreach (var member in type.GetMembers())
             {
-                if (member is IMethodSymbol method)
-                {
-                    if (method.Name == "New"
-                    && method.Parameters.Length == 0
-                    && SymbolEqualityComparer.Default.Equals(method.ReturnType, type))
-                    {
-                        hasNew = true;
-                    }
-
-                    if (method.Name == "OnRelease"
-                        && method.Parameters.Length == 0
-                        && method.ReturnsVoid)
-                    {
-                        hasOnRelease = true;
-                    }
-                }
-
-
                 if (member is IFieldSymbol field)
                 {
+                    if (IsManagedStateIgnoreMember(field.Type)) continue;
+
                     if (IsList(field.Type))
                     {
                         if (field.Type is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)
@@ -102,18 +84,29 @@ namespace SourceGenerator
                             }
                         }
                     }
-                    else if (IsUserDefinedClass(field.Type) && !IsManagedState(field.Type))
+                    else if (IsUserDefinedClass(field.Type) &&
+                            !IsManagedState(field.Type) &&
+                            field.Type is INamedTypeSymbol namedTypeSymbol)
                     {
                         ctx.ReportDiagnostic(Diagnostic.Create(MissingManagedState, type.Locations[0], field.Type.Name));
+                    }
+                }
+
+                if (member is IMethodSymbol method)
+                {
+                    if (method.Name == "New"
+                    && method.Parameters.Length == 0
+                    && SymbolEqualityComparer.Default.Equals(method.ReturnType, type))
+                    {
+                        hasNew = true;
                     }
                 }
             }
 
             if (!hasNew)
+            {
                 ctx.ReportDiagnostic(Diagnostic.Create(MissingNew, type.Locations[0], type.Name));
-
-            if (!hasOnRelease)
-                ctx.ReportDiagnostic(Diagnostic.Create(MissingOnRelease, type.Locations[0], type.Name));
+            }
         }
 
         #endregion 
@@ -137,9 +130,10 @@ namespace SourceGenerator
             sb.AppendLine("{");
 
             sb.AppendLine("    partial void OnClone();");
+            sb.AppendLine("    partial void OnRelease();");
             sb.AppendLine();
 
-            GenerateCopyFrom(sb, type);
+            GenerateDeepCopyFrom(sb, type);
             sb.AppendLine();
 
             GenerateClone(sb, type);
@@ -160,7 +154,7 @@ namespace SourceGenerator
             sb.AppendLine("    public " + type.Name + " Clone()");
             sb.AppendLine("    {");
             sb.AppendLine("        var obj = New();");
-            sb.AppendLine("        obj.CopyFrom(this);");
+            sb.AppendLine("        obj.DeepCopyFrom(this);");
             sb.AppendLine("        obj.OnClone();");
             sb.AppendLine("        return obj;");
             sb.AppendLine("    }");
@@ -178,6 +172,7 @@ namespace SourceGenerator
                 if (field == null) continue;
                 if (field.IsConst) continue;
                 if (field.IsStatic) continue;
+                if (IsManagedStateIgnoreMember(field.Type)) continue;
 
                 if (isFirstLine)
                 {
@@ -188,15 +183,20 @@ namespace SourceGenerator
                     sb.AppendLine();
                 }
 
+
                 if (IsManagedState(field.Type))
                 {
                     sb.AppendLine("        if (" + field.Name + " != null)");
+                    sb.AppendLine("        {");
                     sb.AppendLine("            " + field.Name + ".Release();");
+                    sb.AppendLine("        }");
                 }
                 else if (IsList(field.Type))
                 {
                     sb.AppendLine("        for (int i = 0; i < " + field.Name + ".Count; i++)");
+                    sb.AppendLine("        {");
                     sb.AppendLine("            " + field.Name + "[i].Release();");
+                    sb.AppendLine("        }");
                     sb.AppendLine("        " + field.Name + ".Clear();");
                 }
                 else if (IsIndexedCollection(field))
@@ -213,19 +213,23 @@ namespace SourceGenerator
                 }
             }
 
-            sb.AppendLine();
+            if (!isFirstLine)
+            {
+                sb.AppendLine();
+            }
+            
             sb.AppendLine("        OnRelease();");
             sb.AppendLine("    }");
         }
 
-        static void GenerateCopyFrom(StringBuilder sb, INamedTypeSymbol type)
+        static void GenerateDeepCopyFrom(StringBuilder sb, INamedTypeSymbol type)
         {
-            sb.AppendLine("    public void CopyFrom(" + type.Name + " other)");
+            sb.AppendLine("    public void DeepCopyFrom(" + type.Name + " other)");
             sb.AppendLine("    {");
 
             if (type.BaseType != null && HasManagedStateAttribute(type.BaseType))
             {
-                sb.AppendLine("        base.CopyFrom(other);");
+                sb.AppendLine("        base.DeepCopyFrom(other);");
             }
 
             var isFirstLine = true;
@@ -235,6 +239,7 @@ namespace SourceGenerator
                 if (field == null) continue;
                 if (field.IsConst) continue;
                 if (field.IsStatic) continue;
+                if (IsManagedStateIgnoreMember(field.Type)) continue;
 
                 if (isFirstLine)
                 {
@@ -259,15 +264,16 @@ namespace SourceGenerator
                     sb.AppendLine("        " + field.Name + ".Clear();");
                     sb.AppendLine("        for (int i = 0; i < " + dictioanryBacking + ".Count; i++)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            var e = " + dictioanryBacking + "[i];");
-                    sb.AppendLine("            " + field.Name + ".Add(e." + key + ", e);");
+                    sb.AppendLine("            " + field.Name + ".Add(" + dictioanryBacking + "[i]." + key + ", " + dictioanryBacking + "[i]);");
                     sb.AppendLine("        }");
                 }
                 else if (IsHashSet(field.Type) && TryGetManagedHashSet(field, out var hashSetBacking))
                 {
                     sb.AppendLine("        " + field.Name + ".Clear();");
                     sb.AppendLine("        for (int i = 0; i < " + hashSetBacking + ".Count; i++)");
+                    sb.AppendLine("        {");
                     sb.AppendLine("            " + field.Name + ".Add(" + hashSetBacking + "[i]);");
+                    sb.AppendLine("        }");
                 }
                 else if (IsString(field.Type) || IsValueType(field.Type))
                 {
@@ -275,10 +281,7 @@ namespace SourceGenerator
                 }
                 else if (IsUserDefinedClass(field.Type))
                 {
-                    sb.AppendLine("        " + "if (other." + field.Name + " != null)");
-                    sb.AppendLine("            " + field.Name + " = other." + field.Name + ".Clone();");
-                    sb.AppendLine("        " + "else");
-                    sb.AppendLine("            " + field.Name + " = null;");
+                    sb.AppendLine("        " + field.Name + " = " + "other." + field.Name + " != null ? " + "other." + field.Name + ".Clone() : null;");
                 }
             }
 
@@ -318,10 +321,40 @@ namespace SourceGenerator
 
         #region Helpers
 
+        static bool IsManagedStateIgnoreMember(ITypeSymbol typeSymbol)
+        {
+            if (IsList(typeSymbol))
+            {
+                if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)
+                {
+                    if (namedTypeSymbol.TypeArguments[0] is INamedTypeSymbol genericNamedTypeSymbol &&
+                        HasManagedStateIgnoreAttribute(genericNamedTypeSymbol))
+                    {
+                        return true;
+                    }
+                }
+            }
+            else if (typeSymbol is INamedTypeSymbol namedTypeSymbol &&
+                    HasManagedStateIgnoreAttribute(namedTypeSymbol))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         static bool HasManagedStateAttribute(INamedTypeSymbol type)
         {
             foreach (var a in type.GetAttributes())
                 if (a.AttributeClass.Name == "ManagedStateAttribute")
+                    return true;
+            return false;
+        }
+
+        static bool HasManagedStateIgnoreAttribute(INamedTypeSymbol type)
+        {
+            foreach (var a in type.GetAttributes())
+                if (a.AttributeClass.Name == "ManagedStateIgnoreAttribute")
                     return true;
             return false;
         }
