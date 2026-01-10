@@ -18,3 +18,10 @@ Unity/.vs/Unity/FileContentIndex
 Unity/.vs/Unity/v17
 Unity/Unity.slnx
 Unity/.vs
+Server/.vs
+Server/FreeNet/.vs
+Server/FreeNet/bin
+Server/FreeNet/obj
+Server/GameServer/.vs
+Server/GameServer/bin
+Server/GameServer/obj
