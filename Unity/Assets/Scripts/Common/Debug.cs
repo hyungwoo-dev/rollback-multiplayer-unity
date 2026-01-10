@@ -32,6 +32,12 @@ public class Debug
         UnityEngine.Debug.LogError(GetTagString() + message);
     }
 
+    [Conditional(CONDITION_STRING)]
+    public void LogException(System.Exception exception)
+    {
+        UnityEngine.Debug.LogException(exception);
+    }
+
     private string GetTagString()
     {
         return string.IsNullOrWhiteSpace(_tag) ? string.Empty : $"[{_tag}] ";

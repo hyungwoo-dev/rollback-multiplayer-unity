@@ -1,9 +1,8 @@
 {
-    "name": "Battle",
+    "name": "Network",
     "rootNamespace": "",
     "references": [
-        "GUID:a044dc201c713474a97cce45965c31d5",
-        "GUID:fbe8a420b0451174ca738d68ab16f18d"
+        "GUID:a044dc201c713474a97cce45965c31d5"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

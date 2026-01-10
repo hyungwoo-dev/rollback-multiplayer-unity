@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1062
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreeNet", "FreeNet\FreeNet.csproj", "{A6AAB26D-E586-4C7A-9374-7B4E1C4188B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServer", "GameServer\GameServer.csproj", "{0FC22A5C-F6F1-4258-B283-1AB0EF637E69}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A6AAB26D-E586-4C7A-9374-7B4E1C4188B6} = {A6AAB26D-E586-4C7A-9374-7B4E1C4188B6}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A6AAB26D-E586-4C7A-9374-7B4E1C4188B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6AAB26D-E586-4C7A-9374-7B4E1C4188B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6AAB26D-E586-4C7A-9374-7B4E1C4188B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6AAB26D-E586-4C7A-9374-7B4E1C4188B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FC22A5C-F6F1-4258-B283-1AB0EF637E69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FC22A5C-F6F1-4258-B283-1AB0EF637E69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FC22A5C-F6F1-4258-B283-1AB0EF637E69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FC22A5C-F6F1-4258-B283-1AB0EF637E69}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B2C74A00-6FE8-463F-BC76-B3CC702B8B96}
+	EndGlobalSection
+EndGlobal
