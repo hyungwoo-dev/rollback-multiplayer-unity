@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 
 [ManagedStateIgnore]
-public class BattleWorldManager : MonoBehaviour
+public class BattleWorldManager
 {
     private Debug Debug = new(nameof(BattleWorldManager));
     
@@ -14,7 +14,7 @@ public class BattleWorldManager : MonoBehaviour
     private bool IsStarted { get; set; }
     private float BattleTime { get; set; }
 
-    private void Awake()
+    public BattleWorldManager()
     {
         InitalizeInputManager();
 
@@ -23,26 +23,23 @@ public class BattleWorldManager : MonoBehaviour
         ServerWorld = ObjectManager.BattleWorldPool.Get();
     }
 
-    private IEnumerator Start()
-    {
-        yield return new WaitForFixedUpdate();
-        IsStarted = true;
 
-        Debug.Log($"Start - FixedTime: {Time.fixedTime}");
+    public void Initialize()
+    {
+
     }
 
-    private void Update()
+    public void AdvanceFrame(BattleFrame frame)
     {
-        InputManager.OnUpdate(Time.unscaledTime, InputContext); 
+
     }
 
-    private void FixedUpdate()
+    public void OnUpdate(BattleFrame frame)
     {
-        if (!IsStarted) return;
-        Debug.Log($"FixedUpdate - FixedTime: {Time.fixedTime}");
+        InputManager.OnUpdate(frame.Time, InputContext);
     }
 
-    private void OnDestroy()
+    public void Dispose()
     {
         DisposeInputManager();
 
@@ -65,9 +62,10 @@ public class BattleWorldManager : MonoBehaviour
         InputContext = new BattleInputContext();
         InputManager.OnInputLeftDash += OnPlayerInputLeftDash;
         InputManager.OnInputRightDash += OnPlayerInputRightDash;
-        InputManager.OnInputAttack1 += OnPlayerInputAttack2;
+        InputManager.OnInputAttack1 += OnPlayerInputAttack1;
         InputManager.OnInputAttack2 += OnPlayerInputAttack2;
         InputManager.OnInputFire += OnPlayerInputFire;
+        InputManager.OnInputJump += OnPlayerInputJump;
     }
 
     private void OnPlayerInputFire()
@@ -95,6 +93,11 @@ public class BattleWorldManager : MonoBehaviour
 
     }
 
+    private void OnPlayerInputJump()
+    {
+
+    }
+
     private void DisposeInputManager()
     {
         InputManager.OnInputLeftDash -= OnPlayerInputLeftDash;
@@ -102,6 +105,7 @@ public class BattleWorldManager : MonoBehaviour
         InputManager.OnInputAttack1 -= OnPlayerInputAttack2;
         InputManager.OnInputAttack2 -= OnPlayerInputAttack2;
         InputManager.OnInputFire -= OnPlayerInputFire;
+        InputManager.OnInputJump -= OnPlayerInputJump;
 
         InputManager = null;
         InputContext = null;

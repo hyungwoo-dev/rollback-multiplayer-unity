@@ -36,6 +36,7 @@ public class BattleInputManager
     public event Action OnInputAttack1 = null;
     public event Action OnInputAttack2 = null;
     public event Action OnInputFire = null;
+    public event Action OnInputJump = null;
 
     private DashInputInfo _leftDashInputInfo = new();
     private DashInputInfo _rightDashInputInfo = new();
@@ -83,6 +84,11 @@ public class BattleInputManager
         if (Input.GetKeyDown(context.FireKeyCode))
         {
             OnInputFire?.Invoke();
+        }
+
+        if (Input.GetKeyDown(context.JumpKeyCode))
+        {
+            OnInputJump?.Invoke();
         }
     }
 }
