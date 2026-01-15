@@ -1,44 +1,75 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class BattleScene : MonoBehaviour
 {
-    private BattleWorldManager WorldManager { get; set; } = new();
-    private bool IsInitialized { get; set; } = false;
+	private static Debug Debug = new(nameof(BattleScene));
 
-    private IEnumerator Start()
-    {
-        yield return new WaitForFixedUpdate();
-        IsInitialized = true;
+	public static void Initialize(BattleInitializationContext intializationContext)
+	{
+		var scene = SceneManager.LoadScene(SceneNames.BATTLE, new LoadSceneParameters()
+		{
+			loadSceneMode = LoadSceneMode.Single,
+			localPhysicsMode = LocalPhysicsMode.Physics3D,
+		});
+	}
 
-        WorldManager.Initialize();
-    }
+	private BattleWorldManager WorldManager { get; set; } = new();
+	private bool IsInitialized { get; set; }
+	private Coroutine LateFixedUpdateCoroutine { get; set; }
 
-    private void FixedUpdate()
-    {
-        if (!IsInitialized) return;
+	private IEnumerator Start()
+	{
+		while (!WorldManager.IsReady())
+		{
+			yield return null;
+		}
 
-        var frame = GetCurrentFrame();
-        WorldManager.AdvanceFrame(frame);
-    }
+		yield return new WaitForFixedUpdate();
 
-    private void Update()
-    {
-        if (!IsInitialized) return;
+		Initialize();
+	}
 
-        var frame = GetCurrentFrame();
-        WorldManager.OnUpdate(frame);
-    }
+	private void Initialize()
+	{
+		Debug.Log($"Initialize FixedTime: {Time.fixedTime}, Time: {Time.time}");
+		WorldManager.Initialize();
+		IsInitialized = true;
+	}
 
-    private void OnDestroy()
-    {
-        WorldManager.Dispose();
-        WorldManager = null;
-    }
+	private void FixedUpdate()
+	{
+		if (!IsInitialized) return;
 
-    private BattleFrame GetCurrentFrame()
-    {
-        return new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.time);
-    }
+		var frame = GetCurrentFrame();
+		WorldManager.OnFixedUpdate(frame);
+		Debug.Log($"FixedUpdate FixedTime: {Time.fixedTime}");
+	}
 
+	private void Update()
+	{
+		if (!IsInitialized) return;
+
+		var frame = GetCurrentFrame();
+		WorldManager.OnUpdate(frame);
+		Debug.Log($"Update Time: {Time.time}");
+	}
+
+	private void OnDestroy()
+	{
+		WorldManager.Dispose();
+		WorldManager = null;
+
+		if (IsInitialized)
+		{
+			StopCoroutine(LateFixedUpdateCoroutine);
+			LateFixedUpdateCoroutine = null;
+		}
+	}
+
+	private BattleFrame GetCurrentFrame()
+	{
+		return new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.time);
+	}
 }

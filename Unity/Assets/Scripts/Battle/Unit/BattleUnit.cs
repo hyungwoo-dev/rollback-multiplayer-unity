@@ -1,16 +1,12 @@
-using UnityEngine;
-
-public class BattleUnit : MonoBehaviour
+﻿using UnityEngine;
+[ManagedState]
+public partial class BattleUnit
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [ManagedStateIgnore]
+    public BattleWorld World { get; set; }
 
-    // Update is called once per frame
-    void Update()
+    public BattleUnit(BattleWorld world)
     {
-        
+        World = world;
     }
 }

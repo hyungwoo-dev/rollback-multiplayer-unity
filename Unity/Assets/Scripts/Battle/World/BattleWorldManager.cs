@@ -1,60 +1,61 @@
-using System;
-using System.Collections;
-using UnityEngine;
+﻿using UnityEngine.Pool;
 
 [ManagedStateIgnore]
 public class BattleWorldManager
 {
-    private Debug Debug = new(nameof(BattleWorldManager));
+    private static Debug Debug = new(nameof(BattleWorldManager));
     
-    public BattleObjectManager ObjectManager { get; private set; }
-    private BattleWorld ClientWorld { get; set; }
-    private BattleWorld ServerWorld { get; set; }
-
-    private bool IsStarted { get; set; }
-    private float BattleTime { get; set; }
+    protected BattleWorld LocalWorld { get; private set; }
 
     public BattleWorldManager()
     {
         InitalizeInputManager();
-
-        ObjectManager = new BattleObjectManager(this);
-        ClientWorld = ObjectManager.BattleWorldPool.Get();
-        ServerWorld = ObjectManager.BattleWorldPool.Get();
+        InitializePool();
+        LocalWorld = WorldPool.Get();
     }
 
-
-    public void Initialize()
+    public virtual void Initialize()
     {
-
+        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.GRAPHICS);
+        worldScene.Initialize();
+        LocalWorld.Initialize(worldScene);
     }
 
-    public void AdvanceFrame(BattleFrame frame)
+    public virtual void OnFixedUpdate(in BattleFrame frame)
     {
-
+        LocalWorld.OnFixedUpdate(frame);
     }
 
-    public void OnUpdate(BattleFrame frame)
+    public virtual void OnUpdate(in BattleFrame frame)
     {
-        InputManager.OnUpdate(frame.Time, InputContext);
+        LocalWorld.OnUpdate(frame);
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         DisposeInputManager();
 
-        ClientWorld.Release();
-        ClientWorld = null;
-        ServerWorld.Release();
-        ClientWorld = null;
+        LocalWorld.Release();
+        LocalWorld = null;
 
-        ObjectManager.Dispose();
+        DisposePool();
+    }
+
+    public virtual bool IsReady()
+    {
+        return true;
     }
 
     #region Input
 
     private BattleInputManager InputManager { get; set; }
     private BattleInputContext InputContext { get; set; }
+
+    protected virtual void OnWorldInputEvent(BattleWorldInputEventType worldInputEventType)
+    {
+        var reservedFrame = LocalWorld.CurrentFrame + 1;
+
+    }
 
     private void InitalizeInputManager()
     {
@@ -112,4 +113,23 @@ public class BattleWorldManager
     }
 
     #endregion Input
+
+    #region Pool
+
+    public ObjectPool<BattleWorld> WorldPool { get; private set; }
+    public ObjectPool<BattleWorldEventInfo> WorldEventInfoPool { get; private set; }
+
+    private void InitializePool()
+    {
+        WorldPool = new ObjectPool<BattleWorld>(createFunc: () => new BattleWorld(this), defaultCapacity: 2);
+        WorldEventInfoPool = new ObjectPool<BattleWorldEventInfo>(createFunc: () => new BattleWorldEventInfo(this), defaultCapacity: 8);
+    }
+
+    private void DisposePool()
+    {
+        WorldPool.Dispose();
+        WorldEventInfoPool.Dispose();
+    }
+
+    #endregion Pool
 }

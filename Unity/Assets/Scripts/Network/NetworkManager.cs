@@ -1,38 +1,33 @@
 ﻿using FreeNet;
+using System;
 using System.Diagnostics;
 using UnityEngine;
 
-public partial class NetworkManager : MonoBehaviour
+public partial class NetworkManager
 {
     private readonly Debug _debug = new Debug(nameof(NetworkHandler));
-
-    [SerializeField]
-    private string _address = "127.0.0.1";
-
-    [SerializeField]
-    private int _port = 7979;
 
     private NetworkHandler Handler { get; set; }
     private NetworkStatus Status { get; set; } = NetworkStatus.NONE;
 
-    private void Awake()
+    public NetworkManager()
     {
         Handler = new NetworkHandler(4096);
         Handler.OnStatusChanged += OnStatusChanged;
         Handler.OnMessage += OnMessage;
     }
 
-    private void Start()
+    public void Connect(string address, int port)
     {
-        Handler.Connect(_address, _port);
+        Handler.Connect(address, port);
     }
 
-    private void Update()
+    public void ProcessPacket()
     {
         Handler.ProcessPacket();
     }
 
-    private void OnDestroy()
+    public void Dispose()
     {
         Handler.OnStatusChanged -= OnStatusChanged;
         Handler.OnMessage -= OnMessage;
@@ -47,36 +42,9 @@ public partial class NetworkManager : MonoBehaviour
     {
         _debug.Log($"OnStatusChanged Status: {status}");
         Status = status;
-        switch (status)
-        {
-            case NetworkStatus.CONNECTED:
-            {
-                RPC_REQUEST(0);
-                break;
-            }
-            case NetworkStatus.DISCONNECTED:
-            {
-                break;
-            }
-        }
     }
 
-    private void OnMessage(CPacket msg)
-    {
-        _debug.Log($"OnMessage ProtocolID: {msg.protocol_id}");
-        var protocol = (Protocol)msg.pop_protocol_id();
-        switch (protocol)
-        {
-            case Protocol.RESPONSE:
-            {
-                int number = msg.pop_int32();
-                RPC_REQUEST(number + 1);
-            }
-            break;
-        }
-    }
-
-    public void Send(CPacket msg)
+    private void Send(CPacket msg)
     {
         if (Status != NetworkStatus.CONNECTED) return;
 
