@@ -27,6 +27,7 @@ namespace GameServer
                 _users[token] = user;
                 _tokens[user.ID] = token;
             }
+            Console.WriteLine($"[GameUserManager::AddUser] {user.ID}");
         }
 
         public GameUser RemoveUser(CUserToken token)
@@ -38,6 +39,7 @@ namespace GameServer
                 {
                     _users.Remove(token);
                     _tokens.Remove(value.ID);
+                    Console.WriteLine($"[GameUserManager::RemoveUser] {value.ID}");
                     return value;
                 }
             }

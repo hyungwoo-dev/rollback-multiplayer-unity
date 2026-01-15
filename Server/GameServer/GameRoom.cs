@@ -27,6 +27,7 @@ namespace GameServer
             lock (_syncLock)
             {
                 _users.Add(user);
+                Console.WriteLine($"[GameRoom::AddUser] Room: {ID} User: {user.ID}, Full: {IsFull()}");
             }
         }
 
@@ -35,6 +36,7 @@ namespace GameServer
             lock (_syncLock)
             {
                 _users.Remove(user);
+                Console.WriteLine($"[GameRoom::RemoveUser] Room: {ID} User: {user.ID}");
             }
         }
 

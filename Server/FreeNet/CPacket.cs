@@ -103,7 +103,14 @@ namespace FreeNet
 			return data;
 		}
 
-		public string pop_string()
+        public Int64 pop_int64()
+        {
+            Int64 data = BitConverter.ToInt64(this.buffer, this.position);
+            this.position += sizeof(Int64);
+            return data;
+        }
+
+        public string pop_string()
 		{
 			// 문자열 길이는 최대 2바이트 까지. 0 ~ 32767
 			Int16 len = BitConverter.ToInt16(this.buffer, this.position);
@@ -123,9 +130,14 @@ namespace FreeNet
             return data;
         }
 
+        public double pop_double()
+        {
+            double data = BitConverter.ToDouble(this.buffer, this.position);
+            this.position += sizeof(double);
+            return data;
+        }
 
-
-		public void set_protocol(Int16 protocol_id)
+        public void set_protocol(Int16 protocol_id)
 		{
 			this.protocol_id = protocol_id;
 			//this.buffer = new byte[1024];
@@ -171,7 +183,14 @@ namespace FreeNet
 			this.position += temp_buffer.Length;
 		}
 
-		public void push(string data)
+        public void push(Int64 data)
+        {
+            byte[] temp_buffer = BitConverter.GetBytes(data);
+            temp_buffer.CopyTo(this.buffer, this.position);
+            this.position += temp_buffer.Length;
+        }
+
+        public void push(string data)
 		{
 			byte[] temp_buffer = Encoding.UTF8.GetBytes(data);
 
@@ -190,5 +209,12 @@ namespace FreeNet
             temp_buffer.CopyTo(this.buffer, this.position);
             this.position += temp_buffer.Length;
         }
-	}
+
+        public void push(double data)
+        {
+            byte[] temp_buffer = BitConverter.GetBytes(data);
+            temp_buffer.CopyTo(this.buffer, this.position);
+            this.position += temp_buffer.Length;
+        }
+    }
 }

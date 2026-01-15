@@ -25,11 +25,10 @@ namespace GameServer
         /// <returns></returns>
         public void OnSessionConnected(CUserToken token)
         {
-            GameUser user = new GameUser(this, UUID.Generate(), token);
+            var user = new GameUser(this, UUID.Generate(), token);
+            Console.WriteLine($"[GameService::OnSessionConnected] user connected. id: {user.ID}");
             _userManager.AddUser(token, user);
             _roomManager.AddUser(user);
-
-            Console.WriteLine($"[GameService::OnSessionConnected] user connected. id: {user.ID}");
         }
 
         public void OnSessionDisconnected(CUserToken token)
