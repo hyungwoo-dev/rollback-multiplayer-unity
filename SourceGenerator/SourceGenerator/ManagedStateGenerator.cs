@@ -1,8 +1,9 @@
-﻿using System;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text;
 
 namespace SourceGenerator
@@ -10,20 +11,11 @@ namespace SourceGenerator
     [Generator]
     public sealed class ManagedStateGenerator : ISourceGenerator
     {
-        static readonly DiagnosticDescriptor MissingNew =
+        static readonly DiagnosticDescriptor MissingClone =
             new DiagnosticDescriptor(
                 "MST001",
                 "Get missing",
-                "ManagedState '{0}' must implement method New()",
-                "ManagedState",
-                DiagnosticSeverity.Error,
-                true);
-
-        static readonly DiagnosticDescriptor MissingOnRelease =
-            new DiagnosticDescriptor(
-                "MST002",
-                "Return missing",
-                "ManagedState '{0}' must implement method OnRelease()",
+                "ManagedState '{0}' must implement method 'Clone()' For List",
                 "ManagedState",
                 DiagnosticSeverity.Error,
                 true);
@@ -62,51 +54,68 @@ namespace SourceGenerator
                 Generate(context, type);
             }
         }
+
         #region Validation
 
         static void ValidatePoolMethods(GeneratorExecutionContext ctx, INamedTypeSymbol type)
         {
-            bool hasNew = false;
             foreach (var member in type.GetMembers())
             {
                 if (member is IFieldSymbol field)
                 {
-                    if (IsManagedStateIgnoreMember(field.Type)) continue;
+                    if (IsManagedStateIgnoreTypeSymbol(field.Type)) continue;
+                    if (HasManagedStateIgnoreMember(field)) continue;
 
                     if (IsList(field.Type))
                     {
-                        if (field.Type is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)
+                        if (field.Type is INamedTypeSymbol namedTypeSymbol &&
+                            namedTypeSymbol.IsGenericType &&
+                            !HasManagedStateIgnoreMember(namedTypeSymbol))
                         {
                             var genericType = namedTypeSymbol.TypeArguments[0];
-                            if (IsUserDefinedClass(genericType) && !IsManagedState(genericType))
+                            if (IsUserDefinedClass(genericType))
                             {
-                                ctx.ReportDiagnostic(Diagnostic.Create(MissingManagedState, type.Locations[0], field.Type.Name));
+                                if (IsManagedState(genericType))
+                                {
+                                    if (genericType is INamedTypeSymbol genericNamedTypeSymbol && IsManagedState(genericType) && !HasCloneMethod(genericNamedTypeSymbol))
+                                    {
+                                        ctx.ReportDiagnostic(Diagnostic.Create(MissingClone, type.Locations[0], genericType.Name));
+                                    }
+                                }
+                                else
+                                {
+                                    ctx.ReportDiagnostic(Diagnostic.Create(MissingManagedState, type.Locations[0], field.Type.Name));
+                                }
                             }
                         }
                     }
                     else if (IsUserDefinedClass(field.Type) &&
                             !IsManagedState(field.Type) &&
-                            field.Type is INamedTypeSymbol namedTypeSymbol)
+                            field.Type is INamedTypeSymbol namedTypeSymbol &&
+                            !HasManagedStateIgnoreMember(namedTypeSymbol))
                     {
                         ctx.ReportDiagnostic(Diagnostic.Create(MissingManagedState, type.Locations[0], field.Type.Name));
                     }
                 }
+            }
+        }
 
+        private static bool HasCloneMethod(INamedTypeSymbol type)
+        {
+            foreach (var member in type.GetMembers())
+            {
                 if (member is IMethodSymbol method)
                 {
-                    if (method.Name == "New"
+                    if (method.Name == "Clone"
                     && method.Parameters.Length == 0
                     && SymbolEqualityComparer.Default.Equals(method.ReturnType, type))
                     {
-                        hasNew = true;
+                        return true;
                     }
                 }
             }
 
-            if (!hasNew)
-            {
-                ctx.ReportDiagnostic(Diagnostic.Create(MissingNew, type.Locations[0], type.Name));
-            }
+            return false;
         }
 
         #endregion 
@@ -129,14 +138,10 @@ namespace SourceGenerator
             sb.AppendLine("partial class " + type.Name);
             sb.AppendLine("{");
 
-            sb.AppendLine("    partial void OnClone();");
             sb.AppendLine("    partial void OnRelease();");
             sb.AppendLine();
 
             GenerateDeepCopyFrom(sb, type);
-            sb.AppendLine();
-
-            GenerateClone(sb, type);
             sb.AppendLine();
 
             GenerateRelease(sb, type);
@@ -149,17 +154,6 @@ namespace SourceGenerator
             ctx.AddSource(type.Name + ".ManagedState.g.cs", sb.ToString());
         }
 
-        static void GenerateClone(StringBuilder sb, INamedTypeSymbol type)
-        {
-            sb.AppendLine("    public " + type.Name + " Clone()");
-            sb.AppendLine("    {");
-            sb.AppendLine("        var obj = New();");
-            sb.AppendLine("        obj.DeepCopyFrom(this);");
-            sb.AppendLine("        obj.OnClone();");
-            sb.AppendLine("        return obj;");
-            sb.AppendLine("    }");
-        }
-
         static void GenerateRelease(StringBuilder sb, INamedTypeSymbol type)
         {
             sb.AppendLine("    public void Release()");
@@ -168,11 +162,13 @@ namespace SourceGenerator
             var isFirstLine = true;
             foreach (var member in type.GetMembers())
             {
+                if (HasManagedStateIgnoreMember(member)) continue;
+
                 var field = member as IFieldSymbol;
                 if (field == null) continue;
                 if (field.IsConst) continue;
                 if (field.IsStatic) continue;
-                if (IsManagedStateIgnoreMember(field.Type)) continue;
+                if (IsManagedStateIgnoreTypeSymbol(field.Type)) continue;
 
                 if (isFirstLine)
                 {
@@ -235,11 +231,13 @@ namespace SourceGenerator
             var isFirstLine = true;
             foreach (var member in type.GetMembers())
             {
+                if (HasManagedStateIgnoreMember(member)) continue;
+
                 var field = member as IFieldSymbol;
                 if (field == null) continue;
                 if (field.IsConst) continue;
                 if (field.IsStatic) continue;
-                if (IsManagedStateIgnoreMember(field.Type)) continue;
+                if (IsManagedStateIgnoreTypeSymbol(field.Type)) continue;
 
                 if (isFirstLine)
                 {
@@ -280,7 +278,7 @@ namespace SourceGenerator
                 {
                     sb.AppendLine("        " + name + " = other." + name + ";");
                 }
-                else if (IsUserDefinedClass(field.Type))
+                else if (IsUserDefinedClass(field.Type) && IsManagedState(field.Type))
                 {
                     sb.AppendLine("        " + name + " = " + "other." + name + " != null ? " + "other." + name + ".Clone() : null;");
                 }
@@ -322,7 +320,7 @@ namespace SourceGenerator
 
         #region Helpers
 
-        static bool IsManagedStateIgnoreMember(ITypeSymbol typeSymbol)
+        static bool IsManagedStateIgnoreTypeSymbol(ITypeSymbol typeSymbol)
         {
             if (IsList(typeSymbol))
             {
@@ -352,11 +350,62 @@ namespace SourceGenerator
             return false;
         }
 
-        static bool HasManagedStateIgnoreAttribute(INamedTypeSymbol type)
+        static bool HasManagedStateIgnoreMember(ISymbol type)
         {
-            foreach (var a in type.GetAttributes())
-                if (a.AttributeClass.Name == "ManagedStateIgnoreAttribute")
+            if (type is IFieldSymbol fieldSymbol)
+            {
+                if (HasManagedStateIgnoreAttribute(fieldSymbol.GetAttributes()))
+                {
                     return true;
+                }
+
+                // 프로퍼티는 자동 생성된 Backing 필드로부터 선언된 프로퍼티 정보를 역참조하여 판단해야 한다.
+                if (fieldSymbol.AssociatedSymbol is IPropertySymbol fieldPropertySymbol)
+                {
+                    if (HasManagedStateIgnoreAttribute(fieldPropertySymbol.GetAttributes()))
+                    {
+                        return true;
+                    }
+                }
+            }
+            if (type is INamedTypeSymbol namedTypeSymbol)
+            {
+                if (HasManagedStateIgnoreAttribute(namedTypeSymbol.GetAttributes()))
+                {
+                    return true;
+                }
+            }
+
+            if (type is IPropertySymbol propertySymbol)
+            {
+                if (HasManagedStateIgnoreAttribute(propertySymbol.GetAttributes()))
+                {
+                    return true;
+                }
+            }
+
+            if (HasManagedStateIgnoreAttribute(type.GetAttributes()))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        static bool HasManagedStateIgnoreAttribute(INamedTypeSymbol namedTypeSymbol)
+        {
+            return HasManagedStateIgnoreAttribute(namedTypeSymbol.GetAttributes());
+        }
+
+        static bool HasManagedStateIgnoreAttribute(ImmutableArray<AttributeData> array)
+        {
+            foreach (var a in array)
+            {
+                if (a.AttributeClass.Name == "ManagedStateIgnoreAttribute")
+                {
+                    return true;
+                }
+            }
             return false;
         }
 
