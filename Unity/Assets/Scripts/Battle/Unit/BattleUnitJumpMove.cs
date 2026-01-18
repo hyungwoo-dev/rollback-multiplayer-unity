@@ -27,21 +27,24 @@ public partial class BattleUnitJumpMove
 
     public Vector3 AdvanceTime(float deltaTime)
     {
-        if (ElapsedTime + deltaTime > MoveTime)
+        if (ElapsedTime + deltaTime >= MoveTime)
         {
             deltaTime = MoveTime - ElapsedTime;
+            var moveDelta = GetMovedAmount(ElapsedTime + deltaTime) - GetMovedAmount(ElapsedTime);
             ElapsedTime = MoveTime;
+            return moveDelta * Vector3.up;
         }
         else
         {
+            var moveDelta = GetMovedAmount(ElapsedTime + deltaTime) - GetMovedAmount(ElapsedTime);
             ElapsedTime += deltaTime;
+            return moveDelta * Vector3.up;
         }
+    }
 
-        // 일정 시간동안 일정 거리만큼 특정 방향으로 이동한다.
-        // 속도는 중력가속도 법칙에 의해 줄어든다.
-        var moveDelta = (Velocity - (Deceleration * deltaTime * 0.5f)) * deltaTime;
-        Velocity -= Deceleration * deltaTime;
-        return moveDelta * Vector3.up;
+    private float GetMovedAmount(float time)
+    {
+        return (Velocity * time) - (Deceleration * 0.5f * time * time);
     }
 
     public bool IsFinished()
