@@ -9,6 +9,11 @@ using System.Net;
 /// </summary>
 public class NetworkHandler
 {
+    static NetworkHandler()
+    {
+        CPacketBufferManager.initialize(4096);
+    }
+
     private readonly object _packetQueueSyncLock = new();
     private Queue<CPacket> _packetQueue = new();
     private Queue<CPacket> _packetProcessQueue = new();
@@ -18,11 +23,6 @@ public class NetworkHandler
 
     public event Action<NetworkStatus> OnStatusChanged;
     public event Action<CPacket> OnMessage;
-
-    public NetworkHandler(int packetBufferSize)
-    {
-        CPacketBufferManager.initialize(packetBufferSize);
-    }
 
     public void ProcessPacket()
     {

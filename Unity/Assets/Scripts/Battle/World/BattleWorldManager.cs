@@ -4,7 +4,7 @@
 public class BattleWorldManager
 {
     private static Debug Debug = new(nameof(BattleWorldManager));
-    
+
     protected BattleWorld LocalWorld { get; private set; }
 
     public BattleWorldManager()
@@ -14,11 +14,16 @@ public class BattleWorldManager
         LocalWorld = WorldPool.Get();
     }
 
-    public virtual void Initialize()
+    public virtual void Prepare()
     {
         var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.GRAPHICS);
-        worldScene.Initialize();
-        LocalWorld.Initialize(worldScene);
+        worldScene.Prepare();
+        LocalWorld.Prepare(worldScene);
+    }
+
+    public virtual void Initialize()
+    {
+        LocalWorld.Initialize();
     }
 
     public virtual void OnFixedUpdate(in BattleFrame frame)
@@ -28,6 +33,7 @@ public class BattleWorldManager
 
     public virtual void OnUpdate(in BattleFrame frame)
     {
+        InputManager.OnUpdate(frame.Time, InputContext);
         LocalWorld.OnUpdate(frame);
     }
 
@@ -43,13 +49,13 @@ public class BattleWorldManager
 
     public virtual bool IsReady()
     {
-        return true;
+        return LocalWorld.IsReady();
     }
 
     #region Input
 
-    private BattleInputManager InputManager { get; set; }
-    private BattleInputContext InputContext { get; set; }
+    private BattleInputManager InputManager { get; } = new BattleInputManager();
+    private BattleInputContext InputContext { get; } = new BattleInputContext();
 
     protected virtual void OnWorldInputEvent(BattleWorldInputEventType worldInputEventType)
     {
@@ -59,8 +65,6 @@ public class BattleWorldManager
 
     private void InitalizeInputManager()
     {
-        InputManager = new BattleInputManager();
-        InputContext = new BattleInputContext();
         InputManager.OnInputLeftDash += OnPlayerInputLeftDash;
         InputManager.OnInputRightDash += OnPlayerInputRightDash;
         InputManager.OnInputAttack1 += OnPlayerInputAttack1;
@@ -69,19 +73,24 @@ public class BattleWorldManager
         InputManager.OnInputJump += OnPlayerInputJump;
     }
 
-    private void OnPlayerInputFire()
-    {
-        
-    }
-
-    private void OnPlayerInputRightDash()
-    {
-        
-    }
 
     private void OnPlayerInputLeftDash()
     {
-        
+        var eventInfo = WorldEventInfoPool.Get();
+        eventInfo.WorldInputEventType = BattleWorldInputEventType.LEFT_DASH;
+        eventInfo.UnitID = 0;
+        eventInfo.TargetFrame = LocalWorld.NextFrame;
+        LocalWorld.AddWorldEventInfo(eventInfo);
+    }
+
+
+    private void OnPlayerInputRightDash()
+    {
+        var eventInfo = WorldEventInfoPool.Get();
+        eventInfo.WorldInputEventType = BattleWorldInputEventType.RIGHT_DASH;
+        eventInfo.UnitID = 0;
+        eventInfo.TargetFrame = LocalWorld.NextFrame;
+        LocalWorld.AddWorldEventInfo(eventInfo);
     }
 
     private void OnPlayerInputAttack1()
@@ -94,9 +103,20 @@ public class BattleWorldManager
 
     }
 
-    private void OnPlayerInputJump()
+
+    private void OnPlayerInputFire()
     {
 
+    }
+
+
+    private void OnPlayerInputJump()
+    {
+        var eventInfo = WorldEventInfoPool.Get();
+        eventInfo.WorldInputEventType = BattleWorldInputEventType.JUMP;
+        eventInfo.UnitID = 0;
+        eventInfo.TargetFrame = LocalWorld.NextFrame;
+        LocalWorld.AddWorldEventInfo(eventInfo);
     }
 
     private void DisposeInputManager()
@@ -107,9 +127,7 @@ public class BattleWorldManager
         InputManager.OnInputAttack2 -= OnPlayerInputAttack2;
         InputManager.OnInputFire -= OnPlayerInputFire;
         InputManager.OnInputJump -= OnPlayerInputJump;
-
-        InputManager = null;
-        InputContext = null;
+        InputManager.Dispose();
     }
 
     #endregion Input

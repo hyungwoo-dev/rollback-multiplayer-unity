@@ -1,18 +1,18 @@
 ﻿using FreeNet;
-using System;
-using System.Diagnostics;
-using UnityEngine;
+using System.Threading;
 
 public partial class NetworkManager
 {
-    private readonly Debug _debug = new Debug(nameof(NetworkHandler));
+    private static Debug Debug { get; } = new Debug(nameof(NetworkManager));
+
+    private long _statusIntValue;
 
     private NetworkHandler Handler { get; set; }
-    private NetworkStatus Status { get; set; } = NetworkStatus.NONE;
+    private NetworkStatus Status => (NetworkStatus)Interlocked.Read(ref _statusIntValue);
 
     public NetworkManager()
     {
-        Handler = new NetworkHandler(4096);
+        Handler = new NetworkHandler();
         Handler.OnStatusChanged += OnStatusChanged;
         Handler.OnMessage += OnMessage;
     }
@@ -40,15 +40,15 @@ public partial class NetworkManager
     /// <param name="server_token"></param>
     private void OnStatusChanged(NetworkStatus status)
     {
-        _debug.Log($"OnStatusChanged Status: {status}");
-        Status = status;
+        Debug.Log($"OnStatusChanged Status: {status}");
+        Interlocked.Exchange(ref _statusIntValue, (long)status);
     }
 
     private void Send(CPacket msg)
     {
         if (Status != NetworkStatus.CONNECTED) return;
 
-        _debug.Log($"SendPacket Protocol ID: {msg.protocol_id}");
+        Debug.Log($"SendPacket Protocol ID: {msg.protocol_id}");
         this.Handler.Send(msg);
     }
 }

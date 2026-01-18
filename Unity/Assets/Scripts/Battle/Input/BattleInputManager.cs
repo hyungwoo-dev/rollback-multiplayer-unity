@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 public class BattleInputManager
@@ -13,7 +13,7 @@ public class BattleInputManager
 
         public void OnUpdate(float time)
         {
-            if (_lastestInputTime - time > DASH_INPUT_DETECT_TIME_SEC)
+            if (time - _lastestInputTime > DASH_INPUT_DETECT_TIME_SEC)
             {
                 _dashInputCounter = 0;
             }
@@ -90,5 +90,15 @@ public class BattleInputManager
         {
             OnInputJump?.Invoke();
         }
+    }
+
+    public void Dispose()
+    {
+        OnInputLeftDash = null;
+        OnInputRightDash = null;
+        OnInputAttack1 = null;
+        OnInputAttack2 = null;
+        OnInputFire = null;
+        OnInputJump = null;
     }
 }

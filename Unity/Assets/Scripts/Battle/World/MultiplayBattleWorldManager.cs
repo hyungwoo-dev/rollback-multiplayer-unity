@@ -11,15 +11,25 @@ public class MultiplayBattleWorldManager : BattleWorldManager
         ServerWorld = WorldPool.Get();
     }
 
+    public override void Prepare()
+    {
+        base.Prepare();
+        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.NO_GRAPHICS);
+        worldScene.Prepare();
+        ServerWorld.Prepare(worldScene);
+
+        NetworkManager = CreateNetworkManager();
+    }
+
     public override void Initialize()
     {
         base.Initialize();
+        ServerWorld.Initialize();
+    }
 
-        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.NO_GRAPHICS);
-        worldScene.Initialize();
-        ServerWorld.Initialize(worldScene);
-
-        NetworkManager = CreateNetworkManager();
+    public override bool IsReady()
+    {
+        return base.IsReady() && ServerWorld.IsReady();
     }
 
     public override void OnFixedUpdate(in BattleFrame frame)

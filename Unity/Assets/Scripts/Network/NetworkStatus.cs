@@ -1,4 +1,4 @@
-﻿public enum NetworkStatus
+﻿public enum NetworkStatus : long
 {
     NONE = 0,
     CONNECTING = 1,

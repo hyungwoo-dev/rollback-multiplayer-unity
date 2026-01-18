@@ -17,7 +17,7 @@ public partial class NetworkManager
 
     private void OnMessage(CPacket msg)
     {
-        _debug.Log($"OnMessage ProtocolID: {msg.protocol_id}");
+        Debug.Log($"OnMessage ProtocolID: {msg.protocol_id}");
         var protocol = (S2C_MSG)msg.pop_protocol_id();
         switch (protocol)
         {

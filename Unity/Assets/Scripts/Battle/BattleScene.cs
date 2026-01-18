@@ -17,11 +17,12 @@ public class BattleScene : MonoBehaviour
 
 	private BattleWorldManager WorldManager { get; set; } = new();
 	private bool IsInitialized { get; set; }
-	private Coroutine LateFixedUpdateCoroutine { get; set; }
 
 	private IEnumerator Start()
 	{
-		while (!WorldManager.IsReady())
+		WorldManager.Prepare();
+
+        while (!WorldManager.IsReady())
 		{
 			yield return null;
 		}
@@ -33,7 +34,6 @@ public class BattleScene : MonoBehaviour
 
 	private void Initialize()
 	{
-		Debug.Log($"Initialize FixedTime: {Time.fixedTime}, Time: {Time.time}");
 		WorldManager.Initialize();
 		IsInitialized = true;
 	}
@@ -42,34 +42,22 @@ public class BattleScene : MonoBehaviour
 	{
 		if (!IsInitialized) return;
 
-		var frame = GetCurrentFrame();
+		var frame = new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.time);
 		WorldManager.OnFixedUpdate(frame);
-		Debug.Log($"FixedUpdate FixedTime: {Time.fixedTime}");
 	}
 
 	private void Update()
 	{
 		if (!IsInitialized) return;
 
-		var frame = GetCurrentFrame();
+		var deltaTime = Mathf.Min(Time.deltaTime, Time.time - Time.fixedTime);
+		var frame = new BattleFrame(Time.inFixedTimeStep, deltaTime, Time.time);
 		WorldManager.OnUpdate(frame);
-		Debug.Log($"Update Time: {Time.time}");
 	}
 
 	private void OnDestroy()
 	{
 		WorldManager.Dispose();
 		WorldManager = null;
-
-		if (IsInitialized)
-		{
-			StopCoroutine(LateFixedUpdateCoroutine);
-			LateFixedUpdateCoroutine = null;
-		}
-	}
-
-	private BattleFrame GetCurrentFrame()
-	{
-		return new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.time);
 	}
 }

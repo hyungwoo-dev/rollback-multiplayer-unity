@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 [ManagedStateIgnore]
-public class BattleWorldScene
+public partial class BattleWorldScene
 {
     private static Debug Debug = new(nameof(BattleWorldScene));
 
@@ -24,11 +25,20 @@ public class BattleWorldScene
         WorldSceneKind = worldSceneKind;
     }
 
+    public void Prepare()
+    {
+        Scene = LoadScene();
+        PhysicsScene = Scene.GetPhysicsScene();
+    }
+
     public void Initialize()
     {
-        var scene = LoadScene();
-        PhysicsScene = scene.GetPhysicsScene();
-        RootGameObject = scene.GetRootGameObjects().First();
+        RootGameObject = Scene.GetRootGameObjects().First();
+    }
+
+    public bool IsReady()
+    {
+        return Scene.isLoaded;
     }
 
     public void SimulatePhysics(float step)
@@ -64,14 +74,34 @@ public class BattleWorldScene
         return new BattleWorldSceneObjectHandle(gameObjectID);
     }
 
-    public void SampleAnimation(BattleWorldSceneObjectHandle handle, string stateName, float fixedTime)
+    public void Move(BattleWorldSceneObjectHandle handle, Vector3 moveAmount)
+    {
+        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        {
+            gameObject.transform.position += moveAmount;
+        }
+        else
+        {
+            Debug.LogError($"{nameof(Move)} Not Found GameObject ID: {handle.ID}");
+        }
+    }
+
+    public void SampleAnimation(BattleWorldSceneObjectHandle handle, BattleWorldSceneAnimationSampleInfo sampleInfo)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
             var animator = gameObject.GetComponent<Animator>();
             if (animator != null)
             {
-                animator.PlayInFixedTime(stateName, 0, fixedTime);
+                if (sampleInfo.PreviousAnimationName != sampleInfo.AnimationName && sampleInfo.ElapsedTime < BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME)
+                {
+                    animator.PlayInFixedTime(sampleInfo.PreviousAnimationName, 0, sampleInfo.PreviousElapsedTime);
+                    animator.CrossFadeInFixedTime(sampleInfo.AnimationName, 0.1f, 0, sampleInfo.ElapsedTime, sampleInfo.ElapsedTime * BattleWorldSceneAnimationSampleInfo.INVERSE_CROSS_FADE_TIME);
+                }
+                else
+                {
+                    animator.PlayInFixedTime(sampleInfo.AnimationName, 0, sampleInfo.ElapsedTime);
+                }
             }
             else
             {
