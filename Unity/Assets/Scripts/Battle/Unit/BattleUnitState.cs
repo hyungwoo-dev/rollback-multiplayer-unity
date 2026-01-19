@@ -1,9 +1,11 @@
-﻿[ManagedState]
+﻿
+[ManagedState]
 public partial class BattleUnitState
 {
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
 
+    public BattleUnitStateType StateType { get; private set; } = BattleUnitStateType.IDLE;
     public string PreviousAnimationName { get; private set; } = string.Empty;
     public float PreviousElapsedTime { get; private set; } = 0.0f;
 
@@ -15,7 +17,22 @@ public partial class BattleUnitState
         World = world;
     }
 
-    public void PlayAnimation(string animationName)
+    public void PlayAnimation(BattleUnitStateType stateType, string animationName)
+    {
+        StateType = stateType;
+        if(AnimationName != animationName)
+        {
+            SetAnimation(animationName);
+        }
+    }
+
+    public void ForcePlayAnimation(BattleUnitStateType stateType, string animationName)
+    {
+        StateType = stateType;
+        SetAnimation(animationName);
+    }
+
+    private void SetAnimation(string animationName)
     {
         PreviousAnimationName = AnimationName;
         PreviousElapsedTime = ElapsedTime;

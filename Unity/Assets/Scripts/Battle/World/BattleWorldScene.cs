@@ -46,17 +46,17 @@ public partial class BattleWorldScene
         PhysicsScene.Simulate(step);
     }
 
-    public BattleWorldSceneObjectHandle Instantiate(BattleWorldResource worldResource)
+    public BattleWorldSceneObjectHandle Instantiate(BattleWorldResource worldResource, Vector3 position, Quaternion rotation)
     {
         switch (WorldSceneKind)
         {
             case BattleWorldSceneKind.GRAPHICS:
             {
-                return Instantiate(worldResource.ResourcePath);
+                return Instantiate(worldResource.ResourcePath, position, rotation);
             }
             case BattleWorldSceneKind.NO_GRAPHICS:
             {
-                return Instantiate(worldResource.NoGraphicsResourcePath);
+                return Instantiate(worldResource.NoGraphicsResourcePath, position, rotation);
             }
             default:
             {
@@ -65,24 +65,52 @@ public partial class BattleWorldScene
         }
     }
 
+    public BattleWorldSceneUnit GetSceneUnit(BattleWorldSceneObjectHandle handle)
+    {
+        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject) && gameObject.TryGetComponent<BattleWorldSceneUnit>(out var sceneUnit))
+        {
+            return sceneUnit;
+        }
+
+        Debug.LogError($"Not found scene unit. ID: {handle.ID}");
+        return null;
+    }
+
     public BattleWorldSceneObjectHandle Instantiate(string resourcePath)
     {
+        return Instantiate(resourcePath, Vector3.zero, Quaternion.identity);
+    }
+
+    public BattleWorldSceneObjectHandle Instantiate(string resourcePath, Vector3 position, Quaternion rotation)
+    {
         var asset = Resources.Load<GameObject>(resourcePath);
-        var gameObject = GameObject.Instantiate(asset, RootGameObject.transform);
+        var gameObject = GameObject.Instantiate(asset, position, rotation, RootGameObject.transform);
         var gameObjectID = GenerateGameObjectID();
         GameObjectDictionary.Add(gameObjectID, gameObject);
         return new BattleWorldSceneObjectHandle(gameObjectID);
     }
 
-    public void Move(BattleWorldSceneObjectHandle handle, Vector3 moveAmount)
+    public void SetPosition(BattleWorldSceneObjectHandle handle, Vector3 position)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
-            gameObject.transform.position += moveAmount;
+            gameObject.transform.position = position;
         }
         else
         {
-            Debug.LogError($"{nameof(Move)} Not Found GameObject ID: {handle.ID}");
+            Debug.LogError($"{nameof(SetPosition)} Not Found GameObject ID: {handle.ID}");
+        }
+    }
+
+    public void MovePosition(BattleWorldSceneObjectHandle handle, Vector3 moveDelta)
+    {
+        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        {
+            gameObject.transform.position += moveDelta;
+        }
+        else
+        {
+            Debug.LogError($"{nameof(SetPosition)} Not Found GameObject ID: {handle.ID}");
         }
     }
 

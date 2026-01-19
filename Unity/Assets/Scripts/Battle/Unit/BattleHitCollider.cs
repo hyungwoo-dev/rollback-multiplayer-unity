@@ -1,16 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class BattleHitCollider : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    public int UnitID { get; private set; } = 0;
 
-    // Update is called once per frame
-    void Update()
+    public void Initialize(int unitID)
     {
-        
+        UnitID = unitID;
     }
 }

@@ -1,4 +1,4 @@
-﻿public class BattleUnitAnimationName
+﻿public class BattleUnitAnimationNames
 {
     public const string IDLE = "Idle_Fighting";
     public const string ATTACK1 = "Attack01";

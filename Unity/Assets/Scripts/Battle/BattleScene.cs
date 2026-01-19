@@ -15,10 +15,18 @@ public class BattleScene : MonoBehaviour
 		});
 	}
 
+	[SerializeField]
+	private BattleCamera BattleCamera;
+
 	private BattleWorldManager WorldManager { get; set; } = new();
 	private bool IsInitialized { get; set; }
 
-	private IEnumerator Start()
+    private void Awake()
+    {
+        Application.runInBackground = true;
+    }
+
+    private IEnumerator Start()
 	{
 		WorldManager.Prepare();
 
@@ -34,8 +42,10 @@ public class BattleScene : MonoBehaviour
 
 	private void Initialize()
 	{
-		WorldManager.Initialize();
-		IsInitialized = true;
+        WorldManager.Initialize();
+		BattleCamera.Initialize(WorldManager.LocalWorld);
+
+        IsInitialized = true;
 	}
 
 	private void FixedUpdate()
@@ -44,7 +54,8 @@ public class BattleScene : MonoBehaviour
 
 		var frame = new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.time);
 		WorldManager.OnFixedUpdate(frame);
-	}
+        BattleCamera.OnUpdate(frame);
+    }
 
 	private void Update()
 	{
@@ -53,7 +64,8 @@ public class BattleScene : MonoBehaviour
 		var deltaTime = Mathf.Min(Time.deltaTime, Time.time - Time.fixedTime);
 		var frame = new BattleFrame(Time.inFixedTimeStep, deltaTime, Time.time);
 		WorldManager.OnUpdate(frame);
-	}
+        BattleCamera.OnUpdate(frame);
+    }
 
 	private void OnDestroy()
 	{

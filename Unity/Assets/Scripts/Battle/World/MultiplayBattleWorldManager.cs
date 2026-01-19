@@ -35,13 +35,11 @@ public class MultiplayBattleWorldManager : BattleWorldManager
     public override void OnFixedUpdate(in BattleFrame frame)
     {
         base.OnFixedUpdate(frame);
-        ServerWorld.OnFixedUpdate(frame);
     }
 
     public override void OnUpdate(in BattleFrame frame)
     {
         base.OnUpdate(frame);
-        
     }
 
     public override void Dispose()

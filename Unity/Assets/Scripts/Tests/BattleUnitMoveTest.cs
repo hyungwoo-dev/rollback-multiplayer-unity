@@ -29,7 +29,7 @@ public class BattleUnitMoveTest
     public static void MoveTest(TestData value)
     {
         var direction = new Vector3(Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f)).normalized;
-        var unitMove = new BattleUnitMove(new BattleWorld(new BattleWorldManager()));
+        var unitMove = new BattleUnitMoveController(new BattleWorld(new BattleWorldManager()));
         var distance = value.Distance;
         unitMove.Initialize(direction, distance, value.Time);
 

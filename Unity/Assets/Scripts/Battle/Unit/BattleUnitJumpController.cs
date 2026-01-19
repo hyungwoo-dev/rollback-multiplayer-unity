@@ -18,7 +18,7 @@ public partial class BattleUnitJumpController
 
     public bool CanJump() => !JumpTimer.IsRunning() && JumpMove.IsFinished();
 
-    public bool IsRunning() => State != BattleUnitJumpState.NONE;
+    public bool IsJumping() => State != BattleUnitJumpState.NONE;
 
     public BattleUnitJumpController(BattleWorld world)
     {
@@ -27,9 +27,8 @@ public partial class BattleUnitJumpController
         JumpMove = world.UnitJumpMovePool.Get();
     }
 
-    public (Vector3 MoveDelta, bool IsFinished) AdvanceTime(in BattleFrame frame)
+    public Vector3 AdvanceTime(in BattleFrame frame)
     {
-        var isFinished = false;
         var (moveDelta, nextState) = AdvanceState(State, frame.DeltaTime);
         if (nextState != null)
         {
@@ -37,7 +36,6 @@ public partial class BattleUnitJumpController
             {
                 case BattleUnitJumpState.NONE:
                 {
-                    isFinished = true;
                     break;
                 }
                 case BattleUnitJumpState.RISING:
@@ -55,7 +53,7 @@ public partial class BattleUnitJumpController
             State = nextState.Value;
         }
 
-        return (moveDelta, isFinished);
+        return moveDelta;
     }
 
     public void DoJump()

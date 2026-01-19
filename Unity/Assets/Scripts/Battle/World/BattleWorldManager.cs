@@ -1,11 +1,13 @@
-﻿using UnityEngine.Pool;
+﻿using UnityEngine;
+using UnityEngine.Pool;
 
 [ManagedStateIgnore]
 public class BattleWorldManager
 {
     private static Debug Debug = new(nameof(BattleWorldManager));
 
-    protected BattleWorld LocalWorld { get; private set; }
+    public BattleWorld LocalWorld { get; private set; }
+    protected int PlayerID { get; private set; } = 0;
 
     public BattleWorldManager()
     {
@@ -57,12 +59,6 @@ public class BattleWorldManager
     private BattleInputManager InputManager { get; } = new BattleInputManager();
     private BattleInputContext InputContext { get; } = new BattleInputContext();
 
-    protected virtual void OnWorldInputEvent(BattleWorldInputEventType worldInputEventType)
-    {
-        var reservedFrame = LocalWorld.CurrentFrame + 1;
-
-    }
-
     private void InitalizeInputManager()
     {
         InputManager.OnInputLeftDash += OnPlayerInputLeftDash;
@@ -73,50 +69,44 @@ public class BattleWorldManager
         InputManager.OnInputJump += OnPlayerInputJump;
     }
 
-
     private void OnPlayerInputLeftDash()
     {
-        var eventInfo = WorldEventInfoPool.Get();
-        eventInfo.WorldInputEventType = BattleWorldInputEventType.LEFT_DASH;
-        eventInfo.UnitID = 0;
-        eventInfo.TargetFrame = LocalWorld.NextFrame;
-        LocalWorld.AddWorldEventInfo(eventInfo);
+        PerformWorldEventInfo(BattleWorldInputEventType.LEFT_DASH, PlayerID);
     }
-
 
     private void OnPlayerInputRightDash()
     {
-        var eventInfo = WorldEventInfoPool.Get();
-        eventInfo.WorldInputEventType = BattleWorldInputEventType.RIGHT_DASH;
-        eventInfo.UnitID = 0;
-        eventInfo.TargetFrame = LocalWorld.NextFrame;
-        LocalWorld.AddWorldEventInfo(eventInfo);
+        PerformWorldEventInfo(BattleWorldInputEventType.RIGHT_DASH, PlayerID);
     }
 
     private void OnPlayerInputAttack1()
     {
-
+        PerformWorldEventInfo(BattleWorldInputEventType.ATTACK1, PlayerID);
     }
 
     private void OnPlayerInputAttack2()
     {
-
+        PerformWorldEventInfo(BattleWorldInputEventType.ATTACK2, PlayerID);
     }
-
 
     private void OnPlayerInputFire()
     {
-
+        PerformWorldEventInfo(BattleWorldInputEventType.FIRE, PlayerID);
     }
-
 
     private void OnPlayerInputJump()
     {
+        PerformWorldEventInfo(BattleWorldInputEventType.JUMP, PlayerID);
+    }
+
+    protected virtual BattleWorldEventInfo PerformWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId)
+    {
         var eventInfo = WorldEventInfoPool.Get();
-        eventInfo.WorldInputEventType = BattleWorldInputEventType.JUMP;
+        eventInfo.WorldInputEventType = inputEventType;
         eventInfo.UnitID = 0;
         eventInfo.TargetFrame = LocalWorld.NextFrame;
         LocalWorld.AddWorldEventInfo(eventInfo);
+        return eventInfo;
     }
 
     private void DisposeInputManager()
@@ -140,7 +130,7 @@ public class BattleWorldManager
     private void InitializePool()
     {
         WorldPool = new ObjectPool<BattleWorld>(createFunc: () => new BattleWorld(this), defaultCapacity: 2);
-        WorldEventInfoPool = new ObjectPool<BattleWorldEventInfo>(createFunc: () => new BattleWorldEventInfo(this), defaultCapacity: 8);
+        WorldEventInfoPool = new ObjectPool<BattleWorldEventInfo>(createFunc: () => new BattleWorldEventInfo(this), defaultCapacity: 32);
     }
 
     private void DisposePool()
