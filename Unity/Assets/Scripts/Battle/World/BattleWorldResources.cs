@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-public class BattleWorldResources
+﻿public class BattleWorldResources
 {
-    public static BattleWorldResource UNIT = new("Prefabs/Unit", "Prefabs/Unit_Collider");
+    public static BattleWorldResource UNIT = new("AndroidUnit/Prefabs/AndroidUnit", "AndroidUnit/Prefabs/AndroidUnit_Collider");
 }

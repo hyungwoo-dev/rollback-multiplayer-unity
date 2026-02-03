@@ -61,22 +61,34 @@ public class BattleWorldManager
 
     private void InitalizeInputManager()
     {
-        InputManager.OnInputLeftDash += OnPlayerInputLeftDash;
-        InputManager.OnInputRightDash += OnPlayerInputRightDash;
+        InputManager.OnInputMoveBackDown += OnPlayerInputMoveBackDown;
+        InputManager.OnInputMoveBackUp += OnPlayerInputMoveBackUp;
+        InputManager.OnInputMoveForwardDown += OnPlayerInputMoveForwardDown;
+        InputManager.OnInputMoveForwardUp += OnPlayerInputMoveForwardUp;
         InputManager.OnInputAttack1 += OnPlayerInputAttack1;
         InputManager.OnInputAttack2 += OnPlayerInputAttack2;
         InputManager.OnInputFire += OnPlayerInputFire;
         InputManager.OnInputJump += OnPlayerInputJump;
     }
 
-    private void OnPlayerInputLeftDash()
+    private void OnPlayerInputMoveForwardDown()
     {
-        PerformWorldEventInfo(BattleWorldInputEventType.LEFT_DASH, PlayerID);
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_FORWARD_DOWN, PlayerID);
     }
 
-    private void OnPlayerInputRightDash()
+    private void OnPlayerInputMoveForwardUp()
     {
-        PerformWorldEventInfo(BattleWorldInputEventType.RIGHT_DASH, PlayerID);
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_FORWARD_UP, PlayerID);
+    }
+
+    private void OnPlayerInputMoveBackDown()
+    {
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_BACK_DOWN, PlayerID);
+    }
+
+    private void OnPlayerInputMoveBackUp()
+    {
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_BACK_UP, PlayerID);
     }
 
     private void OnPlayerInputAttack1()
@@ -111,8 +123,10 @@ public class BattleWorldManager
 
     private void DisposeInputManager()
     {
-        InputManager.OnInputLeftDash -= OnPlayerInputLeftDash;
-        InputManager.OnInputRightDash -= OnPlayerInputRightDash;
+        InputManager.OnInputMoveBackDown -= OnPlayerInputMoveBackDown;
+        InputManager.OnInputMoveBackUp -= OnPlayerInputMoveBackUp;
+        InputManager.OnInputMoveForwardDown -= OnPlayerInputMoveForwardDown;
+        InputManager.OnInputMoveForwardUp -= OnPlayerInputMoveForwardUp;
         InputManager.OnInputAttack1 -= OnPlayerInputAttack2;
         InputManager.OnInputAttack2 -= OnPlayerInputAttack2;
         InputManager.OnInputFire -= OnPlayerInputFire;

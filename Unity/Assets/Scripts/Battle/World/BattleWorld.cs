@@ -35,6 +35,20 @@ public partial class BattleWorld
         }
     }
 
+    public BattleUnit GetOtherUnit(int unitID)
+    {
+        foreach (var unit in Units)
+        {
+            if (unit.ID == unitID)
+            {
+                continue;
+            }
+
+            return unit;
+        }
+        return null;
+    }
+
     public BattleWorld(BattleWorldManager worldManager)
     {
         InitializePool();
@@ -116,19 +130,35 @@ public partial class BattleWorld
         var unit = GetUnit(eventInfo.UnitID);
         switch (eventInfo.WorldInputEventType)
         {
-            case BattleWorldInputEventType.LEFT_DASH:
+            case BattleWorldInputEventType.MOVE_BACK_DOWN:
             {
-                if (unit.CanDash())
+                if (unit.CanMove())
                 {
-                    unit.DoLeftDash();
+                    unit.StartMoveBack();
                 }
                 break;
             }
-            case BattleWorldInputEventType.RIGHT_DASH:
+            case BattleWorldInputEventType.MOVE_BACK_UP:
             {
-                if (unit.CanDash())
+                if (unit.IsMoving())
                 {
-                    unit.DoRightDash();
+                    unit.StopMoveBack();
+                }
+                break;
+            }
+            case BattleWorldInputEventType.MOVE_FORWARD_DOWN:
+            {
+                if (unit.CanMove())
+                {
+                    unit.StartMoveForward();
+                }
+                break;
+            }
+            case BattleWorldInputEventType.MOVE_FORWARD_UP:
+            {
+                if (unit.IsMoving())
+                {
+                    unit.StopMoveForward();
                 }
                 break;
             }
@@ -196,17 +226,38 @@ public partial class BattleWorld
 
     public Rect GetRectContainingUnits()
     {
+        const float MARGIN = 1.0f;
         var xMin = float.MaxValue;
         var xMax = float.MinValue;
         var yMax = 0.0f;
         foreach (var unit in Units)
         {
-            xMin = Mathf.Min(xMin, unit.Position.x - 1.0f);
-            xMax = Mathf.Max(xMax, unit.Position.x + 1.0f);
-            yMax = Mathf.Max(yMax, unit.Position.y + 1.0f);
+            xMin = Mathf.Min(xMin, unit.Position.x - MARGIN);
+            xMax = Mathf.Max(xMax, unit.Position.x + MARGIN);
+            yMax = Mathf.Max(yMax, unit.Position.y + MARGIN);
         }
 
         return Rect.MinMaxRect(xMin, 0.0f, xMax, yMax);
+    }
+
+    public (Vector3 TargetPosition, Quaternion TargetRotation) GetCameraTargetPositionAndRotation(Transform cameraTransform)
+    {
+        const float CAMERA_DISTANCE_MIN = 5.0f;
+        var unit1 = Units[0];
+        var unit2 = Units[1];
+
+        var averagePosition = (unit1.Position + unit2.Position) * 0.5f;
+        var cameraLocalPosition1 = cameraTransform.InverseTransformPoint(unit1.Position);
+        var cameraLocalPosition2 = cameraTransform.InverseTransformPoint(unit2.Position);
+        var rightUnitPosition = cameraLocalPosition1.x > cameraLocalPosition2.x ? unit1.Position : unit2.Position;
+        var rightUnitLocalPosition = rightUnitPosition - averagePosition;
+
+        var cameraDistance = Mathf.Max((unit2.Position - unit1.Position).magnitude * 0.9f, CAMERA_DISTANCE_MIN);
+        var cameraForward = Vector3.Cross(new Vector3(rightUnitLocalPosition.x, 0.0f, rightUnitLocalPosition.z), Vector3.up).normalized;
+
+        var cameraTargetRotation = Quaternion.LookRotation(cameraForward) * Quaternion.Euler(3.0f, 0.0f, 0.0f);
+        var cameraTargetPosition = (averagePosition + cameraForward * -cameraDistance) + new Vector3(0.0f, 1.0f, 0.0f);
+        return (cameraTargetPosition, cameraTargetRotation);
     }
 
     #region Pool
@@ -219,6 +270,8 @@ public partial class BattleWorld
 
     [ManagedStateIgnore]
     public ObjectPool<BattleUnitMoveController> UnitMoveControllerPool { get; private set; }
+    [ManagedStateIgnore]
+    public ObjectPool<BattleUnitDashMoveController> UnitDashMoveControllerPool { get; private set; }
 
     [ManagedStateIgnore]
     public ObjectPool<BattleUnitJumpMove> UnitJumpMovePool { get; private set; }
@@ -237,6 +290,7 @@ public partial class BattleWorld
         UnitPool = new ObjectPool<BattleUnit>(() => new BattleUnit(this));
         UnitStatePool = new ObjectPool<BattleUnitState>(() => new BattleUnitState(this));
         UnitMoveControllerPool = new ObjectPool<BattleUnitMoveController>(() => new BattleUnitMoveController(this));
+        UnitDashMoveControllerPool = new ObjectPool<BattleUnitDashMoveController>(() => new BattleUnitDashMoveController(this));
         UnitJumpMovePool = new ObjectPool<BattleUnitJumpMove>(() => new BattleUnitJumpMove(this));
         UnitJumpControllerPool = new ObjectPool<BattleUnitJumpController>(() => new BattleUnitJumpController(this));
         UnitAttackControllerPool = new ObjectPool<BattleUnitAttackController>(() => new BattleUnitAttackController(this));
@@ -248,6 +302,7 @@ public partial class BattleWorld
         UnitPool.Dispose();
         UnitStatePool.Dispose();
         UnitMoveControllerPool.Dispose();
+        UnitDashMoveControllerPool.Dispose();
         UnitJumpMovePool.Dispose();
         UnitJumpControllerPool.Dispose();
         TimerPool.Dispose();

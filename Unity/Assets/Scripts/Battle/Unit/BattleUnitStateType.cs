@@ -1,7 +1,8 @@
 ﻿public enum BattleUnitStateType
 {
     IDLE = 0,
-    DASH,
+    MOVE_FORWARD,
+    MOVE_BACK,
     JUMPING,
     ATTACK,
     HIT,

@@ -8,15 +8,18 @@
         return new BattleWorldSceneAnimationSampleInfo()
         {
             PreviousAnimationName = state.PreviousAnimationName,
-            PreviousElapsedTime = state.PreviousElapsedTime,
+            PreviousAnimationElapsedTime = state.PreviousAnimationElapsedTime,
+
             AnimationName = state.AnimationName,
+            PreviousElapsedTime = state.PreviousElapsedTime,
             ElapsedTime = state.ElapsedTime,
         };
     }
 
     public string PreviousAnimationName;
-    public float PreviousElapsedTime;
+    public float PreviousAnimationElapsedTime;
 
     public string AnimationName;
+    public float PreviousElapsedTime;
     public float ElapsedTime;
 }

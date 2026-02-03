@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+﻿using System.Runtime.CompilerServices;
+using UnityEngine;
 using UnityEngine.Pool;
 
 [ManagedState]
 public partial class BattleUnit
 {
-    private const float DASH_MOVE_AMOUNT = 1.0f;
-    private const float DASH_MOVE_TIME = 0.25f;
+    private const float MOVE_SPEED = 1.0f;
 
     private const float HIT_MOVE_AMOUNT = 0.5f;
     private const float HIT_MOVE_TIME = 1.167f;
@@ -13,33 +13,36 @@ public partial class BattleUnit
     [ManagedStateIgnore]
     public BattleWorld World { get; set; }
     public int ID { get; private set; }
-    public Vector3 Position { get; private set; }
+    public Vector3 Position { get; private set; } = Vector3.zero;
+    public Quaternion Rotation { get; private set; } = Quaternion.identity;
 
     private BattleWorldSceneObjectHandle Handle { get; set; }
     private BattleUnitState State { get; set; }
-    private BattleUnitMoveController DashMoveController { get; set; }
+    private BattleUnitMoveController MoveController { get; set; }
     private BattleUnitJumpController JumpController { get; set; }
     private BattleUnitAttackController AttackController { get; set; }
-    private BattleUnitMoveController HitMoveController { get; set; }
+    private BattleUnitDashMoveController HitMoveController { get; set; }
 
-    public bool CanDash() => State.StateType == BattleUnitStateType.IDLE;
-    public bool CanAttack() => State.StateType == BattleUnitStateType.IDLE;
-    public bool CanJump() => State.StateType == BattleUnitStateType.IDLE;
+    public bool IsMoving() => State.StateType == BattleUnitStateType.MOVE_FORWARD || State.StateType == BattleUnitStateType.MOVE_BACK;
+    public bool CanMove() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
+    public bool CanAttack() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
+    public bool CanJump() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
 
     public BattleUnit(BattleWorld world)
     {
         World = world;
         State = world.UnitStatePool.Get();
-        DashMoveController = world.UnitMoveControllerPool.Get();
+        MoveController = world.UnitMoveControllerPool.Get();
         JumpController = world.UnitJumpControllerPool.Get();
         AttackController = world.UnitAttackControllerPool.Get();
-        HitMoveController = world.UnitMoveControllerPool.Get();
+        HitMoveController = world.UnitDashMoveControllerPool.Get();
     }
 
     public void Initialize(int unitID, Vector3 position, Quaternion rotation)
     {
         ID = unitID;
         Position = position;
+        Rotation = rotation;
         Handle = World.WorldScene.Instantiate(BattleWorldResources.UNIT, position, rotation);
         var sceneUnit = World.WorldScene.GetSceneUnit(Handle);
         sceneUnit.Initialize(unitID);
@@ -57,30 +60,31 @@ public partial class BattleUnit
             Position += moveDelta;
         }
 
-        World.WorldScene.SetPosition(Handle, Position);
-        World.WorldScene.SampleAnimation(Handle, BattleWorldSceneAnimationSampleInfo.From(State));
+        var (deltaPosition, deltaRotation) = World.WorldScene.SampleAnimation(Handle, BattleWorldSceneAnimationSampleInfo.From(State));
+        if (deltaPosition.sqrMagnitude > 0)
+        {
+            Position += deltaPosition;
+        }
+        Rotation *= deltaRotation;
 
+        World.WorldScene.SetPositionAndRotation(Handle, Position, Rotation);
         State.AdvanceTime(frame.DeltaTime);
     }
 
-    private void UpdateState(BattleFrame frame, ref Vector3 moveDelta)
+    private void UpdateState(in BattleFrame frame, ref Vector3 moveDelta)
     {
         switch (State.StateType)
         {
             case BattleUnitStateType.IDLE:
             {
+                SnapPositionAndRotation(frame);
                 break;
             }
-            case BattleUnitStateType.DASH:
+            case BattleUnitStateType.MOVE_BACK:
+            case BattleUnitStateType.MOVE_FORWARD:
             {
-                if (DashMoveController.IsMoving())
-                {
-                    moveDelta += DashMoveController.AdvanceTime(frame.DeltaTime);
-                }
-                else
-                {
-                    State.PlayAnimation(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE);
-                }
+                SnapPositionAndRotation(frame);
+                moveDelta += MoveController.AdvanceTime(frame.DeltaTime);
                 break;
             }
             case BattleUnitStateType.JUMPING:
@@ -107,7 +111,7 @@ public partial class BattleUnit
                 }
                 else
                 {
-                    State.PlayAnimation(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE);
+                    ResetState();
                 }
                 break;
             }
@@ -119,8 +123,57 @@ public partial class BattleUnit
                 }
                 else
                 {
-                    State.PlayAnimation(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE);
+                    ResetState();
                 }
+                break;
+            }
+        }
+    }
+
+    private void SnapPositionAndRotation(in BattleFrame frame)
+    {
+        const float ROTATION_SNAP_THRESHOLD = 0.5f;
+        var otherUnit = World.GetOtherUnit(ID);
+        var targetRotation = Quaternion.LookRotation(otherUnit.Position.ToXZ() - Position.ToXZ());
+        if (Quaternion.Angle(Rotation, targetRotation) < ROTATION_SNAP_THRESHOLD)
+        {
+            Rotation = targetRotation;
+        }
+        else
+        {
+            Rotation = Quaternion.Slerp(Rotation, targetRotation, frame.DeltaTime * 6.0f);
+        }
+
+        const float POSITION_SNAP_SQR_THREADSHOLD = 0.05f * 0.05f;
+        var targetPosition = new Vector3(Position.x, 0.0f, Position.z);
+        if ((targetPosition - Position).sqrMagnitude < POSITION_SNAP_SQR_THREADSHOLD)
+        {
+            Position = targetPosition;
+        }
+        else
+        {
+            Position = Vector3.Lerp(Position, targetPosition, frame.DeltaTime * 6.0f);
+        }
+
+    }
+
+    private void ResetState()
+    {
+        switch (MoveController.MoveSide)
+        {
+            case BattleUnitMoveSide.None:
+            {
+                State.PlayAnimation(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE);
+                break;
+            }
+            case BattleUnitMoveSide.Forward:
+            {
+                State.PlayAnimation(BattleUnitStateType.MOVE_FORWARD, BattleUnitAnimationNames.MOVE_BACK);
+                break;
+            }
+            case BattleUnitMoveSide.Back:
+            {
+                State.PlayAnimation(BattleUnitStateType.MOVE_BACK, BattleUnitAnimationNames.MOVE_BACK);
                 break;
             }
         }
@@ -131,16 +184,34 @@ public partial class BattleUnit
         World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
     }
 
-    public void DoLeftDash()
+    public void StartMoveBack()
     {
-        State.PlayAnimation(BattleUnitStateType.DASH, BattleUnitAnimationNames.IDLE);
-        DashMoveController.Initialize(Vector3.left, DASH_MOVE_AMOUNT, DASH_MOVE_TIME);
+        State.PlayAnimation(BattleUnitStateType.MOVE_BACK, BattleUnitAnimationNames.MOVE_BACK);
+        MoveController.Start(BattleUnitMoveSide.Back, Vector3.left, MOVE_SPEED);
     }
 
-    public void DoRightDash()
+    public void StopMoveBack()
     {
-        State.PlayAnimation(BattleUnitStateType.DASH, BattleUnitAnimationNames.IDLE);
-        DashMoveController.Initialize(Vector3.right, DASH_MOVE_AMOUNT, DASH_MOVE_TIME);
+        if (State.StateType == BattleUnitStateType.MOVE_BACK)
+        {
+            State.PlayAnimation(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE);
+            MoveController.Stop();
+        }
+    }
+
+    public void StartMoveForward()
+    {
+        State.PlayAnimation(BattleUnitStateType.MOVE_FORWARD, BattleUnitAnimationNames.MOVE_FORWARD);
+        MoveController.Start(BattleUnitMoveSide.Forward, Vector3.right, MOVE_SPEED);
+    }
+
+    public void StopMoveForward()
+    {
+        if (State.StateType == BattleUnitStateType.MOVE_FORWARD)
+        {
+            State.PlayAnimation(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE);
+            MoveController.Stop();
+        }
     }
 
     public void DoAttack1()

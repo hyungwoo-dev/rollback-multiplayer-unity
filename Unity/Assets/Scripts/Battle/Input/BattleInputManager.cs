@@ -31,44 +31,40 @@ public class BattleInputManager
         }
     }
 
-    public event Action OnInputLeftDash = null;
-    public event Action OnInputRightDash = null;
+    public event Action OnInputMoveBackDown = null;
+    public event Action OnInputMoveBackUp = null;
+    public event Action OnInputMoveForwardDown = null;
+    public event Action OnInputMoveForwardUp = null;
     public event Action OnInputAttack1 = null;
     public event Action OnInputAttack2 = null;
     public event Action OnInputFire = null;
     public event Action OnInputJump = null;
 
-    private DashInputInfo _leftDashInputInfo = new();
-    private DashInputInfo _rightDashInputInfo = new();
-
     public void OnUpdate(float time, BattleInputContext context)
     {
         UpdateInputEvents(time, context);
-        UpdateDashInfo(time);
-    }
-
-    private void UpdateDashInfo(float time)
-    {
-        _leftDashInputInfo.OnUpdate(time);
-        _rightDashInputInfo.OnUpdate(time);
     }
 
     private void UpdateInputEvents(float time, BattleInputContext context)
     {
-        if (Input.GetKeyDown(context.LeftDashKeyCode))
+        if (Input.GetKeyDown(context.MoveBackKeyCode))
         {
-            if (_leftDashInputInfo.OnInput(time))
-            {
-                OnInputLeftDash?.Invoke();
-            }
+            OnInputMoveBackDown?.Invoke();
         }
 
-        if (Input.GetKeyDown(context.RightDashKeyCode))
+        if (Input.GetKeyUp(context.MoveBackKeyCode))
         {
-            if (_rightDashInputInfo.OnInput(time))
-            {
-                OnInputRightDash?.Invoke();
-            }
+            OnInputMoveBackUp?.Invoke();
+        }
+
+        if (Input.GetKeyDown(context.MoveForwardKeyCode))
+        {
+            OnInputMoveForwardDown?.Invoke();
+        }
+
+        if (Input.GetKeyUp(context.MoveForwardKeyCode))
+        {
+            OnInputMoveForwardUp?.Invoke();
         }
 
         if (Input.GetKeyDown(context.Attack1KeyCode))
@@ -94,8 +90,8 @@ public class BattleInputManager
 
     public void Dispose()
     {
-        OnInputLeftDash = null;
-        OnInputRightDash = null;
+        OnInputMoveBackDown = null;
+        OnInputMoveBackUp = null;
         OnInputAttack1 = null;
         OnInputAttack2 = null;
         OnInputFire = null;

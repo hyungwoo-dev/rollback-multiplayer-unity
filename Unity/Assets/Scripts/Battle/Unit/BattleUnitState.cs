@@ -7,9 +7,10 @@ public partial class BattleUnitState
 
     public BattleUnitStateType StateType { get; private set; } = BattleUnitStateType.IDLE;
     public string PreviousAnimationName { get; private set; } = string.Empty;
-    public float PreviousElapsedTime { get; private set; } = 0.0f;
+    public float PreviousAnimationElapsedTime { get; private set; } = 0.0f;
 
     public string AnimationName { get; private set; } = string.Empty;
+    public float PreviousElapsedTime = 0.0f;
     public float ElapsedTime = 0.0f;
 
     public BattleUnitState(BattleWorld world)
@@ -35,14 +36,16 @@ public partial class BattleUnitState
     private void SetAnimation(string animationName)
     {
         PreviousAnimationName = AnimationName;
-        PreviousElapsedTime = ElapsedTime;
+        PreviousAnimationElapsedTime = ElapsedTime;
 
         AnimationName = animationName;
+        PreviousElapsedTime = 0.0f;
         ElapsedTime = 0.0f;
     }
 
     public void AdvanceTime(float deltaTime)
     {
+        PreviousElapsedTime = ElapsedTime;
         ElapsedTime += deltaTime;
     }
 

@@ -3,7 +3,7 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [ManagedState]
-public partial class BattleUnitMoveController
+public partial class BattleUnitDashMoveController
 {
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
@@ -14,7 +14,7 @@ public partial class BattleUnitMoveController
     public float MoveTime { get; private set; }
     public float ElapsedTime { get; private set; }
 
-    public BattleUnitMoveController(BattleWorld world)
+    public BattleUnitDashMoveController(BattleWorld world)
     {
         World = world;
     }
@@ -52,15 +52,15 @@ public partial class BattleUnitMoveController
         return ElapsedTime != MoveTime;
     }
 
-    public BattleUnitMoveController Clone()
+    public BattleUnitDashMoveController Clone()
     {
-        var clone = World.UnitMoveControllerPool.Get();
+        var clone = World.UnitDashMoveControllerPool.Get();
         clone.DeepCopyFrom(this);
         return clone;
     }
 
     partial void OnRelease()
     {
-        World.UnitMoveControllerPool.Release(this);
+        World.UnitDashMoveControllerPool.Release(this);
     }
 }
