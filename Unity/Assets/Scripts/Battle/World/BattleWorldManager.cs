@@ -35,8 +35,8 @@ public class BattleWorldManager
 
     public virtual void OnUpdate(in BattleFrame frame)
     {
-        InputManager.OnUpdate(frame.Time, InputContext);
-        LocalWorld.OnUpdate(frame);
+        InputManager.OnUpdate(InputContext);
+        LocalWorld.Interpolate(frame);
     }
 
     public virtual void Dispose()

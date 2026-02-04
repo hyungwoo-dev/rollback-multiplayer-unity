@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.Generic;
+
 [ManagedState]
 public partial class BattleUnitState
 {
@@ -10,8 +12,8 @@ public partial class BattleUnitState
     public float PreviousAnimationElapsedTime { get; private set; } = 0.0f;
 
     public string AnimationName { get; private set; } = string.Empty;
-    public float PreviousElapsedTime = 0.0f;
-    public float ElapsedTime = 0.0f;
+    public float PreviousElapsedTime { get; private set; } = 0.0f;
+    public float ElapsedTime { get; private set; } = 0.0f;
 
     public BattleUnitState(BattleWorld world)
     {
@@ -19,15 +21,6 @@ public partial class BattleUnitState
     }
 
     public void PlayAnimation(BattleUnitStateType stateType, string animationName)
-    {
-        StateType = stateType;
-        if(AnimationName != animationName)
-        {
-            SetAnimation(animationName);
-        }
-    }
-
-    public void ForcePlayAnimation(BattleUnitStateType stateType, string animationName)
     {
         StateType = stateType;
         SetAnimation(animationName);
@@ -43,7 +36,7 @@ public partial class BattleUnitState
         ElapsedTime = 0.0f;
     }
 
-    public void AdvanceTime(float deltaTime)
+    public void AdvanceFrame(float deltaTime)
     {
         PreviousElapsedTime = ElapsedTime;
         ElapsedTime += deltaTime;

@@ -1,5 +1,4 @@
-﻿using Unity.VisualScripting.YamlDotNet.Core.Tokens;
-using UnityEditor.Experimental.GraphView;
+﻿using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [ManagedState]
@@ -7,8 +6,6 @@ public partial class BattleUnitMoveController
 {
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
-
-    public Vector3 Direction { get; private set; }
     public float Speed { get; private set; }
     public float ElapsedTime { get; private set; }
 
@@ -20,25 +17,31 @@ public partial class BattleUnitMoveController
         World = world;
     }
 
-    public void Start(BattleUnitMoveSide side, Vector3 direction, float speed)
+    public void Start(BattleUnitMoveSide side, float speed)
     {
         MoveSide = side;
-        Direction = direction;
         Speed = speed;
     }
 
     public void Stop()
     {
         MoveSide = BattleUnitMoveSide.None;
-        Direction = Vector3.zero;
         Speed = 0.0f;
     }
 
-    public Vector3 AdvanceTime(float deltaTime)
+    public Vector3 AdvanceTime(float deltaTime, Quaternion rotation)
     {
+        var directionScale = MoveSide switch
+        {
+            BattleUnitMoveSide.None => 0,
+            BattleUnitMoveSide.Forward => 1,
+            BattleUnitMoveSide.Back => -1,
+        };
+
+        var direction = rotation * Vector3.forward * directionScale;
         ElapsedTime += deltaTime;
 
-        return Direction * Speed * deltaTime;
+        return direction * Speed * deltaTime;
     }
 
     public BattleUnitMoveController Clone()

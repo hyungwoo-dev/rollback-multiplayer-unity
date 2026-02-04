@@ -26,7 +26,7 @@ public partial class BattleWorld
     {
         foreach (var unit in Units)
         {
-            if(unit.ID != unitID)
+            if (unit.ID != unitID)
             {
                 continue;
             }
@@ -57,7 +57,7 @@ public partial class BattleWorld
 
     public void Prepare(BattleWorldScene worldScene)
     {
-        WorldScene = worldScene; 
+        WorldScene = worldScene;
     }
 
     public void Initialize()
@@ -72,25 +72,34 @@ public partial class BattleWorld
         return WorldScene.IsReady();
     }
 
-    public void OnUpdate(in BattleFrame frame)
+    public void Interpolate(in BattleFrame frame)
     {
         foreach (var unit in Units)
         {
-            unit.OnUpdate(frame);
+            unit.Interpolate(frame);
         }
     }
 
     public void OnFixedUpdate(in BattleFrame frame)
     {
         CurrentFrame += 1;
+        ExecuteWorldEventInfos(CurrentFrame);
+
         foreach (var unit in Units)
         {
             unit.OnFixedUpdate(frame);
         }
-
-        ExecuteWorldEventInfos(CurrentFrame);
+        foreach (var unit in Units)
+        {
+            unit.AdjustNextPositionAndRotation(frame);
+        }
 
         WorldScene.SimulatePhysics(frame.DeltaTime);
+
+        foreach (var unit in Units)
+        {
+            unit.OnAfterSimulateFixedUpdate(frame);
+        }
     }
 
     public void AddWorldEventInfo(BattleWorldEventInfo worldEventInfo)

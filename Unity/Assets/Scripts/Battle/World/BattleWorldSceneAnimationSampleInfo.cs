@@ -3,17 +3,14 @@
     public static readonly float CROSS_FADE_TIME = 0.1f;
     public static readonly float INVERSE_CROSS_FADE_TIME = 1.0f / CROSS_FADE_TIME;
 
-    public static BattleWorldSceneAnimationSampleInfo From(BattleUnitState state)
+    public BattleWorldSceneAnimationSampleInfo(BattleUnitState state)
     {
-        return new BattleWorldSceneAnimationSampleInfo()
-        {
-            PreviousAnimationName = state.PreviousAnimationName,
-            PreviousAnimationElapsedTime = state.PreviousAnimationElapsedTime,
+        PreviousAnimationName = state.PreviousAnimationName;
+        PreviousAnimationElapsedTime = state.PreviousAnimationElapsedTime;
 
-            AnimationName = state.AnimationName,
-            PreviousElapsedTime = state.PreviousElapsedTime,
-            ElapsedTime = state.ElapsedTime,
-        };
+        AnimationName = state.AnimationName;
+        PreviousElapsedTime = state.PreviousElapsedTime;
+        ElapsedTime = state.ElapsedTime;
     }
 
     public string PreviousAnimationName;

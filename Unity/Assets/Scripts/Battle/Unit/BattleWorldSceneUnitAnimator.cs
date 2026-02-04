@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class BattleWorldSceneUnitAnimator : MonoBehaviour
 {
-    private static Debug Debug = new(nameof(BattleWorldSceneUnitAnimator));
     [SerializeField]
     private Animator _animator;
 
@@ -41,6 +40,11 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
     public (Vector3 DeltaPosition, Quaternion DeltaRotation) OnUpdate(float deltaTime)
     {
         _animator.Update(deltaTime);
-        return (DeltaPosition, DeltaRotation);
+
+        var result = (DeltaPosition, DeltaRotation);
+        DeltaPosition = Vector3.zero;
+        DeltaRotation = Quaternion.identity;
+
+        return result;
     }
 }

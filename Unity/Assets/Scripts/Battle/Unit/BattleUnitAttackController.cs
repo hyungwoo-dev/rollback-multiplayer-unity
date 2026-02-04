@@ -15,7 +15,7 @@ public partial class BattleUnitAttackController
         World = world;
     }
 
-    public bool IsRunning()
+    public bool IsAttacking()
     {
         return ElapsedTime < Duration;
     }

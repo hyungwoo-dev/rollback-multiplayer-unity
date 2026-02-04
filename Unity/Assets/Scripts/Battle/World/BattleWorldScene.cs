@@ -104,11 +104,12 @@ public partial class BattleWorldScene
         }
     }
 
-    public void MovePosition(BattleWorldSceneObjectHandle handle, Vector3 moveDelta)
+    public void ApplyDeltaPositionAndRotation(BattleWorldSceneObjectHandle handle, Vector3 deltaPosition, Quaternion deltaRotation)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
-            gameObject.transform.position += moveDelta;
+            gameObject.transform.localPosition += deltaPosition;
+            gameObject.transform.localRotation *= deltaRotation;
         }
         else
         {
@@ -123,27 +124,37 @@ public partial class BattleWorldScene
             var animator = gameObject.GetComponentInChildren<BattleWorldSceneUnitAnimator>();
             if (animator != null)
             {
-                if (sampleInfo.PreviousAnimationName != sampleInfo.AnimationName && sampleInfo.ElapsedTime < BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME)
+                var isCrossFading = !string.IsNullOrWhiteSpace(sampleInfo.PreviousAnimationName) &&
+                                    sampleInfo.PreviousAnimationName != sampleInfo.AnimationName &&
+                                    sampleInfo.ElapsedTime < BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME;
+                if (isCrossFading)
                 {
-                    var deltaTime = sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
-                    animator.PlayInFixedTime(sampleInfo.PreviousAnimationName, 0, sampleInfo.PreviousAnimationElapsedTime);
+                    animator.PlayInFixedTime(
+                        animationName: sampleInfo.PreviousAnimationName,
+                        animationLayer: 0,
+                        fixedTime: sampleInfo.PreviousAnimationElapsedTime);
+
+                    animator.CrossFadeInFixedTime(
+                        animationName: sampleInfo.AnimationName,
+                        fixedTransitionDuration: BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME,
+                        animationLayer: 0,
+                        fixedTimeOffset: sampleInfo.PreviousElapsedTime,
+                        normalizedTransitionTime: sampleInfo.PreviousElapsedTime * BattleWorldSceneAnimationSampleInfo.INVERSE_CROSS_FADE_TIME);
+
                     animator.ResetDelta();
 
-                    animator.CrossFadeInFixedTime(sampleInfo.AnimationName, 0.1f, 0, 0.0f, sampleInfo.ElapsedTime * BattleWorldSceneAnimationSampleInfo.INVERSE_CROSS_FADE_TIME);
-                    if(sampleInfo.PreviousElapsedTime > 0)
-                    {
-                        animator.OnUpdate(sampleInfo.PreviousElapsedTime);
-                        animator.ResetDelta();
-                    }
-                    
-                    return animator.OnUpdate(deltaTime);
+                    var deltaTime = sampleInfo.ElapsedTime == 0 ? 0 : sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
+                    var result = animator.OnUpdate(deltaTime);
+                    return result;
                 }
                 else
                 {
-                    var deltaTime = sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
                     animator.PlayInFixedTime(sampleInfo.AnimationName, 0, sampleInfo.PreviousElapsedTime);
                     animator.ResetDelta();
-                    return animator.OnUpdate(deltaTime);
+
+                    var deltaTime = sampleInfo.ElapsedTime == 0 ? 0 : sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
+                    var result = animator.OnUpdate(deltaTime);
+                    return result;
                 }
             }
             else
@@ -159,14 +170,14 @@ public partial class BattleWorldScene
         return (Vector3.zero, Quaternion.identity);
     }
 
-    public void UpdateAnimation(BattleWorldSceneObjectHandle handle, float deltaTime)
+    public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimation(BattleWorldSceneObjectHandle handle, float deltaTime)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
             var animator = gameObject.GetComponentInChildren<BattleWorldSceneUnitAnimator>();
             if (animator != null)
             {
-                animator.OnUpdate(deltaTime);
+                return animator.OnUpdate(deltaTime);
             }
             else
             {
@@ -177,6 +188,8 @@ public partial class BattleWorldScene
         {
             Debug.LogError($"{nameof(UpdateAnimation)} Not Found GameObject. ID: {handle.ID}");
         }
+
+        return (Vector3.zero, Quaternion.identity);
     }
 
     private int GenerateGameObjectID()

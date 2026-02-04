@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Pool;
 
 [ManagedState]
@@ -14,10 +13,13 @@ public partial class BattleUnit
     public BattleWorld World { get; set; }
     public int ID { get; private set; }
     public Vector3 Position { get; private set; } = Vector3.zero;
+    public Vector3 NextPosition { get; private set; } = Vector3.zero;
     public Quaternion Rotation { get; private set; } = Quaternion.identity;
+    public Quaternion NextRotation { get; private set; } = Quaternion.identity;
 
     private BattleWorldSceneObjectHandle Handle { get; set; }
     private BattleUnitState State { get; set; }
+    private BattleUnitStateType AdjustStateType { get; set; }
     private BattleUnitMoveController MoveController { get; set; }
     private BattleUnitJumpController JumpController { get; set; }
     private BattleUnitAttackController AttackController { get; set; }
@@ -41,8 +43,13 @@ public partial class BattleUnit
     public void Initialize(int unitID, Vector3 position, Quaternion rotation)
     {
         ID = unitID;
+
         Position = position;
+        NextPosition = position;
+
         Rotation = rotation;
+        NextRotation = rotation;
+
         Handle = World.WorldScene.Instantiate(BattleWorldResources.UNIT, position, rotation);
         var sceneUnit = World.WorldScene.GetSceneUnit(Handle);
         sceneUnit.Initialize(unitID);
@@ -52,56 +59,86 @@ public partial class BattleUnit
 
     public void OnFixedUpdate(in BattleFrame frame)
     {
-        var moveDelta = Vector3.zero;
-        UpdateState(frame, ref moveDelta);
+        var (animationDeltaPosition, deltaRotation) = World.WorldScene.SampleAnimation(Handle, new BattleWorldSceneAnimationSampleInfo(State));
+        State.AdvanceFrame(frame.DeltaTime);
 
-        if (moveDelta != Vector3.zero)
-        {
-            Position += moveDelta;
-        }
+        Position = NextPosition;
+        Rotation = NextRotation;
 
-        var (deltaPosition, deltaRotation) = World.WorldScene.SampleAnimation(Handle, BattleWorldSceneAnimationSampleInfo.From(State));
-        if (deltaPosition.sqrMagnitude > 0)
-        {
-            Position += deltaPosition;
-        }
-        Rotation *= deltaRotation;
+        var moveStateDeltaPosition = AdvanceMoveState(frame);
+        var moveDeltaPosition = animationDeltaPosition + moveStateDeltaPosition;
+
+        NextPosition += moveDeltaPosition;
+        NextRotation *= deltaRotation;
 
         World.WorldScene.SetPositionAndRotation(Handle, Position, Rotation);
-        State.AdvanceTime(frame.DeltaTime);
     }
 
-    private void UpdateState(in BattleFrame frame, ref Vector3 moveDelta)
+    public void OnAfterSimulateFixedUpdate(in BattleFrame frame)
+    {
+        AdvanceAttackState(frame);
+    }
+
+    public void AdjustNextPositionAndRotation(in BattleFrame frame)
     {
         switch (State.StateType)
         {
             case BattleUnitStateType.IDLE:
+            case BattleUnitStateType.MOVE_FORWARD:
+            case BattleUnitStateType.MOVE_BACK:
             {
-                SnapPositionAndRotation(frame);
+                (NextPosition, NextRotation) = AdjustPositionAndRotation(frame, NextPosition, NextRotation);
                 break;
             }
+        }
+    }
+
+    private Vector3 AdvanceMoveState(in BattleFrame frame)
+    {
+        AdjustStateType = State.StateType;
+        switch (State.StateType)
+        {
             case BattleUnitStateType.MOVE_BACK:
             case BattleUnitStateType.MOVE_FORWARD:
             {
-                SnapPositionAndRotation(frame);
-                moveDelta += MoveController.AdvanceTime(frame.DeltaTime);
-                break;
+                return MoveController.AdvanceTime(frame.DeltaTime, Rotation);
             }
             case BattleUnitStateType.JUMPING:
             {
                 if (JumpController.IsJumping())
                 {
-                    moveDelta += JumpController.AdvanceTime(frame);
+                    return JumpController.AdvanceTime(frame);
                 }
                 else
                 {
-                    State.PlayAnimation(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE);
+                    ResetState();
                 }
                 break;
             }
+            case BattleUnitStateType.HIT:
+            {
+                if (HitMoveController.IsMoving())
+                {
+                    return HitMoveController.AdvanceTime(frame.DeltaTime);
+                }
+                else
+                {
+                    ResetState();
+                }
+                break;
+            }
+        }
+
+        return Vector3.zero;
+    }
+
+    private void AdvanceAttackState(in BattleFrame frame)
+    {
+        switch (State.StateType)
+        {
             case BattleUnitStateType.ATTACK:
             {
-                if (AttackController.IsRunning())
+                if (AttackController.IsAttacking())
                 {
                     AttackController.AdvanceTime(frame, out var performAttack);
                     if (performAttack)
@@ -115,46 +152,35 @@ public partial class BattleUnit
                 }
                 break;
             }
-            case BattleUnitStateType.HIT:
-            {
-                if (HitMoveController.IsMoving())
-                {
-                    moveDelta += HitMoveController.AdvanceTime(frame.DeltaTime);
-                }
-                else
-                {
-                    ResetState();
-                }
-                break;
-            }
         }
     }
 
-    private void SnapPositionAndRotation(in BattleFrame frame)
+    private (Vector3 Position, Quaternion Rotation) AdjustPositionAndRotation(in BattleFrame frame, Vector3 position, Quaternion rotation)
     {
         const float ROTATION_SNAP_THRESHOLD = 0.5f;
         var otherUnit = World.GetOtherUnit(ID);
         var targetRotation = Quaternion.LookRotation(otherUnit.Position.ToXZ() - Position.ToXZ());
-        if (Quaternion.Angle(Rotation, targetRotation) < ROTATION_SNAP_THRESHOLD)
+        if (Quaternion.Angle(rotation, targetRotation) < ROTATION_SNAP_THRESHOLD)
         {
-            Rotation = targetRotation;
+            rotation = targetRotation;
         }
         else
         {
-            Rotation = Quaternion.Slerp(Rotation, targetRotation, frame.DeltaTime * 6.0f);
+            rotation = Quaternion.Slerp(rotation, targetRotation, frame.DeltaTime * 6.0f);
         }
 
         const float POSITION_SNAP_SQR_THREADSHOLD = 0.05f * 0.05f;
-        var targetPosition = new Vector3(Position.x, 0.0f, Position.z);
-        if ((targetPosition - Position).sqrMagnitude < POSITION_SNAP_SQR_THREADSHOLD)
+        var targetPosition = position.ToXZ();
+        if ((targetPosition - position).sqrMagnitude < POSITION_SNAP_SQR_THREADSHOLD)
         {
-            Position = targetPosition;
+            position = targetPosition;
         }
         else
         {
-            Position = Vector3.Lerp(Position, targetPosition, frame.DeltaTime * 6.0f);
+            position = Vector3.Lerp(position, targetPosition, frame.DeltaTime * 6.0f);
         }
 
+        return (position, rotation);
     }
 
     private void ResetState()
@@ -168,7 +194,7 @@ public partial class BattleUnit
             }
             case BattleUnitMoveSide.Forward:
             {
-                State.PlayAnimation(BattleUnitStateType.MOVE_FORWARD, BattleUnitAnimationNames.MOVE_BACK);
+                State.PlayAnimation(BattleUnitStateType.MOVE_FORWARD, BattleUnitAnimationNames.MOVE_FORWARD);
                 break;
             }
             case BattleUnitMoveSide.Back:
@@ -179,15 +205,58 @@ public partial class BattleUnit
         }
     }
 
-    public void OnUpdate(in BattleFrame frame)
+    public void Interpolate(in BattleFrame frame)
     {
-        World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
+        var (animationDeltaPosition, animationDeltaRotation) = World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
+        var moveStateDeltaPosition = Vector3.zero; // InterpolateMoveState(frame);
+        var deltaPosition = animationDeltaPosition + moveStateDeltaPosition;
+        World.WorldScene.ApplyDeltaPositionAndRotation(Handle, deltaPosition, animationDeltaRotation);
+    }
+
+    private Vector3 InterpolateMoveState(in BattleFrame frame)
+    {
+        switch (AdjustStateType)
+        {
+
+            case BattleUnitStateType.MOVE_BACK:
+            case BattleUnitStateType.MOVE_FORWARD:
+            {
+                var rotation = Quaternion.Slerp(Rotation, NextRotation, frame.DeltaTime);
+                return MoveController.AdvanceTime(frame.DeltaTime, rotation);
+            }
+            case BattleUnitStateType.JUMPING:
+            {
+                if (JumpController.IsJumping())
+                {
+                    return JumpController.AdvanceTime(frame);
+                }
+                else
+                {
+                    ResetState();
+                }
+                break;
+            }
+            case BattleUnitStateType.HIT:
+            {
+                if (HitMoveController.IsMoving())
+                {
+                    return HitMoveController.AdvanceTime(frame.DeltaTime);
+                }
+                else
+                {
+                    ResetState();
+                }
+                break;
+            }
+        }
+
+        return Vector3.zero;
     }
 
     public void StartMoveBack()
     {
         State.PlayAnimation(BattleUnitStateType.MOVE_BACK, BattleUnitAnimationNames.MOVE_BACK);
-        MoveController.Start(BattleUnitMoveSide.Back, Vector3.left, MOVE_SPEED);
+        MoveController.Start(BattleUnitMoveSide.Back, MOVE_SPEED);
     }
 
     public void StopMoveBack()
@@ -202,7 +271,7 @@ public partial class BattleUnit
     public void StartMoveForward()
     {
         State.PlayAnimation(BattleUnitStateType.MOVE_FORWARD, BattleUnitAnimationNames.MOVE_FORWARD);
-        MoveController.Start(BattleUnitMoveSide.Forward, Vector3.right, MOVE_SPEED);
+        MoveController.Start(BattleUnitMoveSide.Forward, MOVE_SPEED);
     }
 
     public void StopMoveForward()
@@ -216,13 +285,13 @@ public partial class BattleUnit
 
     public void DoAttack1()
     {
-        AttackController.Initialize(0.333333f, 1.0f);
+        AttackController.Initialize(0.233333f, 0.833f);
         State.PlayAnimation(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK1);
     }
 
     public void DoAttack2()
     {
-        AttackController.Initialize(0.5f, 1.029f);
+        AttackController.Initialize(0.5f, 1.0f);
         State.PlayAnimation(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK2);
     }
 
@@ -234,7 +303,7 @@ public partial class BattleUnit
     public void DoHit(int damage)
     {
         HitMoveController.Initialize(Vector3.right, HIT_MOVE_AMOUNT, HIT_MOVE_TIME);
-        State.ForcePlayAnimation(BattleUnitStateType.HIT, BattleUnitAnimationNames.HIT);
+        State.PlayAnimation(BattleUnitStateType.HIT, BattleUnitAnimationNames.HIT);
     }
 
     public void DoJump()

@@ -3,34 +3,6 @@ using UnityEngine;
 
 public class BattleInputManager
 {
-    private class DashInputInfo
-    {
-        private const float DASH_INPUT_DETECT_TIME_SEC = 0.3f;
-        private const int DASH_INVOKE_INPUT_COUNT = 2;
-
-        private int _dashInputCounter = 0;
-        private float _lastestInputTime = 0.0f;
-
-        public void OnUpdate(float time)
-        {
-            if (time - _lastestInputTime > DASH_INPUT_DETECT_TIME_SEC)
-            {
-                _dashInputCounter = 0;
-            }
-        }
-
-        public bool OnInput(float time)
-        {
-            _lastestInputTime = time;
-            var result = ++_dashInputCounter == DASH_INVOKE_INPUT_COUNT;
-            if (result)
-            {
-                _dashInputCounter = 0;
-            }
-            return result;
-        }
-    }
-
     public event Action OnInputMoveBackDown = null;
     public event Action OnInputMoveBackUp = null;
     public event Action OnInputMoveForwardDown = null;
@@ -40,12 +12,12 @@ public class BattleInputManager
     public event Action OnInputFire = null;
     public event Action OnInputJump = null;
 
-    public void OnUpdate(float time, BattleInputContext context)
+    public void OnUpdate(BattleInputContext context)
     {
-        UpdateInputEvents(time, context);
+        UpdateInputEvents(context);
     }
 
-    private void UpdateInputEvents(float time, BattleInputContext context)
+    private void UpdateInputEvents(BattleInputContext context)
     {
         if (Input.GetKeyDown(context.MoveBackKeyCode))
         {

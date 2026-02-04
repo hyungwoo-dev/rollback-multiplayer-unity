@@ -5,6 +5,7 @@ public class BattleCamera : MonoBehaviour
 {
     [SerializeField]
     private Vector3 CurrentVelocity;
+
     [SerializeField]
     private float SmoothTime = 1.0f;
     private BattleWorld World { get; set; }
@@ -12,19 +13,14 @@ public class BattleCamera : MonoBehaviour
     public void Initialize(BattleWorld world)
     {
         World = world;
+
+        var (targetPosition, targetRotation) = World.GetCameraTargetPositionAndRotation(transform);
+        transform.position = targetPosition;
+        transform.rotation = targetRotation;
     }
 
     public void OnUpdate(in BattleFrame frame)
     {
-        //var rect = World.GetRectContainingUnits();
-
-        //var targetPosition = transform.position;
-        //targetPosition.x = rect.center.x;
-        //targetPosition.y = rect.center.y;
-
-        //var newPosition = Vector3.SmoothDamp(transform.position, targetPosition, ref CurrentVelocity, SmoothTime);
-        //transform.position = newPosition;
-
         var (targetPosition, targetRotation) = World.GetCameraTargetPositionAndRotation(transform);
 
         transform.position = Vector3.Lerp(transform.position, targetPosition, frame.DeltaTime * 6.0f);
