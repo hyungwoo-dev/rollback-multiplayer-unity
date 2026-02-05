@@ -16,7 +16,7 @@ public class BattleScene : MonoBehaviour
     }
 
     [SerializeField]
-    private BattleCamera BattleCamera;
+    private BattleCamera _battleCamera;
 
     private BattleWorldManager WorldManager { get; set; } = new();
     private bool IsInitialized { get; set; } = false;
@@ -44,7 +44,7 @@ public class BattleScene : MonoBehaviour
     private void Initialize()
     {
         WorldManager.Initialize();
-        BattleCamera.Initialize(WorldManager.LocalWorld);
+        _battleCamera.Initialize(WorldManager.LocalWorld);
 
         IsInitialized = true;
     }
@@ -60,6 +60,7 @@ public class BattleScene : MonoBehaviour
 
         var frame = new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.fixedDeltaTime, Time.time);
         WorldManager.OnFixedUpdate(frame);
+        _battleCamera.OnFixedUpdate(frame);
     }
 
     private void Update()
@@ -69,7 +70,7 @@ public class BattleScene : MonoBehaviour
         var deltaTime = Mathf.Min(Time.deltaTime, Time.time - Time.fixedTime);
         var frame = new BattleFrame(Time.inFixedTimeStep, deltaTime, Time.fixedDeltaTime, Time.time);
         WorldManager.OnUpdate(frame);
-        BattleCamera.OnUpdate(frame);
+        _battleCamera.Interpolate(frame);
     }
 
     private void OnDestroy()

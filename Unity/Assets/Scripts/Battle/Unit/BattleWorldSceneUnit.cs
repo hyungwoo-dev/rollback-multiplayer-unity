@@ -40,12 +40,4 @@ public class BattleWorldSceneUnit : MonoBehaviour
             attackCollider.GetUnitIds(unitIds);
         }
     }
-
-    private void OnAnimatorMove()
-    {
-        if(_animator.deltaPosition.sqrMagnitude > 0)
-        {
-            Debug.Shared.Log($"DeltaPosition: {_animator.deltaPosition}");
-        }
-    }
 }

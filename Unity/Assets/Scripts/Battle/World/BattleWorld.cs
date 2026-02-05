@@ -94,6 +94,10 @@ public partial class BattleWorld
             unit.AdjustNextPositionAndRotation(frame);
         }
 
+        var unit1 = Units[0];
+        var unit2 = Units[1];
+        BattleUnit.ResolveNextPosition(unit1, unit2);
+
         WorldScene.SimulatePhysics(frame.DeltaTime);
 
         foreach (var unit in Units)

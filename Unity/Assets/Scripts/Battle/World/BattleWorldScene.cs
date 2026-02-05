@@ -117,16 +117,17 @@ public partial class BattleWorldScene
         }
     }
 
-    public (Vector3 DeltaPosition, Quaternion DeltaRotation) SampleAnimation(BattleWorldSceneObjectHandle handle, BattleWorldSceneAnimationSampleInfo sampleInfo)
+    public void SampleAnimation(BattleWorldSceneObjectHandle handle, in BattleWorldSceneAnimationSampleInfo sampleInfo)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
             var animator = gameObject.GetComponentInChildren<BattleWorldSceneUnitAnimator>();
             if (animator != null)
             {
-                var isCrossFading = !string.IsNullOrWhiteSpace(sampleInfo.PreviousAnimationName) &&
-                                    sampleInfo.PreviousAnimationName != sampleInfo.AnimationName &&
-                                    sampleInfo.ElapsedTime < BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME;
+                var isCrossFading = false;
+                //var isCrossFading = !string.IsNullOrWhiteSpace(sampleInfo.PreviousAnimationName) &&
+                //                    sampleInfo.PreviousAnimationName != sampleInfo.AnimationName &&
+                //                    sampleInfo.ElapsedTime < BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME;
                 if (isCrossFading)
                 {
                     animator.PlayInFixedTime(
@@ -138,23 +139,15 @@ public partial class BattleWorldScene
                         animationName: sampleInfo.AnimationName,
                         fixedTransitionDuration: BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME,
                         animationLayer: 0,
-                        fixedTimeOffset: sampleInfo.PreviousElapsedTime,
-                        normalizedTransitionTime: sampleInfo.PreviousElapsedTime * BattleWorldSceneAnimationSampleInfo.INVERSE_CROSS_FADE_TIME);
+                        fixedTimeOffset: sampleInfo.ElapsedTime,
+                        normalizedTransitionTime: sampleInfo.ElapsedTime * BattleWorldSceneAnimationSampleInfo.INVERSE_CROSS_FADE_TIME);
 
                     animator.ResetDelta();
-
-                    var deltaTime = sampleInfo.ElapsedTime == 0 ? 0 : sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
-                    var result = animator.OnUpdate(deltaTime);
-                    return result;
                 }
                 else
                 {
-                    animator.PlayInFixedTime(sampleInfo.AnimationName, 0, sampleInfo.PreviousElapsedTime);
+                    animator.PlayInFixedTime(sampleInfo.AnimationName, 0, sampleInfo.ElapsedTime);
                     animator.ResetDelta();
-
-                    var deltaTime = sampleInfo.ElapsedTime == 0 ? 0 : sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
-                    var result = animator.OnUpdate(deltaTime);
-                    return result;
                 }
             }
             else
@@ -166,8 +159,6 @@ public partial class BattleWorldScene
         {
             Debug.LogError($"{nameof(SampleAnimation)} Not Found GameObject ID: {handle.ID}");
         }
-
-        return (Vector3.zero, Quaternion.identity);
     }
 
     public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimation(BattleWorldSceneObjectHandle handle, float deltaTime)
@@ -177,7 +168,7 @@ public partial class BattleWorldScene
             var animator = gameObject.GetComponentInChildren<BattleWorldSceneUnitAnimator>();
             if (animator != null)
             {
-                return animator.OnUpdate(deltaTime);
+                return animator.UpdateAnimator(deltaTime);
             }
             else
             {

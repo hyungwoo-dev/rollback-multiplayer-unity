@@ -6,6 +6,7 @@ public struct BattleFrame
     public float DeltaTime { get; set; }
     public float FixedDeltaTime { get; set; }
     public float Time { get; set; }
+    public float InverseFixeedDeltaTime => 1.0f / FixedDeltaTime;
 
     public BattleFrame(bool inFixedTimeStep, float deltaTime, float fixedDeltaTime, float time) : this()
     {

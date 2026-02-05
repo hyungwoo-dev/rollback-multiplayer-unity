@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BattleWorldSceneUnitAnimator : MonoBehaviour
 {
     [SerializeField]
     private Animator _animator;
-
     public Vector3 DeltaPosition { get; private set; }
     public Quaternion DeltaRotation { get; private set; }
 
@@ -37,14 +37,13 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
         DeltaRotation = Quaternion.identity;
     }
 
-    public (Vector3 DeltaPosition, Quaternion DeltaRotation) OnUpdate(float deltaTime)
+    public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimator(float deltaTime)
     {
         _animator.Update(deltaTime);
 
         var result = (DeltaPosition, DeltaRotation);
         DeltaPosition = Vector3.zero;
         DeltaRotation = Quaternion.identity;
-
         return result;
     }
 }

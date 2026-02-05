@@ -25,10 +25,13 @@ public partial class BattleUnit
     private BattleUnitAttackController AttackController { get; set; }
     private BattleUnitDashMoveController HitMoveController { get; set; }
 
+    private float InterpolatingTime { get; set; } = 0.0f;
+
     public bool IsMoving() => State.StateType == BattleUnitStateType.MOVE_FORWARD || State.StateType == BattleUnitStateType.MOVE_BACK;
     public bool CanMove() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
     public bool CanAttack() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
     public bool CanJump() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
+    public Vector3 GetMoveDelta() => NextPosition - Position;
 
     public BattleUnit(BattleWorld world)
     {
@@ -59,7 +62,15 @@ public partial class BattleUnit
 
     public void OnFixedUpdate(in BattleFrame frame)
     {
-        var (animationDeltaPosition, deltaRotation) = World.WorldScene.SampleAnimation(Handle, new BattleWorldSceneAnimationSampleInfo(State));
+        InterpolatingTime = 0.0f;
+
+        var animationSampleInfo = new BattleWorldSceneAnimationSampleInfo(State);
+        World.WorldScene.SampleAnimation(Handle, animationSampleInfo);
+
+        var (animationDeltaPosition, deltaRotation) = World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
+
+        World.WorldScene.SampleAnimation(Handle, animationSampleInfo);
+
         State.AdvanceFrame(frame.DeltaTime);
 
         Position = NextPosition;
@@ -72,6 +83,17 @@ public partial class BattleUnit
         NextRotation *= deltaRotation;
 
         World.WorldScene.SetPositionAndRotation(Handle, Position, Rotation);
+    }
+
+    public void Interpolate(in BattleFrame frame)
+    {
+        InterpolatingTime += frame.DeltaTime;
+
+        var t = Mathf.Clamp01(InterpolatingTime / frame.FixedDeltaTime);
+        var position = Vector3.Lerp(Position, NextPosition, t);
+        var rotation = Quaternion.Slerp(Rotation, NextRotation, t);
+        World.WorldScene.SetPositionAndRotation(Handle, position, rotation);
+        World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
     }
 
     public void OnAfterSimulateFixedUpdate(in BattleFrame frame)
@@ -101,6 +123,7 @@ public partial class BattleUnit
             case BattleUnitStateType.MOVE_BACK:
             case BattleUnitStateType.MOVE_FORWARD:
             {
+                // var dot = DotForwardAndDirectionToOtherUnit();
                 return MoveController.AdvanceTime(frame.DeltaTime, Rotation);
             }
             case BattleUnitStateType.JUMPING:
@@ -205,54 +228,6 @@ public partial class BattleUnit
         }
     }
 
-    public void Interpolate(in BattleFrame frame)
-    {
-        var (animationDeltaPosition, animationDeltaRotation) = World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
-        var moveStateDeltaPosition = Vector3.zero; // InterpolateMoveState(frame);
-        var deltaPosition = animationDeltaPosition + moveStateDeltaPosition;
-        World.WorldScene.ApplyDeltaPositionAndRotation(Handle, deltaPosition, animationDeltaRotation);
-    }
-
-    private Vector3 InterpolateMoveState(in BattleFrame frame)
-    {
-        switch (AdjustStateType)
-        {
-
-            case BattleUnitStateType.MOVE_BACK:
-            case BattleUnitStateType.MOVE_FORWARD:
-            {
-                var rotation = Quaternion.Slerp(Rotation, NextRotation, frame.DeltaTime);
-                return MoveController.AdvanceTime(frame.DeltaTime, rotation);
-            }
-            case BattleUnitStateType.JUMPING:
-            {
-                if (JumpController.IsJumping())
-                {
-                    return JumpController.AdvanceTime(frame);
-                }
-                else
-                {
-                    ResetState();
-                }
-                break;
-            }
-            case BattleUnitStateType.HIT:
-            {
-                if (HitMoveController.IsMoving())
-                {
-                    return HitMoveController.AdvanceTime(frame.DeltaTime);
-                }
-                else
-                {
-                    ResetState();
-                }
-                break;
-            }
-        }
-
-        return Vector3.zero;
-    }
-
     public void StartMoveBack()
     {
         State.PlayAnimation(BattleUnitStateType.MOVE_BACK, BattleUnitAnimationNames.MOVE_BACK);
@@ -333,5 +308,56 @@ public partial class BattleUnit
     partial void OnRelease()
     {
         World.UnitPool.Release(this);
+    }
+
+    public static void ResolveNextPosition(BattleUnit unit1, BattleUnit unit2)
+    {
+        const float RADIUS = 0.35f;
+        const float UNIT_DISTANCE_LIMIT = RADIUS * 2.0f;
+        const float SQR_UNIT_DISTANCE_LIMIT = UNIT_DISTANCE_LIMIT * UNIT_DISTANCE_LIMIT;
+
+        var unit1MoveDelta = unit1.GetMoveDelta().ToXZ();
+        var unit2MoveDelta = unit2.GetMoveDelta().ToXZ();
+        if (unit1MoveDelta == Vector3.zero && unit2MoveDelta == Vector3.zero)
+        {
+            return;
+        }
+
+        var distanceUnit2ToUnit1 = (unit1.NextPosition - unit2.NextPosition).ToXZ();
+        var sqrDistance = distanceUnit2ToUnit1.sqrMagnitude;
+        if (sqrDistance > SQR_UNIT_DISTANCE_LIMIT)
+        {
+            return;
+        }
+
+        var distance = MathUtils.Sqrt(sqrDistance);
+        var overlap = UNIT_DISTANCE_LIMIT - distance;
+
+        if (unit1MoveDelta != Vector3.zero && unit2MoveDelta != Vector3.zero)
+        {
+            // 함께 움직였다면 서로 겹쳐진 양의 절반만큼 밀어낸다.
+            var halfOverlap = overlap * 0.5f;
+            var unit1ResolveDirection = distanceUnit2ToUnit1.normalized;
+            var unit1Resolve = unit1ResolveDirection * halfOverlap;
+            var unit2Resolve = -unit1ResolveDirection * halfOverlap;
+            unit1.NextPosition += unit1Resolve;
+            unit2.NextPosition += unit2Resolve;
+        }
+        else
+        {
+            // 한 쪽만 움직인다면 움직인 쪽만 반대 방향으로 밀어낸다.
+            if (unit1MoveDelta == Vector3.zero)
+            {
+                // unit2만 움직였다.
+                var resolve = overlap * unit2MoveDelta.normalized * -1.0f;
+                unit2.NextPosition += resolve;
+            }
+            else if (unit2MoveDelta == Vector3.zero)
+            {
+                // unit1만 움직였다.
+                var resolve = overlap * unit1MoveDelta.normalized * -1.0f;
+                unit1.NextPosition += resolve;
+            }
+        }
     }
 }
