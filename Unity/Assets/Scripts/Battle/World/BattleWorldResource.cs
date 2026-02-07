@@ -1,16 +1,16 @@
 ﻿public class BattleWorldResource
 {
     public string ResourcePath;
-    public string NoGraphicsResourcePath;
+    public string ViewResourcePath;
 
     public BattleWorldResource(string resourceName) : this(resourceName, resourceName)
     {
 
     }
 
-    public BattleWorldResource(string resourceName, string noGraphicsResourceName)
+    public BattleWorldResource(string resourceName, string viewResourceName)
     {
         ResourcePath = resourceName;
-        NoGraphicsResourcePath = noGraphicsResourceName;
+        ViewResourcePath = viewResourceName;
     }
 }

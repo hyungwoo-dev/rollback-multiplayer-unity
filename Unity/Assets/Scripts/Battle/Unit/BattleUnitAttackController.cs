@@ -41,15 +41,16 @@ public partial class BattleUnitAttackController
         ElapsedTime = nextElapsedTime;
     }
 
-    public BattleUnitAttackController Clone()
+    public BattleUnitAttackController Clone(BattleWorld context)
     {
-        var clone = World.UnitAttackControllerPool.Get();
-        clone.DeepCopyFrom(this);
+        var clone = context.UnitAttackControllerPool.Get();
+        clone.World = context;
+        clone.DeepCopyFrom(context, this);
         return clone;
     }
 
-    partial void OnRelease()
+    partial void OnRelease(BattleWorld context)
     {
-        World.UnitAttackControllerPool.Release(this);
+        context.UnitAttackControllerPool.Release(this);
     }
 }

@@ -1,13 +1,16 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Pool;
 
 [ManagedStateIgnore]
-public class BattleWorldManager
+public partial class BattleWorldManager
 {
     private static Debug Debug = new(nameof(BattleWorldManager));
 
     public BattleWorld LocalWorld { get; private set; }
     public BattleWorld FutureWorld { get; private set; }
+    public BattleCamera Camera { get; private set; }
+
     protected int PlayerID { get; private set; } = 0;
 
     public BattleWorldManager()
@@ -20,32 +23,33 @@ public class BattleWorldManager
 
     public virtual void Prepare()
     {
-        var localWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.GRAPHICS);
+        var localWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.VIEW, LayerMask.NameToLayer(BattleLayerMaskNames.LOCAL));
         localWorldScene.Prepare();
         LocalWorld.Prepare(localWorldScene);
 
-        var futureWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.NO_GRAPHICS);
+        var futureWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.PLAYING, LayerMask.NameToLayer(BattleLayerMaskNames.FUTURE));
         futureWorldScene.Prepare();
         FutureWorld.Prepare(futureWorldScene);
     }
 
-    public virtual void Initialize(in BattleFrame frame)
+    public virtual void Initialize(BattleCamera camera)
     {
+        Camera = camera;
         LocalWorld.Initialize();
         FutureWorld.Initialize();
-        FutureWorld.AdvanceFrame(frame, out _);
     }
 
     public virtual void AdvanceFrame(in BattleFrame frame)
     {
-        LocalWorld.AdvanceFrame(frame, out var executeWorldEventInfos);
-        if (executeWorldEventInfos)
+        if (WorldEventInfos.Count > 0)
         {
-            FutureWorld.Release();
-            FutureWorld = LocalWorld.Clone();
+            FutureWorld.ExecuteWorldEventInfos(WorldEventInfos);
+            WorldEventInfos.Clear();
         }
 
-        FutureWorld.AdvanceFrame(frame, out _);
+        LocalWorld.Apply(FutureWorld);
+
+        FutureWorld.AdvanceFrame(frame);
     }
 
     public virtual void OnUpdate(in BattleFrame frame)
@@ -57,6 +61,12 @@ public class BattleWorldManager
     public virtual void Dispose()
     {
         DisposeInputManager();
+
+        foreach (var worldEventInfo in WorldEventInfos)
+        {
+            worldEventInfo.Release(this);
+        }
+        WorldEventInfos.Clear();
 
         LocalWorld.Release();
         LocalWorld = null;
@@ -76,37 +86,38 @@ public class BattleWorldManager
 
     private BattleInputManager InputManager { get; } = new BattleInputManager();
     private BattleInputContext InputContext { get; } = new BattleInputContext();
+    private List<BattleWorldEventInfo> WorldEventInfos { get; set; } = new(16);
 
     private void InitalizeInputManager()
     {
-        InputManager.OnInputMoveBackDown += OnPlayerInputMoveBackDown;
-        InputManager.OnInputMoveBackUp += OnPlayerInputMoveBackUp;
-        InputManager.OnInputMoveForwardDown += OnPlayerInputMoveForwardDown;
-        InputManager.OnInputMoveForwardUp += OnPlayerInputMoveForwardUp;
+        InputManager.OnInputMoveLeftArrowDown += OnPlayerInputMoveLeftArrowDown;
+        InputManager.OnInputMoveLeftArrowUp += OnPlayerInputMoveLeftArrowUp;
+        InputManager.OnInputMoveRightArrowDown += OnPlayerInputMoveRightArrowDown;
+        InputManager.OnInputMoveRightArrowUp += OnPlayerInputMoveRightArrowUp;
         InputManager.OnInputAttack1 += OnPlayerInputAttack1;
         InputManager.OnInputAttack2 += OnPlayerInputAttack2;
         InputManager.OnInputFire += OnPlayerInputFire;
         InputManager.OnInputJump += OnPlayerInputJump;
     }
 
-    private void OnPlayerInputMoveForwardDown()
+    private void OnPlayerInputMoveRightArrowDown()
     {
-        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_FORWARD_DOWN, PlayerID);
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_DOWN, PlayerID);
     }
 
-    private void OnPlayerInputMoveForwardUp()
+    private void OnPlayerInputMoveRightArrowUp()
     {
-        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_FORWARD_UP, PlayerID);
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_UP, PlayerID);
     }
 
-    private void OnPlayerInputMoveBackDown()
+    private void OnPlayerInputMoveLeftArrowDown()
     {
-        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_BACK_DOWN, PlayerID);
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_DOWN, PlayerID);
     }
 
-    private void OnPlayerInputMoveBackUp()
+    private void OnPlayerInputMoveLeftArrowUp()
     {
-        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_BACK_UP, PlayerID);
+        PerformWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_UP, PlayerID);
     }
 
     private void OnPlayerInputAttack1()
@@ -129,22 +140,21 @@ public class BattleWorldManager
         PerformWorldEventInfo(BattleWorldInputEventType.JUMP, PlayerID);
     }
 
-    protected virtual BattleWorldEventInfo PerformWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId)
+    protected virtual void PerformWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId)
     {
         var eventInfo = WorldEventInfoPool.Get();
         eventInfo.WorldInputEventType = inputEventType;
         eventInfo.UnitID = 0;
-        eventInfo.TargetFrame = LocalWorld.NextFrame;
-        LocalWorld.AddWorldEventInfo(eventInfo);
-        return eventInfo;
+        eventInfo.TargetFrame = FutureWorld.NextFrame;
+        WorldEventInfos.Add(eventInfo);
     }
 
     private void DisposeInputManager()
     {
-        InputManager.OnInputMoveBackDown -= OnPlayerInputMoveBackDown;
-        InputManager.OnInputMoveBackUp -= OnPlayerInputMoveBackUp;
-        InputManager.OnInputMoveForwardDown -= OnPlayerInputMoveForwardDown;
-        InputManager.OnInputMoveForwardUp -= OnPlayerInputMoveForwardUp;
+        InputManager.OnInputMoveLeftArrowDown -= OnPlayerInputMoveLeftArrowDown;
+        InputManager.OnInputMoveLeftArrowUp -= OnPlayerInputMoveLeftArrowUp;
+        InputManager.OnInputMoveRightArrowDown -= OnPlayerInputMoveRightArrowDown;
+        InputManager.OnInputMoveRightArrowUp -= OnPlayerInputMoveRightArrowUp;
         InputManager.OnInputAttack1 -= OnPlayerInputAttack2;
         InputManager.OnInputAttack2 -= OnPlayerInputAttack2;
         InputManager.OnInputFire -= OnPlayerInputFire;

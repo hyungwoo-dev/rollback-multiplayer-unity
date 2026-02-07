@@ -52,15 +52,16 @@ public partial class BattleUnitDashMoveController
         return ElapsedTime != MoveTime;
     }
 
-    public BattleUnitDashMoveController Clone()
+    public BattleUnitDashMoveController Clone(BattleWorld context)
     {
-        var clone = World.UnitDashMoveControllerPool.Get();
-        clone.DeepCopyFrom(this);
+        var clone = context.UnitDashMoveControllerPool.Get();
+        clone.World = context;
+        clone.DeepCopyFrom(context, this);
         return clone;
     }
 
-    partial void OnRelease()
+    partial void OnRelease(BattleWorld context)
     {
-        World.UnitDashMoveControllerPool.Release(this);
+        context.UnitDashMoveControllerPool.Release(this);
     }
 }

@@ -1,6 +1,6 @@
 ﻿public enum BattleUnitMoveSide
 {
     NONE = 0,
-    FORWARD,
-    BACK,
+    RIGHT_ARROW,
+    LEFT_ARROW,
 }

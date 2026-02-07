@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Runtime.Remoting.Contexts;
+using UnityEngine;
 
 [ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitJumpController
@@ -105,15 +106,16 @@ public partial class BattleUnitJumpController
         }
     }
 
-    public BattleUnitJumpController Clone()
+    public BattleUnitJumpController Clone(BattleWorld context)
     {
-        var clone = World.UnitJumpControllerPool.Get();
-        clone.DeepCopyFrom(this);
+        var clone = context.UnitJumpControllerPool.Get();
+        clone.World = context;
+        clone.DeepCopyFrom(context, this);
         return clone;
     }
 
-    partial void OnRelease()
+    partial void OnRelease(BattleWorld context)
     {
-        World.UnitJumpControllerPool.Release(this);
+        context.UnitJumpControllerPool.Release(this);
     }
 }

@@ -52,15 +52,16 @@ public partial class BattleUnitJumpMove
         return ElapsedTime == MoveTime;
     }
 
-    public BattleUnitJumpMove Clone()
+    public BattleUnitJumpMove Clone(BattleWorld context)
     {
         var clone = World.UnitJumpMovePool.Get();
-        clone.DeepCopyFrom(this);
+        clone.World = context;
+        clone.DeepCopyFrom(context, this);
         return clone;
     }
 
-    partial void OnRelease()
+    partial void OnRelease(BattleWorld context)
     {
-        World.UnitJumpMovePool.Release(this);
+        context.UnitJumpMovePool.Release(this);
     }
 }

@@ -1,4 +1,4 @@
 ﻿public class BattleWorldResources
 {
-    public static BattleWorldResource UNIT = new("AndroidUnit/Prefabs/AndroidUnit", "AndroidUnit/Prefabs/AndroidUnit_Collider");
+    public static BattleWorldResource UNIT = new("AndroidUnit/Prefabs/AndroidUnit", "AndroidUnit/Prefabs/AndroidUnit_View");
 }

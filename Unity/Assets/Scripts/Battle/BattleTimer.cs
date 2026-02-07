@@ -31,15 +31,16 @@ public partial class BattleTimer
         return false;
     }
 
-    public BattleTimer Clone()
+    public BattleTimer Clone(BattleWorld context)
     {
-        var clone = World.TimerPool.Get();
-        clone.DeepCopyFrom(this);
+        var clone = context.TimerPool.Get();
+        clone.World = context;
+        clone.DeepCopyFrom(context, this);
         return clone;
     }
 
-    partial void OnRelease()
+    partial void OnRelease(BattleWorld context)
     {
-        World.TimerPool.Release(this);
+        context.TimerPool.Release(this);
     }
 }

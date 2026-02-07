@@ -1,5 +1,5 @@
 ﻿public enum BattleWorldSceneKind
 {
-    GRAPHICS = 0,
-    NO_GRAPHICS = 1,
+    VIEW = 0,
+    PLAYING = 1,
 }

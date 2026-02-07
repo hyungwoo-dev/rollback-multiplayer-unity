@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.SceneManagement;
 
-[ManagedState(typeof(BattleWorldManager))]
 public partial class BattleWorld
 {
     private Debug Debug = new(nameof(BattleWorld));
@@ -14,11 +14,10 @@ public partial class BattleWorld
     protected static readonly Quaternion RIGHT_UNIT_ROTATION = Quaternion.Euler(0.0f, -90.0f, 0.0f);
 
     public int ID { get; set; }
-    public BattleWorldManager WorldManager { get; }
+    public BattleWorldManager WorldManager { get; private set; }
     public BattleWorldScene WorldScene { get; private set; }
     public int CurrentFrame { get; private set; }
     public int NextFrame => CurrentFrame + 1;
-    private List<BattleWorldEventInfo> WorldEventInfos { get; set; } = new(16);
 
     private List<BattleUnit> Units { get; set; } = new();
 
@@ -94,10 +93,17 @@ public partial class BattleWorld
         }
     }
 
-    public void AdvanceFrame(in BattleFrame frame, out bool executeWorldEventInfos)
+    public void Apply(BattleWorld other)
+    {
+        foreach (var unit in Units)
+        {
+            unit.Apply(other);
+        }
+    }
+
+    public void AdvanceFrame(in BattleFrame frame)
     {
         CurrentFrame += 1;
-        executeWorldEventInfos = ExecuteWorldEventInfos(CurrentFrame);
 
         foreach (var unit in Units)
         {
@@ -112,11 +118,6 @@ public partial class BattleWorld
         }
     }
 
-    public void AddWorldEventInfo(BattleWorldEventInfo worldEventInfo)
-    {
-        WorldEventInfos.Add(worldEventInfo);
-    }
-
     private void AddUnit(int unitID, Vector3 position, Quaternion rotation)
     {
         var unit = UnitPool.Get();
@@ -124,25 +125,13 @@ public partial class BattleWorld
         Units.Add(unit);
     }
 
-    private bool ExecuteWorldEventInfos(int targetFrame)
+    public void ExecuteWorldEventInfos(List<BattleWorldEventInfo> worldEventInfos)
     {
-        var popEventCount = 0;
-        for (int i = 0; i < WorldEventInfos.Count; i++)
+        for (int i = 0; i < worldEventInfos.Count; i++)
         {
-            var eventInfo = WorldEventInfos[i];
-            if (eventInfo.TargetFrame <= targetFrame)
-            {
-                popEventCount += 1;
-                ExecuteWorldEvent(eventInfo);
-            }
-            else
-            {
-                break;
-            }
+            var eventInfo = worldEventInfos[i];
+            ExecuteWorldEvent(eventInfo);
         }
-
-        WorldEventInfos.RemoveRange(0, popEventCount);
-        return popEventCount > 0;
     }
 
     private void ExecuteWorldEvent(BattleWorldEventInfo eventInfo)
@@ -150,35 +139,51 @@ public partial class BattleWorld
         var unit = GetUnit(eventInfo.UnitID);
         switch (eventInfo.WorldInputEventType)
         {
-            case BattleWorldInputEventType.MOVE_BACK_DOWN:
+            case BattleWorldInputEventType.MOVE_LEFT_ARROW_DOWN:
             {
                 if (unit.CanMove())
                 {
-                    unit.StartMoveBack();
+                    unit.StartMoveLeftArrow(false);
+                }
+                else
+                {
+                    unit.SetInputSide(BattleUnitMoveSide.LEFT_ARROW);
                 }
                 break;
             }
-            case BattleWorldInputEventType.MOVE_BACK_UP:
+            case BattleWorldInputEventType.MOVE_LEFT_ARROW_UP:
             {
                 if (unit.IsMoving())
                 {
-                    unit.StopMoveBack();
+                    unit.StopMoveLeftArrow();
+                }
+                else
+                {
+                    unit.ResetInputSide(BattleUnitMoveSide.LEFT_ARROW);
                 }
                 break;
             }
-            case BattleWorldInputEventType.MOVE_FORWARD_DOWN:
+            case BattleWorldInputEventType.MOVE_RIGHT_ARROW_DOWN:
             {
                 if (unit.CanMove())
                 {
-                    unit.StartMoveForward();
+                    unit.StartMoveRightArrow(false);
+                }
+                else
+                {
+                    unit.SetInputSide(BattleUnitMoveSide.RIGHT_ARROW);
                 }
                 break;
             }
-            case BattleWorldInputEventType.MOVE_FORWARD_UP:
+            case BattleWorldInputEventType.MOVE_RIGHT_ARROW_UP:
             {
                 if (unit.IsMoving())
                 {
-                    unit.StopMoveForward();
+                    unit.StopMoveRightArrow();
+                }
+                else
+                {
+                    unit.ResetInputSide(BattleUnitMoveSide.RIGHT_ARROW);
                 }
                 break;
             }
@@ -216,18 +221,37 @@ public partial class BattleWorld
             }
         }
 
-        eventInfo.Release();
+        eventInfo.Release(WorldManager);
     }
 
-    public BattleWorld Clone()
+    public void CopyFrom(BattleWorld other)
     {
-        var world = WorldManager.WorldPool.Get();
-        world.DeepCopyFrom(this);
-        return world;
+        CurrentFrame = other.CurrentFrame;
+
+        Units.Clear();
+        foreach (var unit in other.Units)
+        {
+            var clone = unit.Clone(this);
+            Units.Add(clone);
+        }
     }
 
-    partial void OnRelease()
+    public void Reset()
     {
+        foreach (var unit in Units)
+        {
+            unit.ResetPositionAndRotation();
+        }
+    }
+
+    public void Release()
+    {
+        foreach (var unit in Units)
+        {
+            unit.Release(this);
+        }
+        Units.Clear();
+
         DisposePool();
         WorldManager.WorldPool.Release(this);
     }

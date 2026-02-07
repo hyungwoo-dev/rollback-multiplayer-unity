@@ -25,6 +25,8 @@ public class BattleScene : MonoBehaviour
     private void Awake()
     {
         Application.runInBackground = true;
+        Application.targetFrameRate = 144;
+        Physics.simulationMode = SimulationMode.Script;
     }
 
     private IEnumerator Start()
@@ -41,10 +43,10 @@ public class BattleScene : MonoBehaviour
         IsReady = true;
     }
 
-    private void Initialize(in BattleFrame frame)
+    private void Initialize()
     {
-        WorldManager.Initialize(frame);
-        _battleCamera.Initialize(WorldManager.LocalWorld);
+        WorldManager.Initialize(_battleCamera);
+        _battleCamera.Initialize(WorldManager.FutureWorld);
 
         IsInitialized = true;
     }
@@ -57,7 +59,8 @@ public class BattleScene : MonoBehaviour
 
         if (!IsInitialized)
         {
-            Initialize(frame);
+            Initialize();
+            WorldManager.FutureWorld.AdvanceFrame(frame);
         }
 
         WorldManager.AdvanceFrame(frame);

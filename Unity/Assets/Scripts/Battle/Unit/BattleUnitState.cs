@@ -18,6 +18,8 @@ public partial class BattleUnitState
     [ManagedStateIgnore]
     public BattleUnitStateInfo NextStateInfo { get; private set; }
 
+    public float NextStateElapsedTime { get; private set; }
+
     public BattleUnitStateType StateType => StateInfo.StateType;
 
     public BattleUnitState(BattleWorld world)
@@ -32,7 +34,13 @@ public partial class BattleUnitState
 
     public void SetNextStateInfo(BattleUnitStateInfo stateInfo)
     {
+        SetNextStateInfo(stateInfo, 0.0f);
+    }
+
+    public void SetNextStateInfo(BattleUnitStateInfo stateInfo, float elaspedTime)
+    {
         NextStateInfo = stateInfo;
+        NextStateElapsedTime = elaspedTime;
     }
 
     public void AdvanceFrame(float deltaTime, out bool isStateChanged)
@@ -47,7 +55,7 @@ public partial class BattleUnitState
             NextStateInfo = null;
 
             PreviousElapsedTime = 0.0f;
-            ElapsedTime = 0.0f;
+            ElapsedTime = NextStateElapsedTime;
         }
         else
         {
@@ -55,21 +63,39 @@ public partial class BattleUnitState
 
             PreviousElapsedTime = ElapsedTime;
             ElapsedTime += deltaTime;
+
+            switch (StateInfo)
+            {
+                case BattleUnitFiniteStateInfo finiteStateInfo:
+                {
+                    if (ElapsedTime > finiteStateInfo.Duration)
+                    {
+                        var nextStateStartTime = ElapsedTime - finiteStateInfo.Duration;
+                        SetNextStateInfo(finiteStateInfo.NextStateInfo, nextStateStartTime);
+                    }
+                    break;
+                }
+                case BattleUnitLoopStateInfo loopStateInfo:
+                {
+                    break;
+                }
+            }
         }
     }
 
-    public BattleUnitState Clone()
+    public BattleUnitState Clone(BattleWorld context)
     {
-        var clone = World.UnitStatePool.Get();
-        clone.DeepCopyFrom(this);
+        var clone = context.UnitStatePool.Get();
+        clone.World = context;
+        clone.DeepCopyFrom(context, this);
         clone.PreviousStateInfo = PreviousStateInfo;
         clone.StateInfo = StateInfo;
         clone.NextStateInfo = NextStateInfo;
         return clone;
     }
 
-    partial void OnRelease()
+    partial void OnRelease(BattleWorld context)
     {
-        World.UnitStatePool.Release(this);
+        context.UnitStatePool.Release(this);
     }
 }

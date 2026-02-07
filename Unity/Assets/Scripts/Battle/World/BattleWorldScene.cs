@@ -21,11 +21,13 @@ public partial class BattleWorldScene
 
     private Dictionary<int, GameObject> GameObjectDictionary { get; set; } = new();
     private int CurrentGameObjectID { get; set; } = 0;
+    private int Layer { get; set; }
 
-    public BattleWorldScene(BattleWorldManager worldManager, BattleWorldSceneKind worldSceneKind)
+    public BattleWorldScene(BattleWorldManager worldManager, BattleWorldSceneKind worldSceneKind, int layer)
     {
         WorldManager = worldManager;
         WorldSceneKind = worldSceneKind;
+        Layer = layer;
     }
 
     public void Prepare()
@@ -53,13 +55,13 @@ public partial class BattleWorldScene
     {
         switch (WorldSceneKind)
         {
-            case BattleWorldSceneKind.GRAPHICS:
+            case BattleWorldSceneKind.VIEW:
+            {
+                return Instantiate(worldResource.ViewResourcePath, position, rotation);
+            }
+            case BattleWorldSceneKind.PLAYING:
             {
                 return Instantiate(worldResource.ResourcePath, position, rotation);
-            }
-            case BattleWorldSceneKind.NO_GRAPHICS:
-            {
-                return Instantiate(worldResource.NoGraphicsResourcePath, position, rotation);
             }
             default:
             {
@@ -88,9 +90,19 @@ public partial class BattleWorldScene
     {
         var asset = Resources.Load<GameObject>(resourcePath);
         var gameObject = GameObject.Instantiate(asset, position, rotation, RootGameObject.transform);
+        SetGameObjectLayerRecursively(gameObject, Layer);
         var gameObjectID = GenerateGameObjectID();
         GameObjectDictionary.Add(gameObjectID, gameObject);
         return new BattleWorldSceneObjectHandle(gameObjectID);
+    }
+
+    private void SetGameObjectLayerRecursively(GameObject gameObject, int layer)
+    {
+        gameObject.layer = layer;
+        foreach (Transform child in gameObject.transform)
+        {
+            SetGameObjectLayerRecursively(child.gameObject, layer);
+        }
     }
 
     private bool TryGetComponent<T>(BattleWorldSceneObjectHandle handle, out T component) where T : Component
@@ -224,13 +236,13 @@ public partial class BattleWorldScene
     {
         switch (WorldSceneKind)
         {
-            case BattleWorldSceneKind.GRAPHICS:
+            case BattleWorldSceneKind.VIEW:
             {
-                return SceneManager.LoadScene(SceneNames.BATTLE_WORLD_GRAPHICS, new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.Physics3D));
+                return SceneManager.LoadScene(SceneNames.BATTLE_WORLD_VIEW, new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.None));
             }
-            case BattleWorldSceneKind.NO_GRAPHICS:
+            case BattleWorldSceneKind.PLAYING:
             {
-                return SceneManager.LoadScene(SceneNames.BATTLE_WORLD_NO_GRAPHICS, new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.Physics3D));
+                return SceneManager.LoadScene(SceneNames.BATTLE_WORLD, new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.Physics3D));
             }
             default:
             {

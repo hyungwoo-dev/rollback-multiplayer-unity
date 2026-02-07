@@ -1,5 +1,6 @@
 ﻿using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 [ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitMoveController
@@ -9,50 +10,44 @@ public partial class BattleUnitMoveController
     public float Speed { get; private set; }
     public float ElapsedTime { get; private set; }
 
-    public bool IsMoving => MoveSide != BattleUnitMoveSide.NONE;
-    public BattleUnitMoveSide MoveSide { get; private set; }
+    public bool IsMoving => DirectionScale != 0;
+    public int DirectionScale { get; private set; }
 
     public BattleUnitMoveController(BattleWorld world)
     {
         World = world;
     }
 
-    public void Start(BattleUnitMoveSide side, float speed)
+    public void Start(int directionScale, float speed)
     {
-        MoveSide = side;
+        DirectionScale = directionScale;
         Speed = speed;
     }
 
     public void Stop()
     {
-        MoveSide = BattleUnitMoveSide.NONE;
+        DirectionScale = 0;
         Speed = 0.0f;
     }
 
     public Vector3 AdvanceTime(float deltaTime, Quaternion rotation)
     {
-        var directionScale = MoveSide switch
-        {
-            BattleUnitMoveSide.NONE => 0,
-            BattleUnitMoveSide.FORWARD => 1,
-            BattleUnitMoveSide.BACK => -1,
-        };
-
-        var direction = rotation * Vector3.forward * directionScale;
+        var direction = rotation * Vector3.forward * DirectionScale;
         ElapsedTime += deltaTime;
 
         return direction * Speed * deltaTime;
     }
 
-    public BattleUnitMoveController Clone()
+    public BattleUnitMoveController Clone(BattleWorld context)
     {
         var clone = World.UnitMoveControllerPool.Get();
-        clone.DeepCopyFrom(this);
+        clone.World = context;
+        clone.DeepCopyFrom(context, this);
         return clone;
     }
 
-    partial void OnRelease()
+    partial void OnRelease(BattleWorld context)
     {
-        World.UnitMoveControllerPool.Release(this);
+        context.UnitMoveControllerPool.Release(this);
     }
 }

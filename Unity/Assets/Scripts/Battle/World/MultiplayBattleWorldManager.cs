@@ -1,4 +1,6 @@
-﻿[ManagedStateIgnore]
+﻿using UnityEngine;
+
+[ManagedStateIgnore]
 public class MultiplayBattleWorldManager : BattleWorldManager
 {
     private static Debug Debug = new(nameof(MultiplayBattleWorldManager));
@@ -14,16 +16,16 @@ public class MultiplayBattleWorldManager : BattleWorldManager
     public override void Prepare()
     {
         base.Prepare();
-        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.NO_GRAPHICS);
+        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.VIEW, LayerMask.NameToLayer(BattleLayerMaskNames.Server));
         worldScene.Prepare();
         ServerWorld.Prepare(worldScene);
 
         NetworkManager = CreateNetworkManager();
     }
 
-    public override void Initialize(in BattleFrame frame)
+    public override void Initialize(BattleCamera camera)
     {
-        base.Initialize(frame);
+        base.Initialize(camera);
         ServerWorld.Initialize();
     }
 

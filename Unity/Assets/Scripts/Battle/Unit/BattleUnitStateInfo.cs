@@ -8,12 +8,12 @@ public abstract class BattleUnitStateInfo
     public static readonly BattleUnitStateInfo MOVE_BACK = new BattleUnitLoopStateInfo(BattleUnitStateType.MOVE_BACK, BattleUnitAnimationNames.MOVE_BACK, CROSS_FADE_IN_TIME);
     public static readonly BattleUnitStateInfo MOVE_FORWARD = new BattleUnitLoopStateInfo(BattleUnitStateType.MOVE_FORWARD, BattleUnitAnimationNames.MOVE_FORWARD, CROSS_FADE_IN_TIME);
 
-    public static readonly BattleUnitStateInfo ATTACK1 = new BattleUnitFiniteStateInfo(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK1, CROSS_FADE_IN_TIME, 0.833f, BattleUnitStateType.IDLE);
-    public static readonly BattleUnitStateInfo ATTACK2 = new BattleUnitFiniteStateInfo(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK2, CROSS_FADE_IN_TIME, 1.0f, BattleUnitStateType.IDLE);
+    public static readonly BattleUnitStateInfo ATTACK1 = new BattleUnitFiniteStateInfo(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK1, CROSS_FADE_IN_TIME, 0.833f, BattleUnitStateInfo.IDLE);
+    public static readonly BattleUnitStateInfo ATTACK2 = new BattleUnitFiniteStateInfo(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK2, CROSS_FADE_IN_TIME, 1.0f, BattleUnitStateInfo.IDLE);
 
-    public static readonly BattleUnitStateInfo JUMP = new BattleUnitFiniteStateInfo(BattleUnitStateType.JUMPING, BattleUnitAnimationNames.JUMP, CROSS_FADE_IN_TIME, 1.0f, BattleUnitStateType.IDLE);
+    public static readonly BattleUnitStateInfo JUMP = new BattleUnitFiniteStateInfo(BattleUnitStateType.JUMPING, BattleUnitAnimationNames.JUMP, CROSS_FADE_IN_TIME, 1.0f, BattleUnitStateInfo.IDLE);
 
-    public static readonly BattleUnitStateInfo HIT = new BattleUnitFiniteStateInfo(BattleUnitStateType.HIT, BattleUnitAnimationNames.HIT, CROSS_FADE_IN_TIME_ZERO, 1.0f, BattleUnitStateType.IDLE);
+    public static readonly BattleUnitStateInfo HIT = new BattleUnitFiniteStateInfo(BattleUnitStateType.HIT, BattleUnitAnimationNames.HIT, CROSS_FADE_IN_TIME_ZERO, 0.533333f, BattleUnitStateInfo.IDLE);
 
     public abstract BattleUnitStateType StateType { get; }
     public abstract string AnimationName { get; }
@@ -42,14 +42,14 @@ public class BattleUnitFiniteStateInfo : BattleUnitStateInfo
     public override float CrossFadeInTime { get; }
 
     public float Duration { get; }
-    public BattleUnitStateType NextStateType { get; }
+    public BattleUnitStateInfo NextStateInfo { get; }
 
-    public BattleUnitFiniteStateInfo(BattleUnitStateType stateType, string animationName, float crossFadingTime, float duration, BattleUnitStateType nextStateType)
+    public BattleUnitFiniteStateInfo(BattleUnitStateType stateType, string animationName, float crossFadingTime, float duration, BattleUnitStateInfo nextStateInfo)
     {
         StateType = stateType;
         AnimationName = animationName;
         CrossFadeInTime = crossFadingTime;
         Duration = duration;
-        NextStateType = nextStateType;
+        NextStateInfo = nextStateInfo;
     }
 }

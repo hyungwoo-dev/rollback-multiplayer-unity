@@ -3,10 +3,10 @@ using UnityEngine;
 
 public class BattleInputManager
 {
-    public event Action OnInputMoveBackDown = null;
-    public event Action OnInputMoveBackUp = null;
-    public event Action OnInputMoveForwardDown = null;
-    public event Action OnInputMoveForwardUp = null;
+    public event Action OnInputMoveLeftArrowDown = null;
+    public event Action OnInputMoveLeftArrowUp = null;
+    public event Action OnInputMoveRightArrowDown = null;
+    public event Action OnInputMoveRightArrowUp = null;
     public event Action OnInputAttack1 = null;
     public event Action OnInputAttack2 = null;
     public event Action OnInputFire = null;
@@ -19,24 +19,24 @@ public class BattleInputManager
 
     private void UpdateInputEvents(BattleInputContext context)
     {
-        if (Input.GetKeyDown(context.MoveBackKeyCode))
+        if (Input.GetKeyDown(context.MoveLeftArrowKeyCode))
         {
-            OnInputMoveBackDown?.Invoke();
+            OnInputMoveLeftArrowDown?.Invoke();
         }
 
-        if (Input.GetKeyUp(context.MoveBackKeyCode))
+        if (Input.GetKeyUp(context.MoveLeftArrowKeyCode))
         {
-            OnInputMoveBackUp?.Invoke();
+            OnInputMoveLeftArrowUp?.Invoke();
         }
 
-        if (Input.GetKeyDown(context.MoveForwardKeyCode))
+        if (Input.GetKeyDown(context.MoveRightArrowKeyCode))
         {
-            OnInputMoveForwardDown?.Invoke();
+            OnInputMoveRightArrowDown?.Invoke();
         }
 
-        if (Input.GetKeyUp(context.MoveForwardKeyCode))
+        if (Input.GetKeyUp(context.MoveRightArrowKeyCode))
         {
-            OnInputMoveForwardUp?.Invoke();
+            OnInputMoveRightArrowUp?.Invoke();
         }
 
         if (Input.GetKeyDown(context.Attack1KeyCode))
@@ -62,8 +62,8 @@ public class BattleInputManager
 
     public void Dispose()
     {
-        OnInputMoveBackDown = null;
-        OnInputMoveBackUp = null;
+        OnInputMoveLeftArrowDown = null;
+        OnInputMoveLeftArrowUp = null;
         OnInputAttack1 = null;
         OnInputAttack2 = null;
         OnInputFire = null;
