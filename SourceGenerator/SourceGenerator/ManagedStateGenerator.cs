@@ -50,14 +50,18 @@ namespace SourceGenerator
                 if (!HasManagedStateAttribute(type) || HasManagedStateIgnoreAttribute(type))
                     continue;
 
-                ValidatePoolMethods(context, type);
-                Generate(context, type);
+                var contextType = GetManagedStateContextType(type);
+                if (contextType == null)
+                    continue;
+
+                ValidatePoolMethods(context, type, contextType);
+                Generate(context, type, contextType);
             }
         }
 
         #region Validation
 
-        static void ValidatePoolMethods(GeneratorExecutionContext ctx, INamedTypeSymbol type)
+        static void ValidatePoolMethods(GeneratorExecutionContext ctx, INamedTypeSymbol type, INamedTypeSymbol contextType)
         {
             foreach (var member in type.GetMembers())
             {
@@ -77,9 +81,13 @@ namespace SourceGenerator
                             {
                                 if (IsManagedState(genericType))
                                 {
-                                    if (genericType is INamedTypeSymbol genericNamedTypeSymbol && IsManagedState(genericType) && !HasCloneMethod(genericNamedTypeSymbol))
+                                    if (genericType is INamedTypeSymbol genericNamedTypeSymbol && IsManagedState(genericType))
                                     {
-                                        ctx.ReportDiagnostic(Diagnostic.Create(MissingClone, type.Locations[0], genericType.Name));
+                                        var genericContextType = GetManagedStateContextType(genericNamedTypeSymbol);
+                                        if(!HasCloneMethod(genericNamedTypeSymbol, genericContextType))
+                                        {
+                                            ctx.ReportDiagnostic(Diagnostic.Create(MissingClone, type.Locations[0], genericType.Name));
+                                        }
                                     }
                                 }
                                 else
@@ -100,21 +108,21 @@ namespace SourceGenerator
             }
         }
 
-        private static bool HasCloneMethod(INamedTypeSymbol type)
+        private static bool HasCloneMethod(INamedTypeSymbol type, INamedTypeSymbol contextType)
         {
             foreach (var member in type.GetMembers())
             {
                 if (member is IMethodSymbol method)
                 {
                     if (method.Name == "Clone"
-                    && method.Parameters.Length == 0
-                    && SymbolEqualityComparer.Default.Equals(method.ReturnType, type))
+                        && method.Parameters.Length == 1
+                        && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, contextType)
+                        && SymbolEqualityComparer.Default.Equals(method.ReturnType, type))
                     {
                         return true;
                     }
                 }
             }
-
             return false;
         }
 
@@ -122,12 +130,13 @@ namespace SourceGenerator
 
         #region Generation
 
-        static void Generate(GeneratorExecutionContext ctx, INamedTypeSymbol type)
+        static void Generate(GeneratorExecutionContext ctx, INamedTypeSymbol type, INamedTypeSymbol contextType)
         {
             var sb = new StringBuilder();
             var ns = type.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : type.ContainingNamespace.ToDisplayString();
+            var contextTypeName = contextType.ToDisplayString();
 
             if (ns != null)
             {
@@ -138,13 +147,13 @@ namespace SourceGenerator
             sb.AppendLine("partial class " + type.Name);
             sb.AppendLine("{");
 
-            sb.AppendLine("    partial void OnRelease();");
+            sb.AppendLine("    partial void OnRelease(" + contextTypeName + " context" + ");");
             sb.AppendLine();
 
-            GenerateDeepCopyFrom(sb, type);
+            GenerateDeepCopyFrom(sb, type, contextTypeName);
             sb.AppendLine();
 
-            GenerateRelease(sb, type);
+            GenerateRelease(sb, type, contextTypeName);
 
             sb.AppendLine("}");
 
@@ -154,9 +163,9 @@ namespace SourceGenerator
             ctx.AddSource(type.Name + ".ManagedState.g.cs", sb.ToString());
         }
 
-        static void GenerateRelease(StringBuilder sb, INamedTypeSymbol type)
+        static void GenerateRelease(StringBuilder sb, INamedTypeSymbol type, string contextTypeName)
         {
-            sb.AppendLine("    public void Release()");
+            sb.AppendLine("    public void Release(" + contextTypeName + " context)");
             sb.AppendLine("    {");
 
             var isFirstLine = true;
@@ -184,14 +193,14 @@ namespace SourceGenerator
                 {
                     sb.AppendLine("        if (" + name + " != null)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            " + name + ".Release();");
+                    sb.AppendLine("            " + name + ".Release(context);");
                     sb.AppendLine("        }");
                 }
                 else if (IsList(field.Type))
                 {
                     sb.AppendLine("        for (int i = 0; i < " + name + ".Count; i++)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            " + name + "[i].Release();");
+                    sb.AppendLine("            " + name + "[i].Release(context);");
                     sb.AppendLine("        }");
                     sb.AppendLine("        " + name + ".Clear();");
                 }
@@ -214,18 +223,18 @@ namespace SourceGenerator
                 sb.AppendLine();
             }
 
-            sb.AppendLine("        OnRelease();");
+            sb.AppendLine("        OnRelease(context);");
             sb.AppendLine("    }");
         }
 
-        static void GenerateDeepCopyFrom(StringBuilder sb, INamedTypeSymbol type)
+        static void GenerateDeepCopyFrom(StringBuilder sb, INamedTypeSymbol type, string contextTypeName)
         {
-            sb.AppendLine("    public void DeepCopyFrom(" + type.Name + " other)");
+            sb.AppendLine("    public void DeepCopyFrom(" + contextTypeName + " context, " + type.Name + " other)");
             sb.AppendLine("    {");
 
             if (type.BaseType != null && HasManagedStateAttribute(type.BaseType))
             {
-                sb.AppendLine("        base.DeepCopyFrom(other);");
+                sb.AppendLine("        base.DeepCopyFrom(context, other);");
             }
 
             var isFirstLine = true;
@@ -254,7 +263,7 @@ namespace SourceGenerator
                     sb.AppendLine("        " + name + ".Clear();");
                     sb.AppendLine("        for (int i = 0; i < other." + name + ".Count; i++)");
                     sb.AppendLine("        {");
-                    sb.AppendLine("            var clone = other." + name + "[i].Clone();");
+                    sb.AppendLine("            var clone = other." + name + "[i].Clone(context);");
                     sb.AppendLine("            " + name + ".Add(clone);");
                     sb.AppendLine("        }");
                 }
@@ -280,7 +289,7 @@ namespace SourceGenerator
                 }
                 else if (IsUserDefinedClass(field.Type) && IsManagedState(field.Type))
                 {
-                    sb.AppendLine("        " + name + " = " + "other." + name + " != null ? " + "other." + name + ".Clone() : null;");
+                    sb.AppendLine("        " + name + " = " + "other." + name + " != null ? " + "other." + name + ".Clone(context) : null;");
                 }
             }
 
@@ -441,6 +450,21 @@ namespace SourceGenerator
         static bool IsValueType(ITypeSymbol type)
         {
             return type.IsValueType;
+        }
+
+        static INamedTypeSymbol GetManagedStateContextType(INamedTypeSymbol type)
+        {
+            foreach (var a in type.GetAttributes())
+            {
+                if (a.AttributeClass.Name == "ManagedStateAttribute")
+                {
+                    if (a.ConstructorArguments.Length > 0)
+                    {
+                        return a.ConstructorArguments[0].Value as INamedTypeSymbol;
+                    }
+                }
+            }
+            return null;
         }
 
         static bool IsUserDefinedClass(ITypeSymbol type)
