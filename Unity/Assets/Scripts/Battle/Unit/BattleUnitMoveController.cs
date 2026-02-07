@@ -1,7 +1,7 @@
 ﻿using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-[ManagedState]
+[ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitMoveController
 {
     [ManagedStateIgnore]
@@ -9,7 +9,7 @@ public partial class BattleUnitMoveController
     public float Speed { get; private set; }
     public float ElapsedTime { get; private set; }
 
-    public bool IsMoving => MoveSide != BattleUnitMoveSide.None;
+    public bool IsMoving => MoveSide != BattleUnitMoveSide.NONE;
     public BattleUnitMoveSide MoveSide { get; private set; }
 
     public BattleUnitMoveController(BattleWorld world)
@@ -25,7 +25,7 @@ public partial class BattleUnitMoveController
 
     public void Stop()
     {
-        MoveSide = BattleUnitMoveSide.None;
+        MoveSide = BattleUnitMoveSide.NONE;
         Speed = 0.0f;
     }
 
@@ -33,9 +33,9 @@ public partial class BattleUnitMoveController
     {
         var directionScale = MoveSide switch
         {
-            BattleUnitMoveSide.None => 0,
-            BattleUnitMoveSide.Forward => 1,
-            BattleUnitMoveSide.Back => -1,
+            BattleUnitMoveSide.NONE => 0,
+            BattleUnitMoveSide.FORWARD => 1,
+            BattleUnitMoveSide.BACK => -1,
         };
 
         var direction = rotation * Vector3.forward * directionScale;

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class BattleWorldSceneUnitAnimator : MonoBehaviour
 {
@@ -37,9 +35,28 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
         DeltaRotation = Quaternion.identity;
     }
 
-    public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimator(float deltaTime)
+    public void ManualUpdate(float deltaTime)
     {
         _animator.Update(deltaTime);
+    }
+
+    public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimator(float deltaTime)
+    {
+        if (Application.targetFrameRate > 0)
+        {
+            do
+            {
+                var targetFrameDeltaTime = 1.0f / (float)Application.targetFrameRate;
+                var updateDeltaTime = deltaTime > targetFrameDeltaTime ? targetFrameDeltaTime : deltaTime;
+                _animator.Update(updateDeltaTime);
+                deltaTime = Mathf.Max(deltaTime - updateDeltaTime, 0.0f);
+            }
+            while (deltaTime > 0.0f);
+        }
+        else
+        {
+            _animator.Update(deltaTime);
+        }
 
         var result = (DeltaPosition, DeltaRotation);
         DeltaPosition = Vector3.zero;

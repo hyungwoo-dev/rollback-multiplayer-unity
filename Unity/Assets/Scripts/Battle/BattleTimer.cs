@@ -1,6 +1,6 @@
 ﻿using Codice.CM.Client.Differences;
 
-[ManagedState]
+[ManagedState(typeof(BattleWorld))]
 public partial class BattleTimer
 {
     [ManagedStateIgnore]

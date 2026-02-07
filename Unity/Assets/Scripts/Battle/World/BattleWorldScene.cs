@@ -5,6 +5,8 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
+using static UnityEditor.FilePathAttribute;
 
 [ManagedStateIgnore]
 public partial class BattleWorldScene
@@ -34,7 +36,7 @@ public partial class BattleWorldScene
 
     public void Initialize()
     {
-        RootGameObject = Scene.GetRootGameObjects().First();
+        RootGameObject = Scene.GetRootGameObjects().First(gameObject => gameObject.name == "Root");
     }
 
     public bool IsReady()
@@ -91,43 +93,68 @@ public partial class BattleWorldScene
         return new BattleWorldSceneObjectHandle(gameObjectID);
     }
 
+    private bool TryGetComponent<T>(BattleWorldSceneObjectHandle handle, out T component) where T : Component
+    {
+        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        {
+            if (gameObject.TryGetComponent<T>(out component))
+            {
+                return true;
+            }
+            else
+            {
+                Debug.LogError($"{nameof(TryGetComponent)} Not Found Component, GameObject ID: {handle.ID}");
+            }
+        }
+        else
+        {
+            Debug.LogError($"{nameof(TryGetComponent)} Not Found GameObject ID: {handle.ID}");
+        }
+
+        component = null;
+        return false;
+    }
+
+    public bool TryGetPosition(BattleWorldSceneObjectHandle handle, out Vector3 position)
+    {
+        if (TryGetComponent<Transform>(handle, out var transform))
+        {
+            position = transform.position;
+            return true;
+        }
+        else
+        {
+            position = Vector3.zero;
+            return false;
+        }
+    }
+
     public void SetPositionAndRotation(BattleWorldSceneObjectHandle handle, Vector3 position, Quaternion rotation)
     {
-        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        if (TryGetComponent<Transform>(handle, out var transform))
         {
-            gameObject.transform.localPosition = position;
-            gameObject.transform.localRotation = rotation;
-        }
-        else
-        {
-            Debug.LogError($"{nameof(SetPositionAndRotation)} Not Found GameObject ID: {handle.ID}");
+            transform.SetPositionAndRotation(position, rotation);
         }
     }
 
-    public void ApplyDeltaPositionAndRotation(BattleWorldSceneObjectHandle handle, Vector3 deltaPosition, Quaternion deltaRotation)
+    public void MovePosition(BattleWorldSceneObjectHandle handle, Vector3 position)
     {
-        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        if (TryGetComponent<Rigidbody>(handle, out var rigidbody))
         {
-            gameObject.transform.localPosition += deltaPosition;
-            gameObject.transform.localRotation *= deltaRotation;
-        }
-        else
-        {
-            Debug.LogError($"{nameof(SetPositionAndRotation)} Not Found GameObject ID: {handle.ID}");
+            rigidbody.MovePosition(position);
         }
     }
 
-    public void SampleAnimation(BattleWorldSceneObjectHandle handle, in BattleWorldSceneAnimationSampleInfo sampleInfo)
+    public (Vector3 deltaPosition, Quaternion deltaRotation) SampleAnimation(BattleWorldSceneObjectHandle handle, in BattleWorldSceneAnimationSampleInfo sampleInfo)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
             var animator = gameObject.GetComponentInChildren<BattleWorldSceneUnitAnimator>();
             if (animator != null)
             {
-                var isCrossFading = false;
-                //var isCrossFading = !string.IsNullOrWhiteSpace(sampleInfo.PreviousAnimationName) &&
-                //                    sampleInfo.PreviousAnimationName != sampleInfo.AnimationName &&
-                //                    sampleInfo.ElapsedTime < BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME;
+                var isCrossFading = !string.IsNullOrWhiteSpace(sampleInfo.PreviousAnimationName) &&
+                                    sampleInfo.PreviousAnimationName != sampleInfo.AnimationName &&
+                                    sampleInfo.ElapsedTime < sampleInfo.CrossFadeInTime;
                 if (isCrossFading)
                 {
                     animator.PlayInFixedTime(
@@ -137,18 +164,21 @@ public partial class BattleWorldScene
 
                     animator.CrossFadeInFixedTime(
                         animationName: sampleInfo.AnimationName,
-                        fixedTransitionDuration: BattleWorldSceneAnimationSampleInfo.CROSS_FADE_TIME,
+                        fixedTransitionDuration: sampleInfo.CrossFadeInTime,
                         animationLayer: 0,
-                        fixedTimeOffset: sampleInfo.ElapsedTime,
-                        normalizedTransitionTime: sampleInfo.ElapsedTime * BattleWorldSceneAnimationSampleInfo.INVERSE_CROSS_FADE_TIME);
+                        fixedTimeOffset: sampleInfo.PreviousElapsedTime,
+                        normalizedTransitionTime: sampleInfo.PreviousElapsedTime * sampleInfo.InverseCrossFadeInTime);
 
                     animator.ResetDelta();
                 }
                 else
                 {
-                    animator.PlayInFixedTime(sampleInfo.AnimationName, 0, sampleInfo.ElapsedTime);
+                    animator.PlayInFixedTime(sampleInfo.AnimationName, 0, sampleInfo.PreviousElapsedTime);
                     animator.ResetDelta();
                 }
+
+                var deltaTime = sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
+                return animator.UpdateAnimator(deltaTime);
             }
             else
             {
@@ -159,6 +189,8 @@ public partial class BattleWorldScene
         {
             Debug.LogError($"{nameof(SampleAnimation)} Not Found GameObject ID: {handle.ID}");
         }
+
+        return (Vector3.zero, Quaternion.identity);
     }
 
     public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimation(BattleWorldSceneObjectHandle handle, float deltaTime)

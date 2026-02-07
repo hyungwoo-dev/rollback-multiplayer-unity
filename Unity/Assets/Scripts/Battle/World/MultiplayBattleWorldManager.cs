@@ -21,9 +21,9 @@ public class MultiplayBattleWorldManager : BattleWorldManager
         NetworkManager = CreateNetworkManager();
     }
 
-    public override void Initialize()
+    public override void Initialize(in BattleFrame frame)
     {
-        base.Initialize();
+        base.Initialize(frame);
         ServerWorld.Initialize();
     }
 
@@ -32,9 +32,9 @@ public class MultiplayBattleWorldManager : BattleWorldManager
         return base.IsReady() && ServerWorld.IsReady();
     }
 
-    public override void OnFixedUpdate(in BattleFrame frame)
+    public override void AdvanceFrame(in BattleFrame frame)
     {
-        base.OnFixedUpdate(frame);
+        base.AdvanceFrame(frame);
     }
 
     public override void OnUpdate(in BattleFrame frame)

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-[ManagedState]
+[ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitJumpMove
 {
     [ManagedStateIgnore]

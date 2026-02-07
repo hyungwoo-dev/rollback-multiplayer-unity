@@ -7,6 +7,7 @@ public class BattleWorldManager
     private static Debug Debug = new(nameof(BattleWorldManager));
 
     public BattleWorld LocalWorld { get; private set; }
+    public BattleWorld FutureWorld { get; private set; }
     protected int PlayerID { get; private set; } = 0;
 
     public BattleWorldManager()
@@ -14,29 +15,43 @@ public class BattleWorldManager
         InitalizeInputManager();
         InitializePool();
         LocalWorld = WorldPool.Get();
+        FutureWorld = WorldPool.Get();
     }
 
     public virtual void Prepare()
     {
-        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.GRAPHICS);
-        worldScene.Prepare();
-        LocalWorld.Prepare(worldScene);
+        var localWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.GRAPHICS);
+        localWorldScene.Prepare();
+        LocalWorld.Prepare(localWorldScene);
+
+        var futureWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.NO_GRAPHICS);
+        futureWorldScene.Prepare();
+        FutureWorld.Prepare(futureWorldScene);
     }
 
-    public virtual void Initialize()
+    public virtual void Initialize(in BattleFrame frame)
     {
         LocalWorld.Initialize();
+        FutureWorld.Initialize();
+        FutureWorld.AdvanceFrame(frame, out _);
     }
 
-    public virtual void OnFixedUpdate(in BattleFrame frame)
+    public virtual void AdvanceFrame(in BattleFrame frame)
     {
-        LocalWorld.OnFixedUpdate(frame);
+        LocalWorld.AdvanceFrame(frame, out var executeWorldEventInfos);
+        if (executeWorldEventInfos)
+        {
+            FutureWorld.Release();
+            FutureWorld = LocalWorld.Clone();
+        }
+
+        FutureWorld.AdvanceFrame(frame, out _);
     }
 
     public virtual void OnUpdate(in BattleFrame frame)
     {
         InputManager.OnUpdate(InputContext);
-        LocalWorld.Interpolate(frame);
+        LocalWorld.Interpolate(frame, FutureWorld);
     }
 
     public virtual void Dispose()
@@ -46,12 +61,15 @@ public class BattleWorldManager
         LocalWorld.Release();
         LocalWorld = null;
 
+        FutureWorld.Release();
+        FutureWorld = null;
+
         DisposePool();
     }
 
     public virtual bool IsReady()
     {
-        return LocalWorld.IsReady();
+        return LocalWorld.IsReady() && FutureWorld.IsReady();
     }
 
     #region Input

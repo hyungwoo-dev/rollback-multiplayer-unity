@@ -2,7 +2,7 @@
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-[ManagedState]
+[ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitDashMoveController
 {
     [ManagedStateIgnore]

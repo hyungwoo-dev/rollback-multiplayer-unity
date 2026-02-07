@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-[ManagedState]
+[ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitJumpController
 {
     private const float JUMP_DELAY = 0.666666f;

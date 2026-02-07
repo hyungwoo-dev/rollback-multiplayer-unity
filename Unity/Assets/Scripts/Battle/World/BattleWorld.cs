@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 
-[ManagedState]
+[ManagedState(typeof(BattleWorldManager))]
 public partial class BattleWorld
 {
     private Debug Debug = new(nameof(BattleWorld));
@@ -33,6 +33,20 @@ public partial class BattleWorld
 
             unit.DoHit(1);
         }
+    }
+
+    public BattleUnit GetUnit(int unitID)
+    {
+        foreach (var unit in Units)
+        {
+            if (unit.ID != unitID)
+            {
+                continue;
+            }
+
+            return unit;
+        }
+        return null;
     }
 
     public BattleUnit GetOtherUnit(int unitID)
@@ -72,31 +86,23 @@ public partial class BattleWorld
         return WorldScene.IsReady();
     }
 
-    public void Interpolate(in BattleFrame frame)
+    public void Interpolate(in BattleFrame frame, BattleWorld futureWorld)
     {
         foreach (var unit in Units)
         {
-            unit.Interpolate(frame);
+            unit.Interpolate(frame, futureWorld);
         }
     }
 
-    public void OnFixedUpdate(in BattleFrame frame)
+    public void AdvanceFrame(in BattleFrame frame, out bool executeWorldEventInfos)
     {
         CurrentFrame += 1;
-        ExecuteWorldEventInfos(CurrentFrame);
+        executeWorldEventInfos = ExecuteWorldEventInfos(CurrentFrame);
 
         foreach (var unit in Units)
         {
-            unit.OnFixedUpdate(frame);
+            unit.AdvanceFrame(frame);
         }
-        foreach (var unit in Units)
-        {
-            unit.AdjustNextPositionAndRotation(frame);
-        }
-
-        var unit1 = Units[0];
-        var unit2 = Units[1];
-        BattleUnit.ResolveNextPosition(unit1, unit2);
 
         WorldScene.SimulatePhysics(frame.DeltaTime);
 
@@ -118,7 +124,7 @@ public partial class BattleWorld
         Units.Add(unit);
     }
 
-    private void ExecuteWorldEventInfos(int targetFrame)
+    private bool ExecuteWorldEventInfos(int targetFrame)
     {
         var popEventCount = 0;
         for (int i = 0; i < WorldEventInfos.Count; i++)
@@ -136,6 +142,7 @@ public partial class BattleWorld
         }
 
         WorldEventInfos.RemoveRange(0, popEventCount);
+        return popEventCount > 0;
     }
 
     private void ExecuteWorldEvent(BattleWorldEventInfo eventInfo)
@@ -195,7 +202,7 @@ public partial class BattleWorld
             {
                 if (unit.CanAttack())
                 {
-                    unit.DoFire();
+                    unit.DoAttack3();
                 }
                 break;
             }
@@ -212,18 +219,6 @@ public partial class BattleWorld
         eventInfo.Release();
     }
 
-    private BattleUnit GetUnit(int unitID)
-    {
-        foreach (var unit in Units)
-        {
-            if (unit.ID != unitID) continue;
-            return unit;
-        }
-
-        Debug.LogError($"Not found unit. ID:{unitID}");
-        return null;
-    }
-
     public BattleWorld Clone()
     {
         var world = WorldManager.WorldPool.Get();
@@ -235,22 +230,6 @@ public partial class BattleWorld
     {
         DisposePool();
         WorldManager.WorldPool.Release(this);
-    }
-
-    public Rect GetRectContainingUnits()
-    {
-        const float MARGIN = 1.0f;
-        var xMin = float.MaxValue;
-        var xMax = float.MinValue;
-        var yMax = 0.0f;
-        foreach (var unit in Units)
-        {
-            xMin = Mathf.Min(xMin, unit.Position.x - MARGIN);
-            xMax = Mathf.Max(xMax, unit.Position.x + MARGIN);
-            yMax = Mathf.Max(yMax, unit.Position.y + MARGIN);
-        }
-
-        return Rect.MinMaxRect(xMin, 0.0f, xMax, yMax);
     }
 
     public (Vector3 TargetPosition, Quaternion TargetRotation) GetCameraTargetPositionAndRotation(Transform cameraTransform)

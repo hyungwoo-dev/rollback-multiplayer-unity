@@ -1,16 +1,14 @@
 ﻿public struct BattleWorldSceneAnimationSampleInfo
 {
-    public static readonly float CROSS_FADE_TIME = 0.1f;
-    public static readonly float INVERSE_CROSS_FADE_TIME = 1.0f / CROSS_FADE_TIME;
-
     public BattleWorldSceneAnimationSampleInfo(BattleUnitState state)
     {
-        PreviousAnimationName = state.PreviousAnimationName;
-        PreviousAnimationElapsedTime = state.PreviousAnimationElapsedTime;
+        PreviousAnimationName = state.PreviousStateInfo != null ? state.PreviousStateInfo.AnimationName : string.Empty;
+        PreviousAnimationElapsedTime = state.PreviousStateElapsedTime;
 
-        AnimationName = state.AnimationName;
+        AnimationName = state.StateInfo.AnimationName;
         PreviousElapsedTime = state.PreviousElapsedTime;
         ElapsedTime = state.ElapsedTime;
+        CrossFadeInTime = state.StateInfo.CrossFadeInTime;
     }
 
     public string PreviousAnimationName;
@@ -19,4 +17,8 @@
     public string AnimationName;
     public float PreviousElapsedTime;
     public float ElapsedTime;
+
+    public float CrossFadeInTime;
+
+    public float InverseCrossFadeInTime => 1.0f / CrossFadeInTime;
 }

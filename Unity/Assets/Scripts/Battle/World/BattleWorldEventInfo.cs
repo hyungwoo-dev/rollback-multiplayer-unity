@@ -1,4 +1,4 @@
-﻿[ManagedState]
+﻿[ManagedState(typeof(BattleWorldManager))]
 public partial class BattleWorldEventInfo
 {
     private BattleWorldManager WorldManager { get; }

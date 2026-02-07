@@ -1,51 +1,70 @@
-﻿
-using System.Collections.Generic;
-
-[ManagedState]
+﻿[ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitState
 {
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
 
-    public BattleUnitStateType StateType { get; private set; } = BattleUnitStateType.IDLE;
-    public string PreviousAnimationName { get; private set; } = string.Empty;
-    public float PreviousAnimationElapsedTime { get; private set; } = 0.0f;
+    public float PreviousStateElapsedTime { get; private set; } = 0.0f;
 
-    public string AnimationName { get; private set; } = string.Empty;
     public float PreviousElapsedTime { get; private set; } = 0.0f;
     public float ElapsedTime { get; private set; } = 0.0f;
+
+    [ManagedStateIgnore]
+    public BattleUnitStateInfo PreviousStateInfo { get; private set; }
+
+    [ManagedStateIgnore]
+    public BattleUnitStateInfo StateInfo { get; private set; }
+
+    [ManagedStateIgnore]
+    public BattleUnitStateInfo NextStateInfo { get; private set; }
+
+    public BattleUnitStateType StateType => StateInfo.StateType;
 
     public BattleUnitState(BattleWorld world)
     {
         World = world;
     }
 
-    public void PlayAnimation(BattleUnitStateType stateType, string animationName)
+    public void SetStateInfo(BattleUnitStateInfo stateInfo)
     {
-        StateType = stateType;
-        SetAnimation(animationName);
+        StateInfo = stateInfo;
     }
 
-    private void SetAnimation(string animationName)
+    public void SetNextStateInfo(BattleUnitStateInfo stateInfo)
     {
-        PreviousAnimationName = AnimationName;
-        PreviousAnimationElapsedTime = ElapsedTime;
-
-        AnimationName = animationName;
-        PreviousElapsedTime = 0.0f;
-        ElapsedTime = 0.0f;
+        NextStateInfo = stateInfo;
     }
 
-    public void AdvanceFrame(float deltaTime)
+    public void AdvanceFrame(float deltaTime, out bool isStateChanged)
     {
-        PreviousElapsedTime = ElapsedTime;
-        ElapsedTime += deltaTime;
+        if (NextStateInfo != null)
+        {
+            isStateChanged = true;
+
+            PreviousStateElapsedTime = ElapsedTime;
+            PreviousStateInfo = StateInfo;
+            StateInfo = NextStateInfo;
+            NextStateInfo = null;
+
+            PreviousElapsedTime = 0.0f;
+            ElapsedTime = 0.0f;
+        }
+        else
+        {
+            isStateChanged = false;
+
+            PreviousElapsedTime = ElapsedTime;
+            ElapsedTime += deltaTime;
+        }
     }
 
     public BattleUnitState Clone()
     {
         var clone = World.UnitStatePool.Get();
         clone.DeepCopyFrom(this);
+        clone.PreviousStateInfo = PreviousStateInfo;
+        clone.StateInfo = StateInfo;
+        clone.NextStateInfo = NextStateInfo;
         return clone;
     }
 

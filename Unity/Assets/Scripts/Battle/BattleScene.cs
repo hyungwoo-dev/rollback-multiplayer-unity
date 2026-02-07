@@ -41,9 +41,9 @@ public class BattleScene : MonoBehaviour
         IsReady = true;
     }
 
-    private void Initialize()
+    private void Initialize(in BattleFrame frame)
     {
-        WorldManager.Initialize();
+        WorldManager.Initialize(frame);
         _battleCamera.Initialize(WorldManager.LocalWorld);
 
         IsInitialized = true;
@@ -53,13 +53,14 @@ public class BattleScene : MonoBehaviour
     {
         if (!IsReady) return;
 
+        var frame = new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.fixedDeltaTime, Time.time);
+
         if (!IsInitialized)
         {
-            Initialize();
+            Initialize(frame);
         }
 
-        var frame = new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.fixedDeltaTime, Time.time);
-        WorldManager.OnFixedUpdate(frame);
+        WorldManager.AdvanceFrame(frame);
         _battleCamera.OnFixedUpdate(frame);
     }
 
