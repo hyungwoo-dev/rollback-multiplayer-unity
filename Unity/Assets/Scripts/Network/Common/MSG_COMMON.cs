@@ -1,10 +1,12 @@
 ﻿public enum FrameEventType : byte
 {
     NONE = 0,
-    LEFT_DASH = 1,
-    RIGHT_DASH = 2,
-    ATTACK1 = 3,
-    ATTACK2 = 4,
-    FIRE = 5,
-    JUMP = 6,
+    LEFT_ARROW_DOWN = 1,
+    LEFT_ARROW_UP = 2,
+    RIGHT_ARROW_DOWN = 3,
+    RIGHT_ARROW_UP = 4,
+    ATTACK1 = 5,
+    ATTACK2 = 6,
+    FIRE = 7,
+    JUMP = 8,
 }

@@ -52,11 +52,6 @@ public class S2C_MSG_FRAME_EVENT
     public int Frame;
 
     /// <summary>
-    /// 해당 프레임의 이벤트 실행 순서 (0 또는 1)
-    /// </summary>
-    public byte EventOrder;
-
-    /// <summary>
     /// 이벤트를 실행할 유저 인덱스
     /// </summary>
     public byte UserIndex;

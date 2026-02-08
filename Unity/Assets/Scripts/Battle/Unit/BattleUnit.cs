@@ -15,14 +15,13 @@ public partial class BattleUnit
     public int ID { get; private set; }
     public Vector3 Position { get; private set; } = Vector3.zero;
     public Quaternion Rotation { get; private set; } = Quaternion.identity;
-    public BattleWorldSceneAnimationSampleInfo AnimationSampleInfo { get; set; }
     private BattleWorldSceneObjectHandle Handle { get; set; }
     private BattleUnitState State { get; set; }
     private BattleUnitMoveController MoveController { get; set; }
     private BattleUnitJumpController JumpController { get; set; }
     private BattleUnitAttackController AttackController { get; set; }
     private BattleUnitDashMoveController HitMoveController { get; set; }
-
+    public BattleWorldSceneAnimationSampleInfo AnimationSampleInfo;
     private float InterpolatingTime { get; set; } = 0.0f;
 
     public bool IsMoving() => State.StateType == BattleUnitStateType.MOVE_FORWARD || State.StateType == BattleUnitStateType.MOVE_BACK;
@@ -65,8 +64,10 @@ public partial class BattleUnit
 
         var (animationDeltaPosition, animationDeltaRotation) = World.WorldScene.SampleAnimation(Handle, AnimationSampleInfo);
         State.AdvanceFrame(frame.DeltaTime, out var isStateChanged);
+
         if (isStateChanged && State.StateType == BattleUnitStateType.IDLE)
         {
+            // IDLE 상태로 전환된 경우, 이동 입력에 상태에 따라 다음 상태를 판단한다.
             switch (InputMoveSide)
             {
                 case BattleUnitMoveSide.RIGHT_ARROW:
@@ -83,6 +84,7 @@ public partial class BattleUnit
         }
         else if (IsMoving())
         {
+            // 이동중인 경우, 캐릭터 움직임에 따른 이동 방향을 다시 판단한다.
             switch (InputMoveSide)
             {
                 case BattleUnitMoveSide.RIGHT_ARROW:
@@ -112,9 +114,32 @@ public partial class BattleUnit
         var moveDeltaPosition = animationDeltaPosition + stateDeltaPosition;
 
         var movePosition = Position + moveDeltaPosition;
-        World.WorldScene.MovePosition(Handle, movePosition);
 
+        // 특정 상태에서 중력 연산을 적용한다.
+        switch (State.StateType)
+        {
+            case BattleUnitStateType.IDLE:
+            case BattleUnitStateType.MOVE_FORWARD:
+            case BattleUnitStateType.MOVE_BACK:
+            {
+                if (movePosition.y > 0)
+                {
+                    movePosition += Physics.gravity * frame.DeltaTime;
+                }
+                break;
+            }
+        }
+
+        // 위치가 0미만으로 떨어지지 않도록 한다.
+        if (movePosition.y < 0.0f)
+        {
+            movePosition.y = 0.0f;
+        }
+
+        World.WorldScene.MovePosition(Handle, movePosition);
         Rotation *= animationDeltaRotation;
+
+        // 특정 상태에서 상대방을 바라보도록 방향을 보정한다.
         switch (State.StateType)
         {
             case BattleUnitStateType.IDLE:
@@ -159,7 +184,28 @@ public partial class BattleUnit
         var position = Vector3.Lerp(Position, nextPosition, t);
         var rotation = Quaternion.Slerp(Rotation, nextRotation, t);
         World.WorldScene.SetPositionAndRotation(Handle, position, rotation);
-        World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
+
+        if (AnimationSampleInfo.NextStateInfo != null &&
+            AnimationSampleInfo.StateInfo is BattleUnitFiniteStateInfo finiteStateInfo &&
+            AnimationSampleInfo.ElapsedTime + InterpolatingTime > finiteStateInfo.Duration)
+        {
+            var elasedTime = AnimationSampleInfo.ElapsedTime + InterpolatingTime - finiteStateInfo.Duration;
+            AnimationSampleInfo = AnimationSampleInfo.SetNextInfo(elasedTime);
+            World.WorldScene.SampleAnimation(Handle, AnimationSampleInfo);
+        }
+        else
+        {
+            World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
+        }
+    }
+
+    public void Apply(BattleWorld other)
+    {
+        InterpolatingTime = 0.0f;
+        var otherUnit = other.GetUnit(ID);
+        SetPositionAndRotation(otherUnit.Position, otherUnit.Rotation);
+        AnimationSampleInfo = otherUnit.AnimationSampleInfo;
+        World.WorldScene.SampleAnimation(Handle, AnimationSampleInfo);
     }
 
     private Quaternion LookOtherUnitRotation(in BattleFrame frame)
@@ -376,12 +422,5 @@ public partial class BattleUnit
     partial void OnRelease(BattleWorld context)
     {
         context.UnitPool.Release(this);
-    }
-
-    public void Apply(BattleWorld other)
-    {
-        var unit = other.GetUnit(ID);
-        SetPositionAndRotation(unit.Position, unit.Rotation);
-        World.WorldScene.SampleAnimation(Handle, unit.AnimationSampleInfo);
     }
 }

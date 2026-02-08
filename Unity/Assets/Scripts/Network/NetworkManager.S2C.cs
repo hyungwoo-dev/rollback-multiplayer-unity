@@ -1,4 +1,5 @@
 ﻿using FreeNet;
+using System.Collections.Generic;
 using UnityEngine.Pool;
 
 public partial class NetworkManager
@@ -8,7 +9,7 @@ public partial class NetworkManager
     public event S2C_GAME_START_DELEGATE OnGameStart = null;
 
     private ObjectPool<S2C_MSG_FRAME_EVENT> FrameEventMessagePool = new(() => new S2C_MSG_FRAME_EVENT());
-    public delegate void S2C_FRAME_EVENT_DELEGATE(S2C_MSG_FRAME_EVENT msgFrameEvent);
+    public delegate void S2C_FRAME_EVENT_DELEGATE(List<S2C_MSG_FRAME_EVENT> msgFrameEvent);
     public event S2C_FRAME_EVENT_DELEGATE OnFrameEvent = null;
 
     private ObjectPool<S2C_MSG_INVALIDATE_HASH> InvalidateHashMessagePool = new(() => new S2C_MSG_INVALIDATE_HASH());
@@ -54,16 +55,24 @@ public partial class NetworkManager
 
     private void S2C_FRAME_EVENT(CPacket packet)
     {
-        var length = packet.pop_byte();
+        var messages = ListPool<S2C_MSG_FRAME_EVENT>.Get();
+        var length = packet.pop_int32();
         for (var i = 0; i < length; ++i)
         {
             var msgFrameEvent = FrameEventMessagePool.Get();
 
             ReadFrameEvent(packet, msgFrameEvent);
-            OnFrameEvent?.Invoke(msgFrameEvent);
-
-            FrameEventMessagePool.Release(msgFrameEvent);
+            messages.Add(msgFrameEvent);
         }
+
+        OnFrameEvent?.Invoke(messages);
+
+        foreach (var message in messages)
+        {
+            FrameEventMessagePool.Release(message);
+        }
+
+        ListPool<S2C_MSG_FRAME_EVENT>.Release(messages);
     }
 
     private void S2C_INVALIDATE_HASH(CPacket packet)
@@ -83,13 +92,11 @@ public partial class NetworkManager
         if (msgFrameEvent.EventType != FrameEventType.NONE)
         {
             msgFrameEvent.Frame = packet.pop_int32();
-            msgFrameEvent.EventOrder = packet.pop_byte();
             msgFrameEvent.UserIndex = packet.pop_byte();
         }
         else
         {
             msgFrameEvent.Frame = 0;
-            msgFrameEvent.EventOrder = 0;
             msgFrameEvent.UserIndex = 0;
         }
     }

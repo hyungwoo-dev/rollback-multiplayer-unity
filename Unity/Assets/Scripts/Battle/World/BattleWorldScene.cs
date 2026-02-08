@@ -105,7 +105,7 @@ public partial class BattleWorldScene
         }
     }
 
-    private bool TryGetComponent<T>(BattleWorldSceneObjectHandle handle, out T component) where T : Component
+    public bool TryGetComponent<T>(BattleWorldSceneObjectHandle handle, out T component) where T : Component
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {

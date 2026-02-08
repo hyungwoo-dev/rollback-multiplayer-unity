@@ -130,11 +130,11 @@ public partial class BattleWorld
         for (int i = 0; i < worldEventInfos.Count; i++)
         {
             var eventInfo = worldEventInfos[i];
-            ExecuteWorldEvent(eventInfo);
+            ExecuteWorldEventInfo(eventInfo);
         }
     }
 
-    private void ExecuteWorldEvent(BattleWorldEventInfo eventInfo)
+    public void ExecuteWorldEventInfo(BattleWorldEventInfo eventInfo)
     {
         var unit = GetUnit(eventInfo.UnitID);
         switch (eventInfo.WorldInputEventType)
@@ -220,8 +220,6 @@ public partial class BattleWorld
                 break;
             }
         }
-
-        eventInfo.Release(WorldManager);
     }
 
     public void CopyFrom(BattleWorld other)

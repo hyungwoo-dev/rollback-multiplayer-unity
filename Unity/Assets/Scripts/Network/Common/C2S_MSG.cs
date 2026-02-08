@@ -37,6 +37,11 @@ public class C2S_MSG_FRAME_EVENT
     /// 이벤트가 작동할 프레임
     /// </summary>
     public int Frame;
+
+    /// <summary>
+    /// 이벤트를 입력한 유저
+    /// </summary>
+    public int UserIndex;
 }
 
 public class C2S_MSG_FRAME_HASH

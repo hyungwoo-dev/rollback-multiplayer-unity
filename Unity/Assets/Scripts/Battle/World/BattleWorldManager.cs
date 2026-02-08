@@ -41,15 +41,16 @@ public partial class BattleWorldManager
 
     public virtual void AdvanceFrame(in BattleFrame frame)
     {
-        if (WorldEventInfos.Count > 0)
-        {
-            FutureWorld.ExecuteWorldEventInfos(WorldEventInfos);
-            WorldEventInfos.Clear();
-        }
-
         LocalWorld.Apply(FutureWorld);
 
+        ExecuteWorldEventInfos(FutureWorld.NextFrame, WorldEventInfos);
+        WorldEventInfos.Clear();
         FutureWorld.AdvanceFrame(frame);
+    }
+
+    protected virtual void ExecuteWorldEventInfos(int frame, List<BattleWorldEventInfo> worldEventInfos)
+    {
+        FutureWorld.ExecuteWorldEventInfos(worldEventInfos);
     }
 
     public virtual void OnUpdate(in BattleFrame frame)
@@ -80,6 +81,11 @@ public partial class BattleWorldManager
     public virtual bool IsReady()
     {
         return LocalWorld.IsReady() && FutureWorld.IsReady();
+    }
+
+    public virtual bool IsStarted()
+    {
+        return true;
     }
 
     #region Input
@@ -144,7 +150,7 @@ public partial class BattleWorldManager
     {
         var eventInfo = WorldEventInfoPool.Get();
         eventInfo.WorldInputEventType = inputEventType;
-        eventInfo.UnitID = 0;
+        eventInfo.UnitID = PlayerID;
         eventInfo.TargetFrame = FutureWorld.NextFrame;
         WorldEventInfos.Add(eventInfo);
     }

@@ -1,4 +1,5 @@
 ﻿using FreeNet;
+using System.Collections.Generic;
 
 public partial class NetworkManager
 {
@@ -11,12 +12,16 @@ public partial class NetworkManager
         Send(packet);
     }
 
-    public void C2S_FRAME_EVENT(C2S_MSG_FRAME_EVENT msgFrameEvent)
+    public void C2S_FRAME_EVENT(List<C2S_MSG_FRAME_EVENT> msgFrameEvent)
     {
         CPacket packet = new CPacket();
         packet.set_protocol((short)C2S_MSG.FRAME_EVENT);
-        packet.push((byte)msgFrameEvent.EventType);
-        packet.push(msgFrameEvent.Frame);
+        packet.push(msgFrameEvent.Count);
+        for (int i = 0; i < msgFrameEvent.Count; i++)
+        {
+            packet.push((byte)msgFrameEvent[i].EventType);
+            packet.push(msgFrameEvent[i].Frame);
+        }
 
         Send(packet);
     }

@@ -8,7 +8,7 @@ public partial class NetworkManager
     private long _statusIntValue;
 
     private NetworkHandler Handler { get; set; }
-    private NetworkStatus Status => (NetworkStatus)Interlocked.Read(ref _statusIntValue);
+    public NetworkStatus Status => (NetworkStatus)Interlocked.Read(ref _statusIntValue);
 
     public NetworkManager()
     {
