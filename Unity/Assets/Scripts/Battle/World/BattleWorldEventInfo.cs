@@ -1,18 +1,19 @@
-﻿[ManagedState(typeof(BattleWorldManager))]
+﻿[ManagedState(typeof(BaseWorldManager))]
 public partial class BattleWorldEventInfo
 {
-    private BattleWorldManager WorldManager { get; set; }
+    private BaseWorldManager WorldManager { get; set; }
 
     public int TargetFrame { get; set; }
     public int UnitID { get; set; }
     public BattleWorldInputEventType WorldInputEventType { get; set; }
+    public int BattleTimeMillis { get; set; }
 
-    public BattleWorldEventInfo(BattleWorldManager worldManager)
+    public BattleWorldEventInfo(BaseWorldManager worldManager)
     {
         WorldManager = worldManager;
     }
 
-    public BattleWorldEventInfo Clone(BattleWorldManager context)
+    public BattleWorldEventInfo Clone(BaseWorldManager context)
     {
         var clone = WorldManager.WorldEventInfoPool.Get();
         clone.WorldManager = context;
@@ -20,7 +21,7 @@ public partial class BattleWorldEventInfo
         return clone;
     }
 
-    partial void OnRelease(BattleWorldManager context)
+    partial void OnRelease(BaseWorldManager context)
     {
         context.WorldEventInfoPool.Release(this);
     }

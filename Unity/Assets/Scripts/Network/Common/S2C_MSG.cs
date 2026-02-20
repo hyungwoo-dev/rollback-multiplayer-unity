@@ -1,4 +1,6 @@
-﻿/// <summary>
+﻿using System.Collections.Generic;
+
+/// <summary>
 /// [서버 -> 클라이언트] 메세지
 /// </summary>
 public enum S2C_MSG : short
@@ -39,6 +41,16 @@ public class S2C_MSG_GAME_START
     public byte OpponentPlayerIndex;
 }
 
+public class S2C_MSG_FRAME_EVENTS
+{
+    /// <summary>
+    /// 이벤트가 작동할 프레임
+    /// </summary>
+    public int Frame;
+
+    public List<S2C_MSG_FRAME_EVENT> FrameEvents;
+}
+
 public class S2C_MSG_FRAME_EVENT
 {
     /// <summary>
@@ -47,14 +59,14 @@ public class S2C_MSG_FRAME_EVENT
     public FrameEventType EventType;
 
     /// <summary>
-    /// 이벤트가 작동할 프레임
-    /// </summary>
-    public int Frame;
-
-    /// <summary>
     /// 이벤트를 실행할 유저 인덱스
     /// </summary>
     public byte UserIndex;
+
+    /// <summary>
+    /// 입력을 처리했던 시간 (Milliseconds)
+    /// </summary>
+    public int BattleTimeMillis;
 }
 
 public class S2C_MSG_INVALIDATE_HASH

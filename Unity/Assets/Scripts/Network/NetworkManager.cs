@@ -1,14 +1,18 @@
 ﻿using FreeNet;
 using System.Threading;
+using System.Threading.Tasks;
 
 public partial class NetworkManager
 {
+
     private static Debug Debug { get; } = new Debug(nameof(NetworkManager));
 
     private long _statusIntValue;
 
     private NetworkHandler Handler { get; set; }
     public NetworkStatus Status => (NetworkStatus)Interlocked.Read(ref _statusIntValue);
+
+    private CancellationTokenSource _processPacketCancellationToken;
 
     public NetworkManager()
     {
@@ -19,12 +23,42 @@ public partial class NetworkManager
 
     public void Connect(string address, int port)
     {
+        if(Status == NetworkStatus.CONNECTING || Status == NetworkStatus.CONNECTED)
+        {
+            return;
+        }
+
         Handler.Connect(address, port);
+
+        _processPacketCancellationToken = new CancellationTokenSource();
+        Task.Run(ProcessPacket, _processPacketCancellationToken.Token);
+    }
+
+    public void Disconnect()
+    {
+        if (Status == NetworkStatus.DISCONNECTED)
+        {
+            return;
+        }
+
+        if (_processPacketCancellationToken != null)
+        {
+            _processPacketCancellationToken.Cancel();
+        }
+        Handler.Disconnect();
     }
 
     public void ProcessPacket()
     {
-        Handler.ProcessPacket();
+         while (true)
+        {
+            if(Status == NetworkStatus.CONNECTED)
+            {
+                Handler.ProcessPacket();
+            }
+            
+            Thread.Sleep(1);
+        }
     }
 
     public void Dispose()

@@ -3,17 +3,18 @@ using UnityEngine;
 using UnityEngine.Pool;
 
 [ManagedStateIgnore]
-public partial class BattleWorldManager
+public abstract partial class BaseWorldManager
 {
-    private static Debug Debug = new(nameof(BattleWorldManager));
+    private static Debug Debug = new(nameof(BaseWorldManager));
 
     public BattleWorld LocalWorld { get; private set; }
     public BattleWorld FutureWorld { get; private set; }
     public BattleCamera Camera { get; private set; }
 
-    protected int PlayerID { get; private set; } = 0;
+    protected int PlayerID { get; set; } = 0;
 
-    public BattleWorldManager()
+    public abstract int BattleTimeMillis { get; }
+    public BaseWorldManager()
     {
         InitalizeInputManager();
         InitializePool();
@@ -21,15 +22,25 @@ public partial class BattleWorldManager
         FutureWorld = WorldPool.Get();
     }
 
-    public virtual void Prepare()
+    public virtual void Setup()
     {
         var localWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.VIEW, LayerMask.NameToLayer(BattleLayerMaskNames.LOCAL));
-        localWorldScene.Prepare();
-        LocalWorld.Prepare(localWorldScene);
+        localWorldScene.Load();
+        LocalWorld.SetWorldScene(localWorldScene);
 
         var futureWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.PLAYING, LayerMask.NameToLayer(BattleLayerMaskNames.FUTURE));
-        futureWorldScene.Prepare();
-        FutureWorld.Prepare(futureWorldScene);
+        futureWorldScene.Load();
+        FutureWorld.SetWorldScene(futureWorldScene);
+    }
+
+    public virtual bool IsSetupCompleted()
+    {
+        return LocalWorld.IsSceneLoaded() && FutureWorld.IsSceneLoaded();
+    }
+
+    public virtual void OnSetupCompleted()
+    {
+
     }
 
     public virtual void Initialize(BattleCamera camera)
@@ -41,10 +52,21 @@ public partial class BattleWorldManager
 
     public virtual void AdvanceFrame(in BattleFrame frame)
     {
+        // 이 때, FutureWorld와 LocalWorld의 상태가 같아진다.
         LocalWorld.Apply(FutureWorld);
 
         ExecuteWorldEventInfos(FutureWorld.NextFrame, WorldEventInfos);
-        WorldEventInfos.Clear();
+
+        if (WorldEventInfos.Count > 0)
+        {
+            
+            WorldEventInfos.Clear();
+
+            //FutureWorld.Release();
+            //FutureWorld = WorldPool.Get();
+            //FutureWorld.CopyFrom(LocalWorld);
+        }
+        
         FutureWorld.AdvanceFrame(frame);
     }
 
@@ -76,11 +98,6 @@ public partial class BattleWorldManager
         FutureWorld = null;
 
         DisposePool();
-    }
-
-    public virtual bool IsReady()
-    {
-        return LocalWorld.IsReady() && FutureWorld.IsReady();
     }
 
     public virtual bool IsStarted()
@@ -152,6 +169,7 @@ public partial class BattleWorldManager
         eventInfo.WorldInputEventType = inputEventType;
         eventInfo.UnitID = PlayerID;
         eventInfo.TargetFrame = FutureWorld.NextFrame;
+        eventInfo.BattleTimeMillis = BattleTimeMillis;
         WorldEventInfos.Add(eventInfo);
     }
 

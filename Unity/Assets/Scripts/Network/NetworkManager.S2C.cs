@@ -9,7 +9,7 @@ public partial class NetworkManager
     public event S2C_GAME_START_DELEGATE OnGameStart = null;
 
     private ObjectPool<S2C_MSG_FRAME_EVENT> FrameEventMessagePool = new(() => new S2C_MSG_FRAME_EVENT());
-    public delegate void S2C_FRAME_EVENT_DELEGATE(List<S2C_MSG_FRAME_EVENT> msgFrameEvent);
+    public delegate void S2C_FRAME_EVENT_DELEGATE(int frame, List<S2C_MSG_FRAME_EVENT> msgFrameEvent);
     public event S2C_FRAME_EVENT_DELEGATE OnFrameEvent = null;
 
     private ObjectPool<S2C_MSG_INVALIDATE_HASH> InvalidateHashMessagePool = new(() => new S2C_MSG_INVALIDATE_HASH());
@@ -29,7 +29,7 @@ public partial class NetworkManager
             }
             case S2C_MSG.S2C_FRAME_EVENT:
             {
-                S2C_FRAME_EVENT(msg);
+                S2C_FRAME_EVENTS(msg);
                 break;
             }
             case S2C_MSG.S2C_INVALIDATE_HASH:
@@ -53,19 +53,19 @@ public partial class NetworkManager
         GameStartMessagePool.Release(msgStartGame);
     }
 
-    private void S2C_FRAME_EVENT(CPacket packet)
+    private void S2C_FRAME_EVENTS(CPacket packet)
     {
         var messages = ListPool<S2C_MSG_FRAME_EVENT>.Get();
+        var frame = packet.pop_int32();
         var length = packet.pop_int32();
         for (var i = 0; i < length; ++i)
         {
             var msgFrameEvent = FrameEventMessagePool.Get();
-
             ReadFrameEvent(packet, msgFrameEvent);
             messages.Add(msgFrameEvent);
         }
 
-        OnFrameEvent?.Invoke(messages);
+        OnFrameEvent?.Invoke(frame, messages);
 
         foreach (var message in messages)
         {
@@ -91,12 +91,11 @@ public partial class NetworkManager
         msgFrameEvent.EventType = (FrameEventType)packet.pop_byte();
         if (msgFrameEvent.EventType != FrameEventType.NONE)
         {
-            msgFrameEvent.Frame = packet.pop_int32();
             msgFrameEvent.UserIndex = packet.pop_byte();
+            msgFrameEvent.BattleTimeMillis= packet.pop_int32();
         }
         else
         {
-            msgFrameEvent.Frame = 0;
             msgFrameEvent.UserIndex = 0;
         }
     }

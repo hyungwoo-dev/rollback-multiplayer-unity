@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,41 +7,67 @@ public class BattleScene : MonoBehaviour
 {
     private static Debug Debug = new(nameof(BattleScene));
 
-    public static void Initialize(BattleInitializationContext intializationContext)
-    {
+    public static IEnumerator CoLoad(BattleSceneLoadContext context)
+    { 
         var scene = SceneManager.LoadScene(SceneNames.BATTLE, new LoadSceneParameters()
         {
-            loadSceneMode = LoadSceneMode.Single,
+            loadSceneMode = LoadSceneMode.Additive,
             localPhysicsMode = LocalPhysicsMode.Physics3D,
         });
+        
+        while (!scene.isLoaded)
+        {
+            yield return null;
+        }
+
+        foreach (var gameObject in scene.GetRootGameObjects())
+        {
+            if (!gameObject.TryGetComponent<BattleScene>(out var battleScene))
+            {
+                continue;
+            }
+
+            battleScene.Setup(context.PlayMode);
+            break;
+        }
     }
 
     [SerializeField]
     private BattleCamera _battleCamera;
 
-    private BattleWorldManager WorldManager { get; set; } = new();
+    private BaseWorldManager WorldManager { get; set; }
     private bool IsInitialized { get; set; } = false;
-    private bool IsReady { get; set; } = false;
+    private bool IsSetup { get; set; } = false;
 
-    private void Awake()
+    public void Setup(BattlePlayMode playMode)
     {
+        WorldManager = playMode switch
+        {
+            BattlePlayMode.Singleplay => new BattleWorldManager(),
+            BattlePlayMode.Multiplay => new MultiplayBattleWorldManager(),
+            _ => throw new NotImplementedException()
+        };
+
+        var hertz = Mathf.CeilToInt((float)Screen.currentResolution.refreshRateRatio.value);
         Application.runInBackground = true;
-        Application.targetFrameRate = 144;
+        Application.targetFrameRate = hertz;
         Physics.simulationMode = SimulationMode.Script;
+        Debug.Log($"디스플레이 하드웨어 주사율: {hertz}");
+
+        StartCoroutine(CoSetup());
     }
 
-    private IEnumerator Start()
+    private IEnumerator CoSetup()
     {
-        WorldManager.Prepare();
+        WorldManager.Setup();
 
-        while (!WorldManager.IsReady())
+        while (!WorldManager.IsSetupCompleted())
         {
             yield return null;
         }
 
-        yield return new WaitForFixedUpdate();
-
-        IsReady = true;
+        IsSetup = true;
+        WorldManager.OnSetupCompleted();
     }
 
     private void Initialize()
@@ -53,7 +80,7 @@ public class BattleScene : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (!IsReady) return;
+        if (!IsSetup) return;
 
         var frame = new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.fixedDeltaTime);
 
@@ -83,7 +110,10 @@ public class BattleScene : MonoBehaviour
 
     private void OnDestroy()
     {
-        WorldManager.Dispose();
-        WorldManager = null;
+        if (WorldManager != null)
+        {
+            WorldManager.Dispose();
+            WorldManager = null;
+        }
     }
 }

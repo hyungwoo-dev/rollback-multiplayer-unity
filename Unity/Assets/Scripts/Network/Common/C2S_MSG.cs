@@ -1,4 +1,6 @@
-﻿/// <summary>
+﻿using System.Collections.Generic;
+
+/// <summary>
 /// [클라이언트 -> 서버] 메세지
 /// </summary>
 public enum C2S_MSG : short
@@ -26,6 +28,19 @@ public class C2S_MSG_ENTER_WORLD
     public long EnterUnixTimeMillis;
 }
 
+public class C2S_MSG_FRAME_EVENTS
+{
+    /// <summary>
+    /// 이벤트가 작동할 프레임
+    /// </summary>
+    public int Frame;
+
+    /// <summary>
+    /// 이 프레임에 적용할 이벤트 목록
+    /// </summary>
+    public List<C2S_MSG_FRAME_EVENT> Events;
+}
+
 public class C2S_MSG_FRAME_EVENT
 {
     /// <summary>
@@ -34,14 +49,9 @@ public class C2S_MSG_FRAME_EVENT
     public FrameEventType EventType;
 
     /// <summary>
-    /// 이벤트가 작동할 프레임
+    /// 입력을 처리했던 시간 (Milliseconds)
     /// </summary>
-    public int Frame;
-
-    /// <summary>
-    /// 이벤트를 입력한 유저
-    /// </summary>
-    public int UserIndex;
+    public int BattleTimeMillis;
 }
 
 public class C2S_MSG_FRAME_HASH

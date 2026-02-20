@@ -1,13 +1,10 @@
-﻿using log4net.Util;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class BattleCamera : MonoBehaviour
 {
     [SerializeField]
     private Vector3 CurrentVelocity;
 
-    [SerializeField]
-    private float SmoothTime = 1.0f;
     private BattleWorld World { get; set; }
 
     public Vector3 Position { get; private set; }

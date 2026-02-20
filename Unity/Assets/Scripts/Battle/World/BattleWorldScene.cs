@@ -1,19 +1,15 @@
-﻿using Codice.CM.Common.Tree.Partial;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
-using static UnityEditor.FilePathAttribute;
 
 [ManagedStateIgnore]
 public partial class BattleWorldScene
 {
     private static Debug Debug = new(nameof(BattleWorldScene));
 
-    private BattleWorldManager WorldManager { get; }
+    private BaseWorldManager WorldManager { get; }
     private BattleWorldSceneKind WorldSceneKind { get; }
     private Scene Scene { get; set; }
     private PhysicsScene PhysicsScene { get; set; }
@@ -23,14 +19,14 @@ public partial class BattleWorldScene
     private int CurrentGameObjectID { get; set; } = 0;
     private int Layer { get; set; }
 
-    public BattleWorldScene(BattleWorldManager worldManager, BattleWorldSceneKind worldSceneKind, int layer)
+    public BattleWorldScene(BaseWorldManager worldManager, BattleWorldSceneKind worldSceneKind, int layer)
     {
         WorldManager = worldManager;
         WorldSceneKind = worldSceneKind;
         Layer = layer;
     }
 
-    public void Prepare()
+    public void Load()
     {
         Scene = LoadScene();
         PhysicsScene = Scene.GetPhysicsScene();
@@ -41,7 +37,7 @@ public partial class BattleWorldScene
         RootGameObject = Scene.GetRootGameObjects().First(gameObject => gameObject.name == "Root");
     }
 
-    public bool IsReady()
+    public bool IsSceneLoaded()
     {
         return Scene.isLoaded;
     }

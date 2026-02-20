@@ -35,11 +35,6 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
         DeltaRotation = Quaternion.identity;
     }
 
-    public void ManualUpdate(float deltaTime)
-    {
-        _animator.Update(deltaTime);
-    }
-
     public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimator(float deltaTime)
     {
         if (Application.targetFrameRate > 0)

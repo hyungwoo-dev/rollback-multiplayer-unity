@@ -13,8 +13,7 @@ public partial class BattleWorld
     protected static readonly Vector3 RIGHT_UNIT_START_POSITION = new(4.5f, 0.0f, 0.0f);
     protected static readonly Quaternion RIGHT_UNIT_ROTATION = Quaternion.Euler(0.0f, -90.0f, 0.0f);
 
-    public int ID { get; set; }
-    public BattleWorldManager WorldManager { get; private set; }
+    public BaseWorldManager WorldManager { get; private set; }
     public BattleWorldScene WorldScene { get; private set; }
     public int CurrentFrame { get; private set; }
     public int NextFrame => CurrentFrame + 1;
@@ -62,13 +61,13 @@ public partial class BattleWorld
         return null;
     }
 
-    public BattleWorld(BattleWorldManager worldManager)
+    public BattleWorld(BaseWorldManager worldManager)
     {
         InitializePool();
         WorldManager = worldManager;
     }
 
-    public void Prepare(BattleWorldScene worldScene)
+    public void SetWorldScene(BattleWorldScene worldScene)
     {
         WorldScene = worldScene;
     }
@@ -80,9 +79,9 @@ public partial class BattleWorld
         AddUnit(1, RIGHT_UNIT_START_POSITION, RIGHT_UNIT_ROTATION);
     }
 
-    public bool IsReady()
+    public bool IsSceneLoaded()
     {
-        return WorldScene.IsReady();
+        return WorldScene.IsSceneLoaded();
     }
 
     public void Interpolate(in BattleFrame frame, BattleWorld futureWorld)
@@ -95,6 +94,7 @@ public partial class BattleWorld
 
     public void Apply(BattleWorld other)
     {
+        CurrentFrame = other.CurrentFrame;
         foreach (var unit in Units)
         {
             unit.Apply(other);

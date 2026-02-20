@@ -1,8 +1,12 @@
 ﻿using FreeNet;
 using System.Collections.Generic;
+using UnityEngine.Pool;
 
 public partial class NetworkManager
 {
+    public ObjectPool<C2S_MSG_FRAME_EVENTS> C2S_FrameEventsPool = new ObjectPool<C2S_MSG_FRAME_EVENTS>(() => new C2S_MSG_FRAME_EVENTS());
+    public ObjectPool<C2S_MSG_FRAME_EVENT> C2S_FrameEventPool = new ObjectPool<C2S_MSG_FRAME_EVENT>(() => new C2S_MSG_FRAME_EVENT());
+
     public void C2S_ENTER_WORLD(C2S_MSG_ENTER_WORLD msgEnterWorld)
     {
         CPacket packet = new CPacket();
@@ -12,15 +16,16 @@ public partial class NetworkManager
         Send(packet);
     }
 
-    public void C2S_FRAME_EVENT(List<C2S_MSG_FRAME_EVENT> msgFrameEvent)
+    public void C2S_FRAME_EVENTS(C2S_MSG_FRAME_EVENTS msgFrameEvents)
     {
         CPacket packet = new CPacket();
         packet.set_protocol((short)C2S_MSG.FRAME_EVENT);
-        packet.push(msgFrameEvent.Count);
-        for (int i = 0; i < msgFrameEvent.Count; i++)
+        packet.push(msgFrameEvents.Frame);
+        packet.push(msgFrameEvents.Events.Count);
+        for (int i = 0; i < msgFrameEvents.Events.Count; i++)
         {
-            packet.push((byte)msgFrameEvent[i].EventType);
-            packet.push(msgFrameEvent[i].Frame);
+            packet.push((byte)msgFrameEvents.Events[i].EventType);
+            packet.push(msgFrameEvents.Events[i].BattleTimeMillis);
         }
 
         Send(packet);
