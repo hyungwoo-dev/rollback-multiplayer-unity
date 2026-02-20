@@ -46,7 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\C2S_MSG.cs" />
+    <Compile Include="Common\MSG_COMMON.cs" />
+    <Compile Include="Common\S2C_MSG.cs" />
     <Compile Include="GameRoom.cs" />
+    <Compile Include="GameRoomFrameEvent.cs" />
     <Compile Include="GameRoomManager.cs" />
     <Compile Include="GameService.cs" />
     <Compile Include="GameUser.cs" />

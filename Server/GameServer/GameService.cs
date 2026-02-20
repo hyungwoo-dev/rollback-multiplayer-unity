@@ -1,9 +1,7 @@
-﻿using System;
+﻿using FreeNet;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FreeNet;
+using System.Net.Sockets;
 
 namespace GameServer
 {
@@ -40,19 +38,47 @@ namespace GameServer
 
         public void ProcessPacket(GameUser user, CPacket msg)
         {
-            Protocol protocol = (Protocol)msg.pop_protocol_id();
+            C2S_MSG protocol = (C2S_MSG)msg.pop_protocol_id();
             Console.WriteLine($"[GameService::Process] protocol: {protocol.ToString()}");
 
             switch (protocol)
             {
-                case Protocol.REQUEST:
+                case C2S_MSG.ENTER_WORLD:
                 {
-                    int number = msg.pop_int32();
-                    CPacket packet = CPacket.create((short)Protocol.RESPONSE);
-                    packet.push(number + 1);
-                    user.send(packet);
+                    var enterUnixTimeMillis = msg.pop_int64();
+                    Console.WriteLine($"[GameService::ProcessPacket] MSG: {protocol}, enterUnixTimeMillis: {enterUnixTimeMillis}");
+                    _roomManager.OnReceiveEnterWorld(user, enterUnixTimeMillis);
+                    break;
                 }
-                break;
+                case C2S_MSG.FRAME_EVENT:
+                {
+                    var frame = msg.pop_int32();
+                    var count = msg.pop_int32();
+                    var frameEvents = new List<GameRoomFrameEvent>();
+                    for (int i = 0; i < count; i++)
+                    {
+                        var eventType = (FrameEventType)msg.pop_byte();
+                        var battleTimeMillis = msg.pop_int32();
+                        frameEvents.Add(new GameRoomFrameEvent()
+                        {
+                            EventType = eventType,
+                            BattleTimeMillis = battleTimeMillis,
+                        });
+
+                        Console.WriteLine($"[GameService::ProcessPacket] MSG: {protocol}, EventType: {eventType}, Frame: {frame}, BattleTimeMillis: {battleTimeMillis}");
+                    }
+
+                    _roomManager.OnReceiveFrameEvent(user, frame, frameEvents);
+                    break;
+                }
+                case C2S_MSG.FRAME_HASH:
+                {
+                    var frame = msg.pop_int32();
+                    var hash = msg.pop_int32();
+                    Console.WriteLine($"[GameService::ProcessPacket] MSG: {protocol}, Frame: {frame}, Hash: {hash}");
+                    _roomManager.OnReceiveHash(user, frame, hash);
+                    break;
+                }
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,8 +17,8 @@ namespace GameServer
         private readonly CUserToken _token;
         public readonly UUID ID;
 
-        public RoomID RoomID { get; set; }
-
+        public (RoomID RoomID, int Index) RoomInfo = (RoomID.Empty, -1);
+        
         public GameUser(GameService service, UUID uuid, CUserToken token)
         {
             _service = service;
@@ -29,6 +30,45 @@ namespace GameServer
         public void Ban()
         {
             _token.ban();
+        }
+
+        public void send(S2C_MSG_GAME_START msg)
+        {
+            var packet = new CPacket();
+            packet.set_protocol((short)S2C_MSG.S2C_START_GAME);
+            packet.push(msg.GameStartUnixTimeMillis);
+            packet.push(msg.PlayerIndex);
+            packet.push(msg.OpponentPlayerIndex);
+            send(packet);
+        }
+
+        public void send(S2C_MSG_FRAME_EVENTS msg)
+        {
+            var packet = new CPacket();
+            packet.set_protocol((short)S2C_MSG.S2C_FRAME_EVENT);
+            packet.push(msg.Frame);
+            packet.push(msg.FrameEvents.Count);
+
+            foreach (var item in msg.FrameEvents)
+            {
+                var eventType = item.EventType;
+                packet.push((byte)eventType);
+                if (eventType != FrameEventType.NONE)
+                {
+                    packet.push(item.UserIndex);
+                    packet.push(item.BattleTimeMillis);
+                }
+            }
+            send(packet);
+        }
+
+        public void send(S2C_MSG_INVALIDATE_HASH msg)
+        {
+            var packet = new CPacket();
+            packet.set_protocol((short)S2C_MSG.S2C_INVALIDATE_HASH);
+            packet.push(msg.PlayerHash);
+            packet.push(msg.OpponentPlayerHash);
+            send(packet);
         }
 
         public void send(CPacket msg)
