@@ -61,6 +61,7 @@ namespace GameServer
                         var battleTimeMillis = msg.pop_int32();
                         frameEvents.Add(new GameRoomFrameEvent()
                         {
+                            UserIndex = user.RoomInfo.Index,
                             EventType = eventType,
                             BattleTimeMillis = battleTimeMillis,
                         });

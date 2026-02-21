@@ -26,3 +26,4 @@ Server/GameServer/.vs
 Server/GameServer/bin
 Server/GameServer/obj
 Unity/Build
+Unity/Assembly-CSharp.csproj.user

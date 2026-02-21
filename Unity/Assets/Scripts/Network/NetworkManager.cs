@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 
 public partial class NetworkManager
 {
-
     private static Debug Debug { get; } = new Debug(nameof(NetworkManager));
 
     private long _statusIntValue;
@@ -30,8 +29,9 @@ public partial class NetworkManager
 
         Handler.Connect(address, port);
 
-        _processPacketCancellationToken = new CancellationTokenSource();
-        Task.Run(ProcessPacket, _processPacketCancellationToken.Token);
+        var processPacketCancellationToken = new CancellationTokenSource();
+        Task.Run(() => ProcessPacket(this, processPacketCancellationToken));
+        _processPacketCancellationToken = processPacketCancellationToken;
     }
 
     public void Disconnect()
@@ -44,21 +44,9 @@ public partial class NetworkManager
         if (_processPacketCancellationToken != null)
         {
             _processPacketCancellationToken.Cancel();
+            _processPacketCancellationToken = null;
         }
         Handler.Disconnect();
-    }
-
-    public void ProcessPacket()
-    {
-         while (true)
-        {
-            if(Status == NetworkStatus.CONNECTED)
-            {
-                Handler.ProcessPacket();
-            }
-            
-            Thread.Sleep(1);
-        }
     }
 
     public void Dispose()
@@ -84,5 +72,18 @@ public partial class NetworkManager
 
         Debug.Log($"SendPacket Protocol ID: {msg.protocol_id}");
         this.Handler.Send(msg);
+    }
+
+    private static void ProcessPacket(NetworkManager networkManager, CancellationTokenSource cancellationTokenSource)
+    {
+        while (!cancellationTokenSource.IsCancellationRequested)
+        {
+            if (networkManager.Status == NetworkStatus.CONNECTED)
+            {
+                networkManager.Handler.ProcessPacket();
+            }
+
+            Thread.Sleep(1);
+        }
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-using UnityEngine;
-using UnityEngine.Pool;
+﻿using UnityEngine;
 
 [ManagedState(typeof(BattleWorld))]
 public partial class BattleUnit
@@ -15,7 +13,7 @@ public partial class BattleUnit
     public int ID { get; private set; }
     public Vector3 Position { get; private set; } = Vector3.zero;
     public Quaternion Rotation { get; private set; } = Quaternion.identity;
-    private BattleWorldSceneObjectHandle Handle { get; set; }
+    private BattleWorldSceneObjectHandle? Handle { get; set; }
     private BattleUnitState State { get; set; }
     private BattleUnitMoveController MoveController { get; set; }
     private BattleUnitJumpController JumpController { get; set; }
@@ -47,22 +45,28 @@ public partial class BattleUnit
         Position = position;
         Rotation = rotation;
 
-        Handle = World.WorldScene.Instantiate(BattleWorldResources.UNIT, position, rotation);
-        var sceneUnit = World.WorldScene.GetSceneUnit(Handle);
-        sceneUnit.Initialize(unitID);
+        Handle = World.WorldScene?.Instantiate(BattleWorldResources.UNIT, position, rotation);
+        if (Handle != null)
+        {
+            var sceneUnit = World.WorldScene.GetSceneUnit(Handle.Value);
+            sceneUnit.Initialize(unitID);
+        }
 
         State.SetStateInfo(BattleUnitStateInfo.IDLE);
+    }
+
+    // TODO:
+    private (Vector3 DeltaPosition, Quaternion DeltaRotation) SampleAnimation(in BattleWorldSceneAnimationSampleInfo animationSampleInfo)
+    {
+        return (Vector3.zero, Quaternion.identity);
     }
 
     public void AdvanceFrame(in BattleFrame frame)
     {
         InterpolatingTime = 0.0f;
-
-        ResetPositionAndRotation();
-
         AnimationSampleInfo = new BattleWorldSceneAnimationSampleInfo(State);
 
-        var (animationDeltaPosition, animationDeltaRotation) = World.WorldScene.SampleAnimation(Handle, AnimationSampleInfo);
+        var (animationDeltaPosition, animationDeltaRotation) = SampleAnimation(AnimationSampleInfo);
         State.AdvanceFrame(frame.DeltaTime, out var isStateChanged);
 
         if (isStateChanged && State.StateType == BattleUnitStateType.IDLE)
@@ -136,7 +140,7 @@ public partial class BattleUnit
             movePosition.y = 0.0f;
         }
 
-        World.WorldScene.MovePosition(Handle, movePosition);
+        Position = movePosition;
         Rotation *= animationDeltaRotation;
 
         // 특정 상태에서 상대방을 바라보도록 방향을 보정한다.
@@ -152,60 +156,53 @@ public partial class BattleUnit
         }
     }
 
-    public void SetPositionAndRotation(Vector3 position, Quaternion rotation)
-    {
-        Position = position;
-        Rotation = rotation;
-        World.WorldScene.SetPositionAndRotation(Handle, position, rotation);
-    }
-
-    public void ResetPositionAndRotation()
-    {
-        World.WorldScene.SetPositionAndRotation(Handle, Position, Rotation);
-    }
-
     public void OnAfterSimulateFixedUpdate(in BattleFrame frame)
     {
         AdvanceAttackState(frame);
-        if (World.WorldScene.TryGetPosition(Handle, out var position))
-        {
-            Position = position;
-        }
     }
 
-    public void Interpolate(in BattleFrame frame, BattleWorld futureWorld)
-    {
-        InterpolatingTime += frame.DeltaTime;
+    public Vector3 PreviousPosition { get; private set; }
+    public Quaternion PreviousRotation { get; private set; }
 
-        var futureUnit = futureWorld.GetUnit(ID);
-        var nextPosition = futureUnit.Position;
-        var nextRotation = futureUnit.Rotation;
-        var t = Mathf.Clamp01(InterpolatingTime / frame.FixedDeltaTime);
-        var position = Vector3.Lerp(Position, nextPosition, t);
-        var rotation = Quaternion.Slerp(Rotation, nextRotation, t);
-        World.WorldScene.SetPositionAndRotation(Handle, position, rotation);
-
-        if (AnimationSampleInfo.NextStateInfo != null &&
-            AnimationSampleInfo.StateInfo is BattleUnitFiniteStateInfo finiteStateInfo &&
-            AnimationSampleInfo.ElapsedTime + InterpolatingTime > finiteStateInfo.Duration)
-        {
-            var elasedTime = AnimationSampleInfo.ElapsedTime + InterpolatingTime - finiteStateInfo.Duration;
-            AnimationSampleInfo = AnimationSampleInfo.SetNextInfo(elasedTime);
-            World.WorldScene.SampleAnimation(Handle, AnimationSampleInfo);
-        }
-        else
-        {
-            World.WorldScene.UpdateAnimation(Handle, frame.DeltaTime);
-        }
-    }
-
-    public void Apply(BattleWorld other)
+    public void Apply(BattleWorldScene scene)
     {
         InterpolatingTime = 0.0f;
-        var otherUnit = other.GetUnit(ID);
-        SetPositionAndRotation(otherUnit.Position, otherUnit.Rotation);
-        AnimationSampleInfo = otherUnit.AnimationSampleInfo;
-        World.WorldScene.SampleAnimation(Handle, AnimationSampleInfo);
+        PreviousPosition = Position;
+        PreviousRotation = Rotation;
+
+        if (Handle != null)
+        {
+            scene.SetPositionAndRotation(Handle.Value, Position, Rotation);
+            scene.SampleAnimation(Handle.Value, AnimationSampleInfo);
+        }
+    }
+
+    public void Interpolate(in BattleFrame frame, BattleWorldScene worldScene)
+    {
+        return;
+        InterpolatingTime += frame.DeltaTime;
+
+        if (Handle != null)
+        {
+            var t = Mathf.Clamp01(InterpolatingTime / frame.FixedDeltaTime);
+            var position = Vector3.Lerp(PreviousPosition, Position, t);
+            var rotation = Quaternion.Slerp(PreviousRotation, Rotation, t);
+
+            worldScene.SetPositionAndRotation(Handle.Value, position, rotation);
+
+            if (AnimationSampleInfo.NextStateInfo != null &&
+                AnimationSampleInfo.StateInfo is BattleUnitFiniteStateInfo finiteStateInfo &&
+                AnimationSampleInfo.ElapsedTime + InterpolatingTime > finiteStateInfo.Duration)
+            {
+                var elasedTime = AnimationSampleInfo.ElapsedTime + InterpolatingTime - finiteStateInfo.Duration;
+                AnimationSampleInfo = AnimationSampleInfo.SetNextInfo(elasedTime);
+                worldScene.SampleAnimation(Handle.Value, AnimationSampleInfo);
+            }
+            else
+            {
+                worldScene.UpdateAnimation(Handle.Value, frame.DeltaTime);
+            }
+        }
     }
 
     private Quaternion LookOtherUnitRotation(in BattleFrame frame)
@@ -402,13 +399,14 @@ public partial class BattleUnit
 
     public void PerformAttack()
     {
-        var sceneUnit = World.WorldScene.GetSceneUnit(Handle);
-        using var _ = ListPool<int>.Get(out var unitIds);
-        sceneUnit.GetUnitIds(unitIds);
-        foreach (var unitID in unitIds)
-        {
-            World.PerformAttack(this, unitID);
-        }
+        // TODO: 물리
+        //var sceneUnit = World.WorldScene.GetSceneUnit(Handle);
+        //using var _ = ListPool<int>.Get(out var unitIds);
+        //sceneUnit.GetUnitIds(unitIds);
+        //foreach (var unitID in unitIds)
+        //{
+        //    World.PerformAttack(this, unitID);
+        //}
     }
 
     public BattleUnit Clone(BattleWorld context)

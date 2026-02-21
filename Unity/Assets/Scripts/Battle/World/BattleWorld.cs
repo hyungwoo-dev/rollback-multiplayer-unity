@@ -1,10 +1,21 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Pool;
-using UnityEngine.SceneManagement;
 
 public partial class BattleWorld
 {
+    #region Record
+
+    private StringBuilder LogStringBuilder = new StringBuilder();
+
+    public void LogUnit(BattleUnit unit, Vector3 movePosition, Quaternion moveRotation)
+    {
+        LogStringBuilder.Append($"[Frame: {CurrentFrame}]Unit - ID: {unit.ID}, MovePosition: {movePosition}, MoveRotation: {moveRotation}");
+    }
+
+    #endregion Record
+
     private Debug Debug = new(nameof(BattleWorld));
 
     protected static readonly Vector3 LEFT_UNIT_START_POSITION = new(-4.5f, 0.0f, 0.0f);
@@ -33,6 +44,14 @@ public partial class BattleWorld
         }
     }
 
+    public void ApplyTo(BattleWorldScene worldScene)
+    {
+        foreach (var unit in Units)
+        {
+            unit.Apply(worldScene);
+        }
+    }
+
     public BattleUnit GetUnit(int unitID)
     {
         foreach (var unit in Units)
@@ -45,6 +64,17 @@ public partial class BattleWorld
             return unit;
         }
         return null;
+    }
+
+    public string GetInfo()
+    {
+        var stringBuilder = new StringBuilder();
+        stringBuilder.AppendLine($"CurrentFrame: {CurrentFrame}");
+        foreach (var unit in Units)
+        {
+            stringBuilder.AppendLine($"UnitID: {unit.ID}, Position: {unit.Position}, Rotation: {unit.Rotation}");
+        }
+        return stringBuilder.ToString();
     }
 
     public BattleUnit GetOtherUnit(int unitID)
@@ -74,30 +104,15 @@ public partial class BattleWorld
 
     public void Initialize()
     {
-        WorldScene.Initialize();
         AddUnit(0, LEFT_UNIT_START_POSITION, LEFT_UNIT_ROTATION);
         AddUnit(1, RIGHT_UNIT_START_POSITION, RIGHT_UNIT_ROTATION);
     }
 
-    public bool IsSceneLoaded()
-    {
-        return WorldScene.IsSceneLoaded();
-    }
-
-    public void Interpolate(in BattleFrame frame, BattleWorld futureWorld)
+    public void Interpolate(in BattleFrame frame, BattleWorldScene worldScene)
     {
         foreach (var unit in Units)
         {
-            unit.Interpolate(frame, futureWorld);
-        }
-    }
-
-    public void Apply(BattleWorld other)
-    {
-        CurrentFrame = other.CurrentFrame;
-        foreach (var unit in Units)
-        {
-            unit.Apply(other);
+            unit.Interpolate(frame, worldScene);
         }
     }
 
@@ -109,8 +124,6 @@ public partial class BattleWorld
         {
             unit.AdvanceFrame(frame);
         }
-
-        WorldScene.SimulatePhysics(frame.DeltaTime);
 
         foreach (var unit in Units)
         {
@@ -234,24 +247,23 @@ public partial class BattleWorld
         }
     }
 
-    public void Reset()
-    {
-        foreach (var unit in Units)
-        {
-            unit.ResetPositionAndRotation();
-        }
-    }
-
     public void Release()
     {
+        CurrentFrame = 0;
+
         foreach (var unit in Units)
         {
             unit.Release(this);
         }
         Units.Clear();
 
-        DisposePool();
         WorldManager.WorldPool.Release(this);
+    }
+
+    public void Dispose()
+    {
+        Release();
+        DisposePool();
     }
 
     public (Vector3 TargetPosition, Quaternion TargetRotation) GetCameraTargetPositionAndRotation(Transform cameraTransform)
@@ -284,6 +296,7 @@ public partial class BattleWorld
 
     [ManagedStateIgnore]
     public ObjectPool<BattleUnitMoveController> UnitMoveControllerPool { get; private set; }
+
     [ManagedStateIgnore]
     public ObjectPool<BattleUnitDashMoveController> UnitDashMoveControllerPool { get; private set; }
 

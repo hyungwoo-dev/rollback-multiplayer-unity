@@ -46,7 +46,7 @@ Animator:
   m_Enabled: 0
   m_Avatar: {fileID: 9000000, guid: 922c398316b5be44482cc2026955c3e6, type: 3}
   m_Controller: {fileID: 9100000, guid: 4d3201bcf5d185741b5bb7cb69f6d902, type: 2}
-  m_CullingMode: 1
+  m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
@@ -1632,10 +1632,10 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 112
-  m_CollisionDetection: 1
+  m_CollisionDetection: 0
 --- !u!136 &1711231706203783609
 CapsuleCollider:
   m_ObjectHideFlags: 0

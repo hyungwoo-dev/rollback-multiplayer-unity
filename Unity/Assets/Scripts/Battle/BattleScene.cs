@@ -8,13 +8,18 @@ public class BattleScene : MonoBehaviour
     private static Debug Debug = new(nameof(BattleScene));
 
     public static IEnumerator CoLoad(BattleSceneLoadContext context)
-    { 
+    {
+        var hertz = Mathf.CeilToInt((float)Screen.currentResolution.refreshRateRatio.value);
+        Application.targetFrameRate = hertz;
+        Physics.simulationMode = SimulationMode.Script;
+        Debug.Log($"디스플레이 하드웨어 주사율: {hertz}");
+
         var scene = SceneManager.LoadScene(SceneNames.BATTLE, new LoadSceneParameters()
         {
             loadSceneMode = LoadSceneMode.Additive,
             localPhysicsMode = LocalPhysicsMode.Physics3D,
         });
-        
+
         while (!scene.isLoaded)
         {
             yield return null;
@@ -47,12 +52,6 @@ public class BattleScene : MonoBehaviour
             BattlePlayMode.Multiplay => new MultiplayBattleWorldManager(),
             _ => throw new NotImplementedException()
         };
-
-        var hertz = Mathf.CeilToInt((float)Screen.currentResolution.refreshRateRatio.value);
-        Application.runInBackground = true;
-        Application.targetFrameRate = hertz;
-        Physics.simulationMode = SimulationMode.Script;
-        Debug.Log($"디스플레이 하드웨어 주사율: {hertz}");
 
         StartCoroutine(CoSetup());
     }
@@ -87,7 +86,6 @@ public class BattleScene : MonoBehaviour
         if (!IsInitialized)
         {
             Initialize();
-            WorldManager.FutureWorld.AdvanceFrame(frame);
         }
 
         if (WorldManager.IsStarted())
@@ -106,6 +104,13 @@ public class BattleScene : MonoBehaviour
         var frame = new BattleFrame(Time.inFixedTimeStep, deltaTime, Time.fixedDeltaTime);
         WorldManager.OnUpdate(frame);
         _battleCamera.Interpolate(frame);
+
+        // TODO: 
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            var fixedFrame = new BattleFrame(true, Time.fixedDeltaTime, Time.fixedDeltaTime);
+            StartCoroutine(WorldManager.CoSelfResimulate(fixedFrame));
+        }
     }
 
     private void OnDestroy()

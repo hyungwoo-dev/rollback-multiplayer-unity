@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-public struct BattleFrame
+﻿public struct BattleFrame
 {
     public bool InFixedTimeStep { get; set; }
     public float DeltaTime { get; set; }

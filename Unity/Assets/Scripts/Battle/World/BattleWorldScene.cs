@@ -4,6 +4,33 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+public struct BattleCircle
+{
+    public Vector3 Position { get; private set; }
+    public float Radius { get; private set; }
+
+    public BattleCircle(Vector3 position, float radius) : this()
+    {
+        Position = position;
+        Radius = radius;
+    }
+
+    public static bool CheckCollision(BattleCircle a, BattleCircle b, out float overlapDistance)
+    {
+        var sumRadius = (a.Radius + b.Radius);
+        var sqrDistance = (a.Position - b.Position).sqrMagnitude;
+
+        if (sqrDistance > sumRadius * sumRadius)
+        {
+            overlapDistance = 0.0f;
+            return false;
+        }
+
+        overlapDistance = sumRadius - MathUtils.Sqrt(sqrDistance);
+        return true;
+    }
+}
+
 [ManagedStateIgnore]
 public partial class BattleWorldScene
 {
@@ -30,6 +57,11 @@ public partial class BattleWorldScene
     {
         Scene = LoadScene();
         PhysicsScene = Scene.GetPhysicsScene();
+    }
+
+    public void Dispose()
+    {
+        SceneManager.UnloadSceneAsync(Scene);
     }
 
     public void Initialize()
@@ -141,15 +173,8 @@ public partial class BattleWorldScene
     {
         if (TryGetComponent<Transform>(handle, out var transform))
         {
-            transform.SetPositionAndRotation(position, rotation);
-        }
-    }
-
-    public void MovePosition(BattleWorldSceneObjectHandle handle, Vector3 position)
-    {
-        if (TryGetComponent<Rigidbody>(handle, out var rigidbody))
-        {
-            rigidbody.MovePosition(position);
+            transform.position = position;
+            transform.rotation = rotation;
         }
     }
 
