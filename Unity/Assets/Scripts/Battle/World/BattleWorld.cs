@@ -32,6 +32,16 @@ public partial class BattleWorld
 
     private List<BattleUnit> Units { get; set; } = new();
 
+    public int GetWorldHash()
+    {
+        var hash = int.MaxValue;
+        foreach (var unit in Units)
+        {
+            hash ^= unit.GetUnitHash();
+        }
+        return hash;
+    }
+
     public void PerformAttack(BattleUnit attacker, int unitID)
     {
         foreach (var unit in Units)
@@ -126,9 +136,21 @@ public partial class BattleWorld
             unit.AdvanceFrame(frame);
         }
 
+        var unit1 = Units[0];
+        var unit2 = Units[1];
+        var unit1Circle = BattleCircle.FromUnit(unit1);
+        var unit2Circle = BattleCircle.FromUnit(unit2);
+        if (BattleCircle.CheckCollision(unit1Circle, unit2Circle, out var distance))
+        {
+            var direction = (unit2.Position - unit1.Position).Normalize();
+            var adjustVector = direction * distance * Fixed64.Half;
+            unit1.Position -= adjustVector;
+            unit2.Position += adjustVector;
+        }
+
         foreach (var unit in Units)
         {
-            unit.OnAfterSimulateFixedUpdate(frame);
+            unit.CheckCollisions(frame);
         }
     }
 

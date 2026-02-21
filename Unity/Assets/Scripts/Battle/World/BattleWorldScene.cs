@@ -1,5 +1,4 @@
 ﻿using FixedMathSharp;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -14,6 +13,18 @@ public struct BattleCircle
     {
         Position = position;
         Radius = radius;
+    }
+
+    public static BattleCircle FromUnitForward(BattleUnit unit, Fixed64 forwardDistance, Fixed64 radius)
+    {
+        var forward = unit.Rotation * Vector3d.Forward;
+        var position = unit.Position + forward * forwardDistance;
+        return new BattleCircle(position, radius);
+    }
+
+    public static BattleCircle FromUnit(BattleUnit unit)
+    {
+        return new BattleCircle(unit.Position, Fixed64.Half);
     }
 
     public static bool CheckCollision(BattleCircle a, BattleCircle b, out Fixed64 overlapDistance)
@@ -38,19 +49,14 @@ public partial class BattleWorldScene
     private static Debug Debug = new(nameof(BattleWorldScene));
 
     private BaseWorldManager WorldManager { get; }
-    private BattleWorldSceneKind WorldSceneKind { get; }
     private Scene Scene { get; set; }
     private PhysicsScene PhysicsScene { get; set; }
     private GameObject RootGameObject { get; set; }
-
-    private Dictionary<int, GameObject> GameObjectDictionary { get; set; } = new();
-    private int CurrentGameObjectID { get; set; } = 0;
     private int Layer { get; set; }
 
-    public BattleWorldScene(BaseWorldManager worldManager, BattleWorldSceneKind worldSceneKind, int layer)
+    public BattleWorldScene(BaseWorldManager worldManager, int layer)
     {
         WorldManager = worldManager;
-        WorldSceneKind = worldSceneKind;
         Layer = layer;
     }
 
@@ -75,49 +81,24 @@ public partial class BattleWorldScene
         return Scene.isLoaded;
     }
 
-    public BattleWorldSceneObjectHandle Instantiate(BattleWorldResource worldResource, Vector3d position, FixedQuaternion rotation)
+    private Dictionary<int, GameObject> _units = new();
+
+    public void InstantiateUnit(int unitID, Vector3d position, FixedQuaternion rotation)
     {
-        switch (WorldSceneKind)
-        {
-            case BattleWorldSceneKind.VIEW:
-            {
-                return Instantiate(worldResource.ViewResourcePath, position, rotation);
-            }
-            case BattleWorldSceneKind.PLAYING:
-            {
-                return Instantiate(worldResource.ResourcePath, position, rotation);
-            }
-            default:
-            {
-                throw new NotSupportedException($"Instantiate NotSupported {nameof(WorldSceneKind)}: {WorldSceneKind}");
-            }
-        }
+        var gameObject = Instantiate("AndroidUnit/Prefabs/AndroidUnit", position, rotation);
+        _units.Add(unitID, gameObject);
     }
 
-    public BattleWorldSceneUnit GetSceneUnit(BattleWorldSceneObjectHandle handle)
-    {
-        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject) && gameObject.TryGetComponent<BattleWorldSceneUnit>(out var sceneUnit))
-        {
-            return sceneUnit;
-        }
-
-        Debug.LogError($"Not found scene unit. ID: {handle.ID}");
-        return null;
-    }
-
-    public BattleWorldSceneObjectHandle Instantiate(string resourcePath)
+    public GameObject Instantiate(string resourcePath)
     {
         return Instantiate(resourcePath, Vector3d.Zero, FixedQuaternion.Identity);
     }
 
-    public BattleWorldSceneObjectHandle Instantiate(string resourcePath, Vector3d position, FixedQuaternion rotation)
+    public GameObject Instantiate(string resourcePath, Vector3d position, FixedQuaternion rotation)
     {
         var asset = Resources.Load<GameObject>(resourcePath);
         var gameObject = GameObject.Instantiate(asset, position.ToVector3(), rotation.ToQuaternion(), RootGameObject.transform);
-        SetGameObjectLayerRecursively(gameObject, Layer);
-        var gameObjectID = GenerateGameObjectID();
-        GameObjectDictionary.Add(gameObjectID, gameObject);
-        return new BattleWorldSceneObjectHandle(gameObjectID);
+        return gameObject;
     }
 
     private void SetGameObjectLayerRecursively(GameObject gameObject, int layer)
@@ -129,40 +110,18 @@ public partial class BattleWorldScene
         }
     }
 
-    public bool TryGetComponent<T>(BattleWorldSceneObjectHandle handle, out T component) where T : Component
+    public void SetPositionAndRotation(int unitID, Vector3d position, FixedQuaternion rotation)
     {
-        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        if (_units.TryGetValue(unitID, out var gameObject))
         {
-            if (gameObject.TryGetComponent<T>(out component))
-            {
-                return true;
-            }
-            else
-            {
-                Debug.LogError($"{nameof(TryGetComponent)} Not Found Component, GameObject ID: {handle.ID}");
-            }
-        }
-        else
-        {
-            Debug.LogError($"{nameof(TryGetComponent)} Not Found GameObject ID: {handle.ID}");
-        }
-
-        component = null;
-        return false;
-    }
-
-    public void SetPositionAndRotation(BattleWorldSceneObjectHandle handle, Vector3d position, FixedQuaternion rotation)
-    {
-        if (TryGetComponent<Transform>(handle, out var transform))
-        {
-            transform.position = position.ToVector3();
-            transform.rotation = rotation.ToQuaternion();
+            gameObject.transform.position = position.ToVector3();
+            gameObject.transform.rotation = rotation.ToQuaternion();
         }
     }
 
-    public (Vector3d deltaPosition, FixedQuaternion deltaRotation) SampleAnimation(BattleWorldSceneObjectHandle handle, in BattleWorldSceneAnimationSampleInfo sampleInfo)
+    public (Vector3d deltaPosition, FixedQuaternion deltaRotation) SampleAnimation(int unitID, in BattleWorldSceneAnimationSampleInfo sampleInfo)
     {
-        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        if (_units.TryGetValue(unitID, out var gameObject))
         {
             var animator = gameObject.GetComponentInChildren<BattleWorldSceneUnitAnimator>();
             if (animator != null)
@@ -197,20 +156,20 @@ public partial class BattleWorldScene
             }
             else
             {
-                Debug.LogError($"{nameof(SampleAnimation)} Have Not Animator. Name: {gameObject.name}, GameObjectID: {handle.ID}");
+                Debug.LogError($"{nameof(SampleAnimation)} Have Not Animator. Name: {gameObject.name}, UnitID: {unitID}");
             }
         }
         else
         {
-            Debug.LogError($"{nameof(SampleAnimation)} Not Found GameObject ID: {handle.ID}");
+            Debug.LogError($"{nameof(SampleAnimation)} Not Found UnitID: {unitID}");
         }
 
         return (Vector3d.Zero, FixedQuaternion.Identity);
     }
 
-    public (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) UpdateAnimation(BattleWorldSceneObjectHandle handle, Fixed64 deltaTime)
+    public (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) UpdateAnimation(int unitID, Fixed64 deltaTime)
     {
-        if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
+        if (_units.TryGetValue(unitID, out var gameObject))
         {
             var animator = gameObject.GetComponentInChildren<BattleWorldSceneUnitAnimator>();
             if (animator != null)
@@ -219,38 +178,19 @@ public partial class BattleWorldScene
             }
             else
             {
-                Debug.LogError($"{nameof(UpdateAnimation)} Have Not Animator. Name: {gameObject.name}, GameObjectID: {handle.ID}");
+                Debug.LogError($"{nameof(UpdateAnimation)} Have Not Animator. Name: {gameObject.name}, UnitID: {unitID}");
             }
         }
         else
         {
-            Debug.LogError($"{nameof(UpdateAnimation)} Not Found GameObject. ID: {handle.ID}");
+            Debug.LogError($"{nameof(UpdateAnimation)} Not Found GameObject. UnitID: {unitID}");
         }
 
         return (Vector3d.Zero, FixedQuaternion.Identity);
     }
 
-    private int GenerateGameObjectID()
-    {
-        return CurrentGameObjectID++;
-    }
-
     private Scene LoadScene()
     {
-        switch (WorldSceneKind)
-        {
-            case BattleWorldSceneKind.VIEW:
-            {
-                return SceneManager.LoadScene(SceneNames.BATTLE_WORLD_VIEW, new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.None));
-            }
-            case BattleWorldSceneKind.PLAYING:
-            {
-                return SceneManager.LoadScene(SceneNames.BATTLE_WORLD, new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.Physics3D));
-            }
-            default:
-            {
-                throw new NotSupportedException($"LoadScene NotSupported {nameof(WorldSceneKind)}: {WorldSceneKind}");
-            }
-        }
+        return SceneManager.LoadScene(SceneNames.BATTLE_WORLD, new LoadSceneParameters(LoadSceneMode.Additive, LocalPhysicsMode.None));
     }
 }

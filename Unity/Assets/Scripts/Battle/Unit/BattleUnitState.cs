@@ -10,6 +10,7 @@ public partial class BattleUnitState
 
     public Fixed64 PreviousElapsedTime { get; private set; } = Fixed64.Zero;
     public Fixed64 ElapsedTime { get; private set; } = Fixed64.Zero;
+    public int ElapsedFrame { get; private set; } = 0;
 
     [ManagedStateIgnore]
     public BattleUnitStateInfo PreviousStateInfo { get; private set; }
@@ -58,6 +59,7 @@ public partial class BattleUnitState
 
             PreviousElapsedTime = Fixed64.Zero;
             ElapsedTime = NextStateElapsedTime;
+            ElapsedFrame = 0;
         }
         else
         {
@@ -65,6 +67,7 @@ public partial class BattleUnitState
 
             PreviousElapsedTime = ElapsedTime;
             ElapsedTime += deltaTime;
+            ElapsedFrame += 1;
 
             switch (StateInfo)
             {

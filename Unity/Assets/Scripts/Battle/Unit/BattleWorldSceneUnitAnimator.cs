@@ -38,21 +38,7 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
 
     public (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) UpdateAnimator(Fixed64 deltaTime)
     {
-        //if (Application.targetFrameRate > 0)
-        //{
-        //    do
-        //    {
-        //        var targetFrameDeltaTime = 1.0f / (Fixed64)Application.targetFrameRate;
-        //        var updateDeltaTime = deltaTime > targetFrameDeltaTime ? targetFrameDeltaTime : deltaTime;
-        //        _animator.Update(updateDeltaTime);
-        //        deltaTime = Mathf.Max(deltaTime - updateDeltaTime, 0.0f);
-        //    }
-        //    while (deltaTime > 0.0f);
-        //}
-        //else
-        {
-            _animator.Update(deltaTime.ToFormattedFloat());
-        }
+        _animator.Update(deltaTime.ToFormattedFloat());
 
         var result = (DeltaPosition, DeltaRotation);
         DeltaPosition = Vector3d.Zero;

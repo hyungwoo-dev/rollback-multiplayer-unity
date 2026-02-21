@@ -8,6 +8,7 @@ public struct BattleWorldSceneAnimationSampleInfo
     public string AnimationName;
     public Fixed64 PreviousElapsedTime;
     public Fixed64 ElapsedTime;
+    public int ElapsedFrame;
 
     public Fixed64 CrossFadeInTime;
 
@@ -22,6 +23,8 @@ public struct BattleWorldSceneAnimationSampleInfo
         AnimationName = state.StateInfo.AnimationName;
         PreviousElapsedTime = state.PreviousElapsedTime;
         ElapsedTime = state.ElapsedTime;
+        ElapsedFrame = state.ElapsedFrame;
+
         CrossFadeInTime = state.StateInfo.CrossFadeInTime;
 
         StateInfo = state.StateInfo;

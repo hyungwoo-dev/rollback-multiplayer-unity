@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -20,7 +17,6 @@ public abstract partial class BaseWorldManager
 
     public abstract int BattleTimeMillis { get; }
 
-    protected Dictionary<int, List<BattleWorldEventInfo>> LocalWorldEventInfos { get; private set; } = new();
 
     public BaseWorldManager()
     {
@@ -31,7 +27,7 @@ public abstract partial class BaseWorldManager
 
     public virtual void Setup()
     {
-        var localWorldScene = new BattleWorldScene(this, BattleWorldSceneKind.VIEW, LayerMask.NameToLayer(BattleLayerMaskNames.LOCAL));
+        var localWorldScene = new BattleWorldScene(this, LayerMask.NameToLayer(BattleLayerMaskNames.LOCAL));
         localWorldScene.Load();
         LocalWorldScene = localWorldScene;
 
@@ -77,10 +73,6 @@ public abstract partial class BaseWorldManager
 
     protected virtual void ExecuteWorldEventInfos(int frame, List<BattleWorldEventInfo> worldEventInfos)
     {
-        var newWorldEventInfos = ListPool<BattleWorldEventInfo>.Get();
-        newWorldEventInfos.AddRange(worldEventInfos);
-        LocalWorldEventInfos.Add(frame, newWorldEventInfos);
-
         FutureWorld.ExecuteWorldEventInfos(worldEventInfos);
     }
 
@@ -106,81 +98,12 @@ public abstract partial class BaseWorldManager
         FutureWorld.Release();
         FutureWorld = null;
 
-        foreach (var worldEventInfos in LocalWorldEventInfos.Values)
-        {
-            ReleaseWorldEventInfos(worldEventInfos);
-        }
-        LocalWorldEventInfos.Clear();
-
         DisposePool();
     }
 
     public virtual bool IsStarted()
     {
         return true;
-    }
-
-    public IEnumerator CoSelfResimulate(BattleFrame frame)
-    {
-        var world = WorldPool.Get();
-        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.PLAYING, LayerMask.NameToLayer(BattleLayerMaskNames.FUTURE));
-        worldScene.Load();
-        world.SetWorldScene(worldScene);
-
-        while (!worldScene.IsSceneLoaded())
-        {
-            yield return null;
-        }
-
-        world.Initialize();
-
-        var info = FutureWorld.GetInfo();
-
-        var clone = new Dictionary<int, List<BattleWorldEventInfo>>(LocalWorldEventInfos);
-        foreach (var key in clone.Keys.ToList())
-        {
-            if (clone[key].All(a => a.WorldInputEventType == BattleWorldInputEventType.NONE))
-            {
-                clone.Remove(key);
-            }
-        }
-
-        var futureNextFrame = FutureWorld.NextFrame;
-        var targetFrame = futureNextFrame - Mathf.RoundToInt(1.0f / Time.fixedDeltaTime);
-        while (world.NextFrame < targetFrame)
-        {
-            if (clone.TryGetValue(world.NextFrame, out var temp))
-            {
-                world.ExecuteWorldEventInfos(temp);
-            }
-
-            world.AdvanceFrame(frame);
-        }
-
-        FutureWorld.Release();
-        FutureWorld = WorldPool.Get();
-        FutureWorld.CopyFrom(world);
-
-        while (FutureWorld.NextFrame < futureNextFrame)
-        {
-            if (clone.TryGetValue(FutureWorld.NextFrame, out var temp))
-            {
-                FutureWorld.ExecuteWorldEventInfos(temp);
-            }
-            FutureWorld.AdvanceFrame(frame);
-        }
-
-        var newInfo = FutureWorld.GetInfo();
-
-        var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("===OriginInfos===");
-        stringBuilder.AppendLine(info);
-        stringBuilder.AppendLine("===Resimulate===");
-        stringBuilder.AppendLine(newInfo);
-        stringBuilder.AppendLine("=================");
-        Debug.Log(stringBuilder.ToString());
-
-        world.Dispose();
     }
 
     protected int GetWorldEventInfosHash(List<BattleWorldEventInfo> worldEventInfos)

@@ -47,7 +47,6 @@ public class BattleUnitMoveTest
         Assert.True((movedAmount - expectPosition).Magnitude.Abs() < new Fixed64(0.001d), $"Fail, Delta: {movedAmount}, Expect: {distance}");
     }
 
-
     [Test]
     [TestCaseSource(nameof(GetMoveTestSources))]
     public static void JumpMoveTest(TestData value)

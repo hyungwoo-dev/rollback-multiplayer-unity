@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-[ManagedStateIgnore]
+﻿[ManagedStateIgnore]
 public class BattleWorldManager : BaseWorldManager
 {
     private long StartUnixTimeMillis { get; set; }

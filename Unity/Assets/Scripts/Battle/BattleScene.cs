@@ -105,13 +105,6 @@ public class BattleScene : MonoBehaviour
         var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(deltaTime), new Fixed64(Time.fixedDeltaTime));
         WorldManager.OnUpdate(frame);
         _battleCamera.Interpolate(frame);
-
-        // TODO: 
-        if (Input.GetKeyDown(KeyCode.Return))
-        {
-            var fixedFrame = new BattleFrame(true, new Fixed64(Time.fixedDeltaTime), new Fixed64(Time.fixedDeltaTime));
-            StartCoroutine(WorldManager.CoSelfResimulate(fixedFrame));
-        }
     }
 
     private void OnDestroy()

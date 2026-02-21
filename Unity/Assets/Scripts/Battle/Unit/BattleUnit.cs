@@ -12,9 +12,13 @@ public partial class BattleUnit
     [ManagedStateIgnore]
     public BattleWorld World { get; set; }
     public int ID { get; private set; }
-    public Vector3d Position { get; private set; } = Vector3d.Zero;
+
+    public Vector3d PreviousPosition { get; private set; }
+    public FixedQuaternion PreviousRotation { get; private set; }
+
+    public Vector3d Position { get; set; } = Vector3d.Zero;
     public FixedQuaternion Rotation { get; private set; } = FixedQuaternion.Identity;
-    private BattleWorldSceneObjectHandle? Handle { get; set; }
+
     private BattleUnitState State { get; set; }
     private BattleUnitMoveController MoveController { get; set; }
     private BattleUnitJumpController JumpController { get; set; }
@@ -46,20 +50,14 @@ public partial class BattleUnit
         Position = position;
         Rotation = rotation;
 
-        Handle = World.WorldScene?.Instantiate(BattleWorldResources.UNIT, position, rotation);
-        if (Handle != null)
-        {
-            var sceneUnit = World.WorldScene.GetSceneUnit(Handle.Value);
-            sceneUnit.Initialize(unitID);
-        }
-
+        World.WorldScene?.InstantiateUnit(unitID, position, rotation);
         State.SetStateInfo(BattleUnitStateInfo.IDLE);
     }
 
-    // TODO:
     private (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) SampleAnimation(in BattleWorldSceneAnimationSampleInfo animationSampleInfo)
     {
-        return (Vector3d.Zero, FixedQuaternion.Identity);
+        var (deltaPosition, deltaRotation) = AnimationDeltaInfos.Shared.GetDeltas(animationSampleInfo.AnimationName, animationSampleInfo.ElapsedFrame);
+        return (deltaPosition * Rotation, deltaRotation);
     }
 
     public void AdvanceFrame(in BattleFrame frame)
@@ -157,13 +155,10 @@ public partial class BattleUnit
         }
     }
 
-    public void OnAfterSimulateFixedUpdate(in BattleFrame frame)
+    public void CheckCollisions(in BattleFrame frame)
     {
-        AdvanceAttackState(frame);
+        CheckAttackCollision(frame);
     }
-
-    public Vector3d PreviousPosition { get; private set; }
-    public FixedQuaternion PreviousRotation { get; private set; }
 
     public void Apply(BattleWorldScene scene)
     {
@@ -171,37 +166,31 @@ public partial class BattleUnit
         PreviousPosition = Position;
         PreviousRotation = Rotation;
 
-        if (Handle != null)
-        {
-            scene.SetPositionAndRotation(Handle.Value, Position, Rotation);
-            scene.SampleAnimation(Handle.Value, AnimationSampleInfo);
-        }
+        scene.SetPositionAndRotation(ID, Position, Rotation);
+        scene.SampleAnimation(ID, AnimationSampleInfo);
     }
 
     public void Interpolate(in BattleFrame frame, BattleWorldScene worldScene)
     {
         InterpolatingTime += frame.DeltaTime;
 
-        if (Handle != null)
+        var t = (InterpolatingTime / frame.FixedDeltaTime).Clamp01();
+        var position = Vector3d.Lerp(PreviousPosition, Position, t);
+        var rotation = FixedQuaternion.Slerp(PreviousRotation, Rotation, t);
+
+        worldScene.SetPositionAndRotation(ID, position, rotation);
+
+        if (AnimationSampleInfo.NextStateInfo != null &&
+            AnimationSampleInfo.StateInfo is BattleUnitFiniteStateInfo finiteStateInfo &&
+            AnimationSampleInfo.ElapsedTime + InterpolatingTime > finiteStateInfo.Duration)
         {
-            var t = (InterpolatingTime / frame.FixedDeltaTime).Clamp01();
-            var position = Vector3d.Lerp(PreviousPosition, Position, t);
-            var rotation = FixedQuaternion.Slerp(PreviousRotation, Rotation, t);
-
-            worldScene.SetPositionAndRotation(Handle.Value, position, rotation);
-
-            if (AnimationSampleInfo.NextStateInfo != null &&
-                AnimationSampleInfo.StateInfo is BattleUnitFiniteStateInfo finiteStateInfo &&
-                AnimationSampleInfo.ElapsedTime + InterpolatingTime > finiteStateInfo.Duration)
-            {
-                var elasedTime = AnimationSampleInfo.ElapsedTime + InterpolatingTime - finiteStateInfo.Duration;
-                AnimationSampleInfo = AnimationSampleInfo.SetNextInfo(elasedTime);
-                worldScene.SampleAnimation(Handle.Value, AnimationSampleInfo);
-            }
-            else
-            {
-                worldScene.UpdateAnimation(Handle.Value, frame.DeltaTime);
-            }
+            var elasedTime = AnimationSampleInfo.ElapsedTime + InterpolatingTime - finiteStateInfo.Duration;
+            AnimationSampleInfo = AnimationSampleInfo.SetNextInfo(elasedTime);
+            worldScene.SampleAnimation(ID, AnimationSampleInfo);
+        }
+        else
+        {
+            worldScene.UpdateAnimation(ID, frame.DeltaTime);
         }
     }
 
@@ -250,7 +239,7 @@ public partial class BattleUnit
         return Vector3d.Zero;
     }
 
-    private void AdvanceAttackState(in BattleFrame frame)
+    private void CheckAttackCollision(in BattleFrame frame)
     {
         switch (State.StateType)
         {
@@ -399,14 +388,28 @@ public partial class BattleUnit
 
     public void PerformAttack()
     {
-        // TODO: 물리
-        //var sceneUnit = World.WorldScene.GetSceneUnit(Handle);
-        //using var _ = ListPool<int>.Get(out var unitIds);
-        //sceneUnit.GetUnitIds(unitIds);
-        //foreach (var unitID in unitIds)
-        //{
-        //    World.PerformAttack(this, unitID);
-        //}
+        var otherUnit = World.GetOtherUnit(ID);
+        var attackCircle = BattleCircle.FromUnitForward(this, Fixed64.One, Fixed64.One);
+        var otherUnitCircle = BattleCircle.FromUnit(otherUnit);
+        if (BattleCircle.CheckCollision(attackCircle, otherUnitCircle, out _))
+        {
+            World.PerformAttack(this, otherUnit.ID);
+        }
+    }
+
+    public int GetUnitHash()
+    {
+        long longHash = long.MaxValue;
+        longHash ^= Position.x.m_rawValue;
+        longHash ^= Position.y.m_rawValue;
+        longHash ^= Position.z.m_rawValue;
+        longHash ^= Rotation.x.m_rawValue;
+        longHash ^= Rotation.y.m_rawValue;
+        longHash ^= Rotation.z.m_rawValue;
+        longHash ^= Rotation.w.m_rawValue;
+        var uinthash = (uint)(longHash % uint.MaxValue);
+        var intHash = (int)uinthash;
+        return intHash;
     }
 
     public BattleUnit Clone(BattleWorld context)

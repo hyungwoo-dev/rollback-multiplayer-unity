@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.Pool;
 
 [ManagedStateIgnore]
@@ -10,7 +9,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     private BattleWorld ServerWorld { get; set; }
     private NetworkManager NetworkManager { get; set; }
     private Dictionary<int, List<BattleWorldEventInfo>> ReceivedWorldEventInfos { get; set; } = new();
-
+    protected Dictionary<int, List<BattleWorldEventInfo>> LocalWorldEventInfos { get; private set; } = new();
     public long GameStartUnixTimeMillis { get; private set; } = -1;
     public override int BattleTimeMillis => (int)(TimeUtils.UtcNowUnixTimeMillis - GameStartUnixTimeMillis);
     public int OpponentPlayerID { get; private set; } = -1;
@@ -23,10 +22,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     public override void Setup()
     {
         base.Setup();
-        var worldScene = new BattleWorldScene(this, BattleWorldSceneKind.VIEW, LayerMask.NameToLayer(BattleLayerMaskNames.Server));
-        worldScene.Load();
-        ServerWorld.SetWorldScene(worldScene);
-
         NetworkManager = CreateNetworkManager();
         NetworkManager.Connect("127.0.0.1", 7979);
     }
@@ -61,9 +56,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     public override void AdvanceFrame(in BattleFrame frame)
     {
-        var serverWorldNextFrame = ServerWorld.NextFrame;
-        AdvanceServerWorld(frame, serverWorldNextFrame, out var rewind);
-
+        AdvanceServerWorld(frame, ServerWorld.NextFrame, out var rewind);
         if (rewind)
         {
             RewindFuture(frame);
@@ -85,6 +78,13 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             var serverHash = GetWorldEventInfosHash(serverWorldEventInfos);
 
             rewind |= localHash != serverHash;
+
+            var msg = new C2S_MSG_FRAME_HASH()
+            {
+                Frame = ServerWorld.CurrentFrame,
+                Hash = ServerWorld.GetWorldHash()
+            };
+            NetworkManager.C2S_FRAME_HASH(msg);
 
             ReleaseWorldEventInfos(serverWorldEventInfos);
             if (LocalWorldEventInfos.TryGetValue(serverWorldNextFrame, out var pastWorldEventInfos))
@@ -112,6 +112,10 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     protected override void ExecuteWorldEventInfos(int frame, List<BattleWorldEventInfo> worldEventInfos)
     {
         base.ExecuteWorldEventInfos(frame, worldEventInfos);
+
+        var newWorldEventInfos = ListPool<BattleWorldEventInfo>.Get();
+        newWorldEventInfos.AddRange(worldEventInfos);
+        LocalWorldEventInfos.Add(frame, newWorldEventInfos);
 
         var serverFrameEvents = ListPool<C2S_MSG_FRAME_EVENT>.Get();
 
@@ -163,6 +167,12 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         ServerWorld.Release();
         ServerWorld = null;
 
+        foreach (var worldEventInfos in LocalWorldEventInfos.Values)
+        {
+            ReleaseWorldEventInfos(worldEventInfos);
+        }
+        LocalWorldEventInfos.Clear();
+
         DisconnectNetworkManager();
 
         foreach (var worldEventInfos in ReceivedWorldEventInfos.Values)
@@ -173,7 +183,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
         base.Dispose();
     }
-
 
     private NetworkManager CreateNetworkManager()
     {
@@ -193,8 +202,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     private void HandleOnFrameEvent(int frame, List<S2C_MSG_FRAME_EVENT> msgFrameEvents)
     {
-        // TODO: 
-        var worldEventInfos = new List<BattleWorldEventInfo>();
+        var worldEventInfos = ListPool<BattleWorldEventInfo>.Get();
         foreach (var msgFrameEvent in msgFrameEvents)
         {
             if (TryCreateWorldEvnetInfo(msgFrameEvent, frame, out var worldEventInfo))
