@@ -1,29 +1,31 @@
-﻿[ManagedState(typeof(BattleWorld))]
+﻿using FixedMathSharp;
+
+[ManagedState(typeof(BattleWorld))]
 public partial class BattleTimer
 {
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
 
-    private float Delay { get; set; }
+    private Fixed64 Delay { get; set; }
 
-    public bool IsRunning() => Delay > 0.0f;
+    public bool IsRunning() => Delay > Fixed64.Zero;
 
     public BattleTimer(BattleWorld world)
     {
         World = world;
     }
 
-    public void Set(float delay)
+    public void Set(Fixed64 delay)
     {
         Delay = delay;
     }
 
-    public bool AdvanceTime(float deltaTime)
+    public bool AdvanceTime(Fixed64 deltaTime)
     {
         Delay -= deltaTime;
-        if (Delay < 0)
+        if (Delay < Fixed64.Zero)
         {
-            Delay = 0.0f;
+            Delay = Fixed64.Zero;
             return true;
         }
         return false;

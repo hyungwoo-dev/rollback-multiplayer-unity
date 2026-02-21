@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FixedMathSharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -6,27 +7,27 @@ using UnityEngine.SceneManagement;
 
 public struct BattleCircle
 {
-    public Vector3 Position { get; private set; }
-    public float Radius { get; private set; }
+    public Vector3d Position { get; private set; }
+    public Fixed64 Radius { get; private set; }
 
-    public BattleCircle(Vector3 position, float radius) : this()
+    public BattleCircle(Vector3d position, Fixed64 radius) : this()
     {
         Position = position;
         Radius = radius;
     }
 
-    public static bool CheckCollision(BattleCircle a, BattleCircle b, out float overlapDistance)
+    public static bool CheckCollision(BattleCircle a, BattleCircle b, out Fixed64 overlapDistance)
     {
         var sumRadius = (a.Radius + b.Radius);
-        var sqrDistance = (a.Position - b.Position).sqrMagnitude;
+        var distance = (a.Position - b.Position).Magnitude;
 
-        if (sqrDistance > sumRadius * sumRadius)
+        if (distance > sumRadius)
         {
-            overlapDistance = 0.0f;
+            overlapDistance = Fixed64.Zero;
             return false;
         }
 
-        overlapDistance = sumRadius - MathUtils.Sqrt(sqrDistance);
+        overlapDistance = sumRadius - distance;
         return true;
     }
 }
@@ -74,12 +75,7 @@ public partial class BattleWorldScene
         return Scene.isLoaded;
     }
 
-    public void SimulatePhysics(float step)
-    {
-        PhysicsScene.Simulate(step);
-    }
-
-    public BattleWorldSceneObjectHandle Instantiate(BattleWorldResource worldResource, Vector3 position, Quaternion rotation)
+    public BattleWorldSceneObjectHandle Instantiate(BattleWorldResource worldResource, Vector3d position, FixedQuaternion rotation)
     {
         switch (WorldSceneKind)
         {
@@ -111,13 +107,13 @@ public partial class BattleWorldScene
 
     public BattleWorldSceneObjectHandle Instantiate(string resourcePath)
     {
-        return Instantiate(resourcePath, Vector3.zero, Quaternion.identity);
+        return Instantiate(resourcePath, Vector3d.Zero, FixedQuaternion.Identity);
     }
 
-    public BattleWorldSceneObjectHandle Instantiate(string resourcePath, Vector3 position, Quaternion rotation)
+    public BattleWorldSceneObjectHandle Instantiate(string resourcePath, Vector3d position, FixedQuaternion rotation)
     {
         var asset = Resources.Load<GameObject>(resourcePath);
-        var gameObject = GameObject.Instantiate(asset, position, rotation, RootGameObject.transform);
+        var gameObject = GameObject.Instantiate(asset, position.ToVector3(), rotation.ToQuaternion(), RootGameObject.transform);
         SetGameObjectLayerRecursively(gameObject, Layer);
         var gameObjectID = GenerateGameObjectID();
         GameObjectDictionary.Add(gameObjectID, gameObject);
@@ -155,30 +151,16 @@ public partial class BattleWorldScene
         return false;
     }
 
-    public bool TryGetPosition(BattleWorldSceneObjectHandle handle, out Vector3 position)
+    public void SetPositionAndRotation(BattleWorldSceneObjectHandle handle, Vector3d position, FixedQuaternion rotation)
     {
         if (TryGetComponent<Transform>(handle, out var transform))
         {
-            position = transform.position;
-            return true;
-        }
-        else
-        {
-            position = Vector3.zero;
-            return false;
+            transform.position = position.ToVector3();
+            transform.rotation = rotation.ToQuaternion();
         }
     }
 
-    public void SetPositionAndRotation(BattleWorldSceneObjectHandle handle, Vector3 position, Quaternion rotation)
-    {
-        if (TryGetComponent<Transform>(handle, out var transform))
-        {
-            transform.position = position;
-            transform.rotation = rotation;
-        }
-    }
-
-    public (Vector3 deltaPosition, Quaternion deltaRotation) SampleAnimation(BattleWorldSceneObjectHandle handle, in BattleWorldSceneAnimationSampleInfo sampleInfo)
+    public (Vector3d deltaPosition, FixedQuaternion deltaRotation) SampleAnimation(BattleWorldSceneObjectHandle handle, in BattleWorldSceneAnimationSampleInfo sampleInfo)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
@@ -200,7 +182,7 @@ public partial class BattleWorldScene
                         fixedTransitionDuration: sampleInfo.CrossFadeInTime,
                         animationLayer: 0,
                         fixedTimeOffset: sampleInfo.PreviousElapsedTime,
-                        normalizedTransitionTime: sampleInfo.PreviousElapsedTime * sampleInfo.InverseCrossFadeInTime);
+                        normalizedTransitionTime: sampleInfo.PreviousElapsedTime / sampleInfo.CrossFadeInTime);
 
                     animator.ResetDelta();
                 }
@@ -223,10 +205,10 @@ public partial class BattleWorldScene
             Debug.LogError($"{nameof(SampleAnimation)} Not Found GameObject ID: {handle.ID}");
         }
 
-        return (Vector3.zero, Quaternion.identity);
+        return (Vector3d.Zero, FixedQuaternion.Identity);
     }
 
-    public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimation(BattleWorldSceneObjectHandle handle, float deltaTime)
+    public (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) UpdateAnimation(BattleWorldSceneObjectHandle handle, Fixed64 deltaTime)
     {
         if (GameObjectDictionary.TryGetValue(handle.ID, out var gameObject))
         {
@@ -245,7 +227,7 @@ public partial class BattleWorldScene
             Debug.LogError($"{nameof(UpdateAnimation)} Not Found GameObject. ID: {handle.ID}");
         }
 
-        return (Vector3.zero, Quaternion.identity);
+        return (Vector3d.Zero, FixedQuaternion.Identity);
     }
 
     private int GenerateGameObjectID()

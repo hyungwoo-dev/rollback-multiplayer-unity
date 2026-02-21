@@ -1,11 +1,12 @@
-﻿using UnityEngine;
+﻿using FixedMathSharp;
+using UnityEngine;
 
 public class BattleWorldSceneUnitAnimator : MonoBehaviour
 {
     [SerializeField]
     private Animator _animator;
-    public Vector3 DeltaPosition { get; private set; }
-    public Quaternion DeltaRotation { get; private set; }
+    public Vector3d DeltaPosition { get; private set; }
+    public FixedQuaternion DeltaRotation { get; private set; }
 
     private void Awake()
     {
@@ -14,34 +15,34 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
 
     private void OnAnimatorMove()
     {
-        DeltaPosition += _animator.deltaPosition;
-        DeltaRotation *= _animator.deltaRotation;
+        DeltaPosition += _animator.deltaPosition.ToVector3d();
+        DeltaRotation *= _animator.deltaRotation.ToFixedQuaternion();
     }
 
-    public void PlayInFixedTime(string animationName, int animationLayer, float fixedTime)
+    public void PlayInFixedTime(string animationName, int animationLayer, Fixed64 fixedTime)
     {
-        _animator.PlayInFixedTime(animationName, animationLayer, fixedTime);
+        _animator.PlayInFixedTime(animationName, animationLayer, fixedTime.ToFormattedFloat());
     }
 
-    public void CrossFadeInFixedTime(string animationName, float fixedTransitionDuration, int animationLayer, float fixedTimeOffset, float normalizedTransitionTime)
+    public void CrossFadeInFixedTime(string animationName, Fixed64 fixedTransitionDuration, int animationLayer, Fixed64 fixedTimeOffset, Fixed64 normalizedTransitionTime)
     {
-        _animator.CrossFadeInFixedTime(animationName, fixedTransitionDuration, animationLayer, fixedTimeOffset, normalizedTransitionTime);
+        _animator.CrossFadeInFixedTime(animationName, fixedTransitionDuration.ToFormattedFloat(), animationLayer, fixedTimeOffset.ToFormattedFloat(), normalizedTransitionTime.ToFormattedFloat());
     }
 
     public void ResetDelta()
     {
         _animator.Update(0.0f);
-        DeltaPosition = Vector3.zero;
-        DeltaRotation = Quaternion.identity;
+        DeltaPosition = Vector3d.Zero;
+        DeltaRotation = FixedQuaternion.Identity;
     }
 
-    public (Vector3 DeltaPosition, Quaternion DeltaRotation) UpdateAnimator(float deltaTime)
+    public (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) UpdateAnimator(Fixed64 deltaTime)
     {
         //if (Application.targetFrameRate > 0)
         //{
         //    do
         //    {
-        //        var targetFrameDeltaTime = 1.0f / (float)Application.targetFrameRate;
+        //        var targetFrameDeltaTime = 1.0f / (Fixed64)Application.targetFrameRate;
         //        var updateDeltaTime = deltaTime > targetFrameDeltaTime ? targetFrameDeltaTime : deltaTime;
         //        _animator.Update(updateDeltaTime);
         //        deltaTime = Mathf.Max(deltaTime - updateDeltaTime, 0.0f);
@@ -50,12 +51,12 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
         //}
         //else
         {
-            _animator.Update(deltaTime);
+            _animator.Update(deltaTime.ToFormattedFloat());
         }
 
         var result = (DeltaPosition, DeltaRotation);
-        DeltaPosition = Vector3.zero;
-        DeltaRotation = Quaternion.identity;
+        DeltaPosition = Vector3d.Zero;
+        DeltaRotation = FixedQuaternion.Identity;
         return result;
     }
 }

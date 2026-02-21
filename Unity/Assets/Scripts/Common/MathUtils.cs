@@ -1,16 +1,51 @@
-﻿using UnityEngine;
+﻿using FixedMathSharp;
+using UnityEngine;
 
-public class MathUtils
+public static class MathUtils
 {
-    public static float Sqrt(float v, float epsilon = 0.0001f)
+
+    public static Vector3d ToXZ(this Vector3d vec)
     {
-        float x = 1.0f;
-        var count = 0;
-        while ((v - epsilon >= x * x) || (x * x >= v + epsilon))
-        {
-            x = (x + v / x) * 0.5f;
-            count += 1;
-        }
-        return x;
+        return new Vector3d(vec.x, Fixed64.Zero, vec.z);
+    }
+
+    public static Vector3 ToVector3(this Vector3d vec)
+    {
+        return new Vector3(vec.x.ToPreciseFloat(), vec.y.ToPreciseFloat(), vec.z.ToPreciseFloat());
+    }
+
+    public static Vector3d ToVector3d(this Vector3 vec)
+    {
+        return new Vector3d(vec.x, vec.y, vec.z);
+    }
+
+    public static FixedQuaternion ToFixedQuaternion(this Quaternion quat)
+    {
+        return new FixedQuaternion(
+            (Fixed64)quat.x,
+            (Fixed64)quat.y,
+            (Fixed64)quat.z,
+            (Fixed64)quat.w
+        );
+    }
+
+    public static Quaternion ToQuaternion(this FixedQuaternion quat)
+    {
+        return new Quaternion(
+            (float)quat.x,
+            (float)quat.y,
+            (float)quat.z,
+            (float)quat.w
+        );
+    }
+
+    public static Fixed64 Min(Fixed64 a, Fixed64 b)
+    {
+        return a < b ? a : b;
+    }
+
+    public static Fixed64 Max(Fixed64 a, Fixed64 b)
+    {
+        return a > b ? a : b;
     }
 }

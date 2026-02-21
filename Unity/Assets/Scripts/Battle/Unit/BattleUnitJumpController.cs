@@ -1,12 +1,12 @@
-﻿using UnityEngine;
+﻿using FixedMathSharp;
 
 [ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitJumpController
 {
-    private const float JUMP_DELAY = 0.666666f;
-    private const float JUMP_AFTER_DELAY = 0.813334f;
-    private const float JUMP_MOVE_AMOUNT = 2.0f;
-    private const float JUMP_MOVE_TIME = 0.6f;
+    private static readonly Fixed64 JUMP_DELAY = new Fixed64(0.666666d);
+    private static readonly Fixed64 JUMP_AFTER_DELAY = new Fixed64(0.813334d);
+    private static readonly Fixed64 JUMP_MOVE_AMOUNT = new Fixed64(2.0d);
+    private static readonly Fixed64 JUMP_MOVE_TIME = new Fixed64(0.6d);
 
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
@@ -27,7 +27,7 @@ public partial class BattleUnitJumpController
         JumpMove = world.UnitJumpMovePool.Get();
     }
 
-    public Vector3 AdvanceTime(in BattleFrame frame)
+    public Vector3d AdvanceTime(in BattleFrame frame)
     {
         var (moveDelta, nextState) = AdvanceState(State, frame.DeltaTime);
         if (nextState != null)
@@ -62,24 +62,24 @@ public partial class BattleUnitJumpController
         JumpTimer.Set(JUMP_DELAY);
     }
 
-    private (Vector3 MoveDelta, BattleUnitJumpState? NextState) AdvanceState(BattleUnitJumpState state, float deltaTime)
+    private (Vector3d MoveDelta, BattleUnitJumpState? NextState) AdvanceState(BattleUnitJumpState state, Fixed64 deltaTime)
     {
         switch (state)
         {
             case BattleUnitJumpState.NONE:
             {
-                return (Vector3.zero, null);
+                return (Vector3d.Zero, null);
             }
             case BattleUnitJumpState.STARTING:
             {
                 var isFinished = JumpTimer.AdvanceTime(deltaTime);
                 if (isFinished)
                 {
-                    return (Vector3.zero, BattleUnitJumpState.RISING);
+                    return (Vector3d.Zero, BattleUnitJumpState.RISING);
                 }
                 else
                 {
-                    return (Vector3.zero, null);
+                    return (Vector3d.Zero, null);
                 }
             }
             case BattleUnitJumpState.RISING:
@@ -91,16 +91,16 @@ public partial class BattleUnitJumpController
                 var isFinished = JumpTimer.AdvanceTime(deltaTime);
                 if (isFinished)
                 {
-                    return (Vector3.zero, BattleUnitJumpState.NONE);
+                    return (Vector3d.Zero, BattleUnitJumpState.NONE);
                 }
                 else
                 {
-                    return (Vector3.zero, null);
+                    return (Vector3d.Zero, null);
                 }
             }
             default:
             {
-                return (Vector3.zero, null);
+                return (Vector3d.Zero, null);
             }
         }
     }

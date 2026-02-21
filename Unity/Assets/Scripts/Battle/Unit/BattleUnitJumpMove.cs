@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿using FixedMathSharp;
 
 [ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitJumpMove
@@ -6,45 +6,45 @@ public partial class BattleUnitJumpMove
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
 
-    public float Velocity { get; private set; }
-    public float Deceleration { get; private set; }
-    public float MoveTime { get; private set; }
-    public float ElapsedTime { get; private set; }
+    public Fixed64 Velocity { get; private set; }
+    public Fixed64 Deceleration { get; private set; }
+    public Fixed64 MoveTime { get; private set; }
+    public Fixed64 ElapsedTime { get; private set; }
 
     public BattleUnitJumpMove(BattleWorld world)
     {
         World = world;
     }
 
-    public void Initialize(float distance, float time)
+    public void Initialize(Fixed64 distance, Fixed64 time)
     {
-        var riseTime = time * 0.5f;
-        Velocity = distance * (1.0f / riseTime) * 2;
+        var riseTime = time * Fixed64.Half;
+        Velocity = distance / riseTime * 2;
         Deceleration = Velocity / riseTime;
         MoveTime = time;
-        ElapsedTime = 0.0f;
+        ElapsedTime = Fixed64.Zero;
     }
 
-    public Vector3 AdvanceTime(float deltaTime)
+    public Vector3d AdvanceTime(Fixed64 deltaTime)
     {
         if (ElapsedTime + deltaTime >= MoveTime)
         {
             deltaTime = MoveTime - ElapsedTime;
             var moveDelta = GetMovedAmount(ElapsedTime + deltaTime) - GetMovedAmount(ElapsedTime);
             ElapsedTime = MoveTime;
-            return moveDelta * Vector3.up;
+            return moveDelta * Vector3d.Up;
         }
         else
         {
             var moveDelta = GetMovedAmount(ElapsedTime + deltaTime) - GetMovedAmount(ElapsedTime);
             ElapsedTime += deltaTime;
-            return moveDelta * Vector3.up;
+            return moveDelta * Vector3d.Up;
         }
     }
 
-    private float GetMovedAmount(float time)
+    private Fixed64 GetMovedAmount(Fixed64 time)
     {
-        return (Velocity * time) - (Deceleration * 0.5f * time * time);
+        return (Velocity * time) - (Deceleration / 2 * time * time);
     }
 
     public bool IsFinished()

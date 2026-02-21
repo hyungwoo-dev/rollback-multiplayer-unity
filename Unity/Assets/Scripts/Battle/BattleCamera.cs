@@ -1,19 +1,20 @@
-﻿using UnityEngine;
+﻿using FixedMathSharp;
+using UnityEngine;
 
 public class BattleCamera : MonoBehaviour
 {
     [SerializeField]
-    private Vector3 CurrentVelocity;
+    private Vector3d CurrentVelocity;
 
     private BattleWorld World { get; set; }
 
-    public Vector3 Position { get; private set; }
-    public Quaternion Rotation { get; private set; }
+    public Vector3d Position { get; private set; }
+    public FixedQuaternion Rotation { get; private set; }
 
-    public Vector3 NextPosition { get; private set; }
-    public Quaternion NextRotation { get; private set; }
+    public Vector3d NextPosition { get; private set; }
+    public FixedQuaternion NextRotation { get; private set; }
 
-    private float InterpolatingTime { get; set; }
+    private Fixed64 InterpolatingTime { get; set; }
 
     public void Initialize(BattleWorld world)
     {
@@ -29,13 +30,13 @@ public class BattleCamera : MonoBehaviour
 
     public void OnFixedUpdate(in BattleFrame frame)
     {
-        const float INTERPOLATE_SCALE = 6.0f;
-        InterpolatingTime = 0.0f;
+        Fixed64 INTERPOLATE_SCALE = new Fixed64(6.0d);
+        InterpolatingTime = Fixed64.Zero;
 
         var (targetPosition, targetRotation) = World.GetCameraTargetPositionAndRotation(transform);
 
-        var nextPosition = Vector3.Lerp(transform.position, targetPosition, frame.DeltaTime * INTERPOLATE_SCALE);
-        var nextRotation = Quaternion.Slerp(transform.rotation, targetRotation, frame.DeltaTime * INTERPOLATE_SCALE);
+        var nextPosition = Vector3d.Lerp(transform.position.ToVector3d(), targetPosition, frame.DeltaTime * INTERPOLATE_SCALE);
+        var nextRotation = FixedQuaternion.Slerp(transform.rotation.ToFixedQuaternion(), targetRotation, frame.DeltaTime * INTERPOLATE_SCALE);
         UpdatePositionAndRotation(nextPosition, nextRotation);
     }
 
@@ -43,21 +44,21 @@ public class BattleCamera : MonoBehaviour
     {
         InterpolatingTime += frame.DeltaTime;
 
-        var t = Mathf.Clamp01(InterpolatingTime * frame.InverseFixeedDeltaTime);
-        transform.position = Vector3.Lerp(Position, NextPosition, t);
-        transform.rotation = Quaternion.Slerp(Rotation, NextRotation, t);
+        var t = (InterpolatingTime / frame.FixedDeltaTime).Clamp01();
+        transform.position = Vector3d.Lerp(Position, NextPosition, t).ToVector3();
+        transform.rotation = FixedQuaternion.Slerp(Rotation, NextRotation, t).ToQuaternion();
     }
 
-    private void SetPositionAndRotation(Vector3 position, Quaternion rotation)
+    private void SetPositionAndRotation(Vector3d position, FixedQuaternion rotation)
     {
         Position = position;
         Rotation = rotation;
 
-        transform.position = position;
-        transform.rotation = rotation;
+        transform.position = position.ToVector3();
+        transform.rotation = rotation.ToQuaternion();
     }
 
-    private void UpdatePositionAndRotation(Vector3 position, Quaternion rotation)
+    private void UpdatePositionAndRotation(Vector3d position, FixedQuaternion rotation)
     {
         SetPositionAndRotation(NextPosition, NextRotation);
         NextPosition = position;

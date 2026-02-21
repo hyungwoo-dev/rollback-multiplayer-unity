@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using FixedMathSharp;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -9,7 +10,7 @@ public partial class BattleWorld
 
     private StringBuilder LogStringBuilder = new StringBuilder();
 
-    public void LogUnit(BattleUnit unit, Vector3 movePosition, Quaternion moveRotation)
+    public void LogUnit(BattleUnit unit, Vector3d movePosition, FixedQuaternion moveRotation)
     {
         LogStringBuilder.Append($"[Frame: {CurrentFrame}]Unit - ID: {unit.ID}, MovePosition: {movePosition}, MoveRotation: {moveRotation}");
     }
@@ -18,11 +19,11 @@ public partial class BattleWorld
 
     private Debug Debug = new(nameof(BattleWorld));
 
-    protected static readonly Vector3 LEFT_UNIT_START_POSITION = new(-4.5f, 0.0f, 0.0f);
-    protected static readonly Quaternion LEFT_UNIT_ROTATION = Quaternion.Euler(0.0f, 90.0f, 0.0f);
+    protected static readonly Vector3d LEFT_UNIT_START_POSITION = new(-4.5f, 0.0f, 0.0f);
+    protected static readonly FixedQuaternion LEFT_UNIT_ROTATION = FixedQuaternion.FromEulerAngles(new Fixed64(0.0).ToRadians(), new Fixed64(90.0d).ToRadians(), new Fixed64(0.0d).ToRadians());
 
-    protected static readonly Vector3 RIGHT_UNIT_START_POSITION = new(4.5f, 0.0f, 0.0f);
-    protected static readonly Quaternion RIGHT_UNIT_ROTATION = Quaternion.Euler(0.0f, -90.0f, 0.0f);
+    protected static readonly Vector3d RIGHT_UNIT_START_POSITION = new(4.5f, 0.0f, 0.0f);
+    protected static readonly FixedQuaternion RIGHT_UNIT_ROTATION = FixedQuaternion.FromEulerAngles(new Fixed64(0.0d).ToRadians(), new Fixed64(-90.0d).ToRadians(), new Fixed64(0.0d).ToRadians());
 
     public BaseWorldManager WorldManager { get; private set; }
     public BattleWorldScene WorldScene { get; private set; }
@@ -131,7 +132,7 @@ public partial class BattleWorld
         }
     }
 
-    private void AddUnit(int unitID, Vector3 position, Quaternion rotation)
+    private void AddUnit(int unitID, Vector3d position, FixedQuaternion rotation)
     {
         var unit = UnitPool.Get();
         unit.Initialize(unitID, position, rotation);
@@ -266,23 +267,23 @@ public partial class BattleWorld
         DisposePool();
     }
 
-    public (Vector3 TargetPosition, Quaternion TargetRotation) GetCameraTargetPositionAndRotation(Transform cameraTransform)
+    public (Vector3d TargetPosition, FixedQuaternion TargetRotation) GetCameraTargetPositionAndRotation(Transform cameraTransform)
     {
-        const float CAMERA_DISTANCE_MIN = 5.0f;
+        Fixed64 CAMERA_DISTANCE_MIN = new Fixed64(5.0f);
         var unit1 = Units[0];
         var unit2 = Units[1];
 
-        var averagePosition = (unit1.Position + unit2.Position) * 0.5f;
-        var cameraLocalPosition1 = cameraTransform.InverseTransformPoint(unit1.Position);
-        var cameraLocalPosition2 = cameraTransform.InverseTransformPoint(unit2.Position);
+        var averagePosition = (unit1.Position + unit2.Position) * new Fixed64(0.5d);
+        var cameraLocalPosition1 = cameraTransform.InverseTransformPoint(unit1.Position.ToVector3());
+        var cameraLocalPosition2 = cameraTransform.InverseTransformPoint(unit2.Position.ToVector3());
         var rightUnitPosition = cameraLocalPosition1.x > cameraLocalPosition2.x ? unit1.Position : unit2.Position;
         var rightUnitLocalPosition = rightUnitPosition - averagePosition;
 
-        var cameraDistance = Mathf.Max((unit2.Position - unit1.Position).magnitude * 0.9f, CAMERA_DISTANCE_MIN);
-        var cameraForward = Vector3.Cross(new Vector3(rightUnitLocalPosition.x, 0.0f, rightUnitLocalPosition.z), Vector3.up).normalized;
+        var cameraDistance = MathUtils.Max((unit2.Position - unit1.Position).Magnitude * new Fixed64(0.9d), CAMERA_DISTANCE_MIN);
+        var cameraForward = Vector3d.Cross(new Vector3d(rightUnitLocalPosition.x, new Fixed64(0.0d), rightUnitLocalPosition.z), Vector3d.Up).Normalize();
 
-        var cameraTargetRotation = Quaternion.LookRotation(cameraForward) * Quaternion.Euler(3.0f, 0.0f, 0.0f);
-        var cameraTargetPosition = (averagePosition + cameraForward * -cameraDistance) + new Vector3(0.0f, 1.0f, 0.0f);
+        var cameraTargetRotation = FixedQuaternion.LookRotation(cameraForward) * FixedQuaternion.FromEulerAngles(new Fixed64(3.0f).ToRadians(), new Fixed64(0.0f).ToRadians(), new Fixed64(0.0f).ToRadians());
+        var cameraTargetPosition = (averagePosition + cameraForward * -cameraDistance) + new Vector3d(0.0f, 1.0f, 0.0f);
         return (cameraTargetPosition, cameraTargetRotation);
     }
 

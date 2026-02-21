@@ -1,11 +1,12 @@
-﻿public struct BattleFrame
+﻿using FixedMathSharp;
+
+public struct BattleFrame
 {
     public bool InFixedTimeStep { get; set; }
-    public float DeltaTime { get; set; }
-    public float FixedDeltaTime { get; set; }
-    public float InverseFixeedDeltaTime => 1.0f / FixedDeltaTime;
+    public Fixed64 DeltaTime { get; set; }
+    public Fixed64 FixedDeltaTime { get; set; }
 
-    public BattleFrame(bool inFixedTimeStep, float deltaTime, float fixedDeltaTime) : this()
+    public BattleFrame(bool inFixedTimeStep, Fixed64 deltaTime, Fixed64 fixedDeltaTime) : this()
     {
         InFixedTimeStep = inFixedTimeStep;
         DeltaTime = deltaTime;

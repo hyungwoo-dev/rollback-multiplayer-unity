@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FixedMathSharp;
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -81,7 +82,7 @@ public class BattleScene : MonoBehaviour
     {
         if (!IsSetup) return;
 
-        var frame = new BattleFrame(Time.inFixedTimeStep, Time.deltaTime, Time.fixedDeltaTime);
+        var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(Time.deltaTime), new Fixed64(Time.fixedDeltaTime));
 
         if (!IsInitialized)
         {
@@ -101,14 +102,14 @@ public class BattleScene : MonoBehaviour
         if (!WorldManager.IsStarted()) return;
 
         var deltaTime = Mathf.Min(Time.deltaTime, Time.time - Time.fixedTime);
-        var frame = new BattleFrame(Time.inFixedTimeStep, deltaTime, Time.fixedDeltaTime);
+        var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(deltaTime), new Fixed64(Time.fixedDeltaTime));
         WorldManager.OnUpdate(frame);
         _battleCamera.Interpolate(frame);
 
         // TODO: 
         if (Input.GetKeyDown(KeyCode.Return))
         {
-            var fixedFrame = new BattleFrame(true, Time.fixedDeltaTime, Time.fixedDeltaTime);
+            var fixedFrame = new BattleFrame(true, new Fixed64(Time.fixedDeltaTime), new Fixed64(Time.fixedDeltaTime));
             StartCoroutine(WorldManager.CoSelfResimulate(fixedFrame));
         }
     }

@@ -1,13 +1,15 @@
-﻿[ManagedState(typeof(BattleWorld))]
+﻿using FixedMathSharp;
+
+[ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitState
 {
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
 
-    public float PreviousStateElapsedTime { get; private set; } = 0.0f;
+    public Fixed64 PreviousStateElapsedTime { get; private set; } = Fixed64.Zero;
 
-    public float PreviousElapsedTime { get; private set; } = 0.0f;
-    public float ElapsedTime { get; private set; } = 0.0f;
+    public Fixed64 PreviousElapsedTime { get; private set; } = Fixed64.Zero;
+    public Fixed64 ElapsedTime { get; private set; } = Fixed64.Zero;
 
     [ManagedStateIgnore]
     public BattleUnitStateInfo PreviousStateInfo { get; private set; }
@@ -18,7 +20,7 @@ public partial class BattleUnitState
     [ManagedStateIgnore]
     public BattleUnitStateInfo NextStateInfo { get; private set; }
 
-    public float NextStateElapsedTime { get; private set; }
+    public Fixed64 NextStateElapsedTime { get; private set; } = Fixed64.Zero;
 
     public BattleUnitStateType StateType => StateInfo.StateType;
 
@@ -34,16 +36,16 @@ public partial class BattleUnitState
 
     public void SetNextStateInfo(BattleUnitStateInfo stateInfo)
     {
-        SetNextStateInfo(stateInfo, 0.0f);
+        SetNextStateInfo(stateInfo, Fixed64.Zero);
     }
 
-    public void SetNextStateInfo(BattleUnitStateInfo stateInfo, float elaspedTime)
+    public void SetNextStateInfo(BattleUnitStateInfo stateInfo, Fixed64 elaspedTime)
     {
         NextStateInfo = stateInfo;
         NextStateElapsedTime = elaspedTime;
     }
 
-    public void AdvanceFrame(float deltaTime, out bool isStateChanged)
+    public void AdvanceFrame(Fixed64 deltaTime, out bool isStateChanged)
     {
         if (NextStateInfo != null)
         {
@@ -54,7 +56,7 @@ public partial class BattleUnitState
             StateInfo = NextStateInfo;
             NextStateInfo = null;
 
-            PreviousElapsedTime = 0.0f;
+            PreviousElapsedTime = Fixed64.Zero;
             ElapsedTime = NextStateElapsedTime;
         }
         else

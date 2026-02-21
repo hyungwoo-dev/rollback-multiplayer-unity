@@ -1,12 +1,12 @@
-﻿using UnityEngine;
+﻿using FixedMathSharp;
 
 [ManagedState(typeof(BattleWorld))]
 public partial class BattleUnitMoveController
 {
     [ManagedStateIgnore]
     private BattleWorld World { get; set; }
-    public float Speed { get; private set; }
-    public float ElapsedTime { get; private set; }
+    public Fixed64 Speed { get; private set; }
+    public Fixed64 ElapsedTime { get; private set; }
 
     public bool IsMoving => DirectionScale != 0;
     public int DirectionScale { get; private set; }
@@ -16,7 +16,7 @@ public partial class BattleUnitMoveController
         World = world;
     }
 
-    public void Start(int directionScale, float speed)
+    public void Start(int directionScale, Fixed64 speed)
     {
         DirectionScale = directionScale;
         Speed = speed;
@@ -25,12 +25,12 @@ public partial class BattleUnitMoveController
     public void Stop()
     {
         DirectionScale = 0;
-        Speed = 0.0f;
+        Speed = Fixed64.Zero;
     }
 
-    public Vector3 AdvanceTime(float deltaTime, Quaternion rotation)
+    public Vector3d AdvanceTime(Fixed64 deltaTime, FixedQuaternion rotation)
     {
-        var direction = rotation * Vector3.forward * DirectionScale;
+        var direction = rotation * Vector3d.Forward * DirectionScale;
         ElapsedTime += deltaTime;
 
         return direction * Speed * deltaTime;

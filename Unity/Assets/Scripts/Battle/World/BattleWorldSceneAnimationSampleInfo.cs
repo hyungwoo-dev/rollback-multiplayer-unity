@@ -1,18 +1,18 @@
-﻿public struct BattleWorldSceneAnimationSampleInfo
+﻿using FixedMathSharp;
+
+public struct BattleWorldSceneAnimationSampleInfo
 {
     public string PreviousAnimationName;
-    public float PreviousAnimationElapsedTime;
+    public Fixed64 PreviousAnimationElapsedTime;
 
     public string AnimationName;
-    public float PreviousElapsedTime;
-    public float ElapsedTime;
+    public Fixed64 PreviousElapsedTime;
+    public Fixed64 ElapsedTime;
 
-    public float CrossFadeInTime;
+    public Fixed64 CrossFadeInTime;
 
     public BattleUnitStateInfo StateInfo;
     public BattleUnitStateInfo NextStateInfo;
-
-    public float InverseCrossFadeInTime => 1.0f / CrossFadeInTime;
 
     public BattleWorldSceneAnimationSampleInfo(BattleUnitState state)
     {
@@ -28,14 +28,14 @@
         NextStateInfo = state.NextStateInfo;
     }
 
-    public BattleWorldSceneAnimationSampleInfo SetNextInfo(float elapsedTime)
+    public BattleWorldSceneAnimationSampleInfo SetNextInfo(Fixed64 elapsedTime)
     {
         return new BattleWorldSceneAnimationSampleInfo()
         {
             PreviousAnimationName = StateInfo.AnimationName,
             PreviousAnimationElapsedTime = ElapsedTime,
             AnimationName = NextStateInfo.AnimationName,
-            PreviousElapsedTime = 0.0f,
+            PreviousElapsedTime = Fixed64.Zero,
             ElapsedTime = elapsedTime,
             CrossFadeInTime = NextStateInfo.CrossFadeInTime,
             StateInfo = NextStateInfo,

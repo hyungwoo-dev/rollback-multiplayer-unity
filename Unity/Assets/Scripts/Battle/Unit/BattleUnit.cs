@@ -1,18 +1,19 @@
-﻿using UnityEngine;
+﻿using FixedMathSharp;
+using UnityEngine;
 
 [ManagedState(typeof(BattleWorld))]
 public partial class BattleUnit
 {
-    private const float MOVE_SPEED = 1.0f;
+    private static readonly Fixed64 MOVE_SPEED = new Fixed64(1.0d);
 
-    private const float HIT_MOVE_AMOUNT = 0.5f;
-    private const float HIT_MOVE_TIME = 1.167f;
+    private static readonly Fixed64 HIT_MOVE_AMOUNT = new Fixed64(0.5f);
+    private static readonly Fixed64 HIT_MOVE_TIME = new Fixed64(1.167f);
 
     [ManagedStateIgnore]
     public BattleWorld World { get; set; }
     public int ID { get; private set; }
-    public Vector3 Position { get; private set; } = Vector3.zero;
-    public Quaternion Rotation { get; private set; } = Quaternion.identity;
+    public Vector3d Position { get; private set; } = Vector3d.Zero;
+    public FixedQuaternion Rotation { get; private set; } = FixedQuaternion.Identity;
     private BattleWorldSceneObjectHandle? Handle { get; set; }
     private BattleUnitState State { get; set; }
     private BattleUnitMoveController MoveController { get; set; }
@@ -20,7 +21,7 @@ public partial class BattleUnit
     private BattleUnitAttackController AttackController { get; set; }
     private BattleUnitDashMoveController HitMoveController { get; set; }
     public BattleWorldSceneAnimationSampleInfo AnimationSampleInfo;
-    private float InterpolatingTime { get; set; } = 0.0f;
+    private Fixed64 InterpolatingTime { get; set; } = new Fixed64(0.0f);
 
     public bool IsMoving() => State.StateType == BattleUnitStateType.MOVE_FORWARD || State.StateType == BattleUnitStateType.MOVE_BACK;
     public bool CanMove() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
@@ -38,7 +39,7 @@ public partial class BattleUnit
         HitMoveController = world.UnitDashMoveControllerPool.Get();
     }
 
-    public void Initialize(int unitID, Vector3 position, Quaternion rotation)
+    public void Initialize(int unitID, Vector3d position, FixedQuaternion rotation)
     {
         ID = unitID;
 
@@ -56,14 +57,14 @@ public partial class BattleUnit
     }
 
     // TODO:
-    private (Vector3 DeltaPosition, Quaternion DeltaRotation) SampleAnimation(in BattleWorldSceneAnimationSampleInfo animationSampleInfo)
+    private (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) SampleAnimation(in BattleWorldSceneAnimationSampleInfo animationSampleInfo)
     {
-        return (Vector3.zero, Quaternion.identity);
+        return (Vector3d.Zero, FixedQuaternion.Identity);
     }
 
     public void AdvanceFrame(in BattleFrame frame)
     {
-        InterpolatingTime = 0.0f;
+        InterpolatingTime = Fixed64.Zero;
         AnimationSampleInfo = new BattleWorldSceneAnimationSampleInfo(State);
 
         var (animationDeltaPosition, animationDeltaRotation) = SampleAnimation(AnimationSampleInfo);
@@ -114,7 +115,7 @@ public partial class BattleUnit
             }
         }
 
-        var stateDeltaPosition = isStateChanged ? Vector3.zero : AdvanceMoveState(frame);
+        var stateDeltaPosition = isStateChanged ? Vector3d.Zero : AdvanceMoveState(frame);
         var moveDeltaPosition = animationDeltaPosition + stateDeltaPosition;
 
         var movePosition = Position + moveDeltaPosition;
@@ -126,18 +127,18 @@ public partial class BattleUnit
             case BattleUnitStateType.MOVE_FORWARD:
             case BattleUnitStateType.MOVE_BACK:
             {
-                if (movePosition.y > 0)
+                if (movePosition.y > Fixed64.Zero)
                 {
-                    movePosition += Physics.gravity * frame.DeltaTime;
+                    movePosition += new Vector3d(Physics.gravity.x, Physics.gravity.y, Physics.gravity.z) * frame.DeltaTime;
                 }
                 break;
             }
         }
 
         // 위치가 0미만으로 떨어지지 않도록 한다.
-        if (movePosition.y < 0.0f)
+        if (movePosition.y < Fixed64.Zero)
         {
-            movePosition.y = 0.0f;
+            movePosition.y = Fixed64.Zero;
         }
 
         Position = movePosition;
@@ -161,12 +162,12 @@ public partial class BattleUnit
         AdvanceAttackState(frame);
     }
 
-    public Vector3 PreviousPosition { get; private set; }
-    public Quaternion PreviousRotation { get; private set; }
+    public Vector3d PreviousPosition { get; private set; }
+    public FixedQuaternion PreviousRotation { get; private set; }
 
     public void Apply(BattleWorldScene scene)
     {
-        InterpolatingTime = 0.0f;
+        InterpolatingTime = Fixed64.Zero;
         PreviousPosition = Position;
         PreviousRotation = Rotation;
 
@@ -179,14 +180,13 @@ public partial class BattleUnit
 
     public void Interpolate(in BattleFrame frame, BattleWorldScene worldScene)
     {
-        return;
         InterpolatingTime += frame.DeltaTime;
 
         if (Handle != null)
         {
-            var t = Mathf.Clamp01(InterpolatingTime / frame.FixedDeltaTime);
-            var position = Vector3.Lerp(PreviousPosition, Position, t);
-            var rotation = Quaternion.Slerp(PreviousRotation, Rotation, t);
+            var t = (InterpolatingTime / frame.FixedDeltaTime).Clamp01();
+            var position = Vector3d.Lerp(PreviousPosition, Position, t);
+            var rotation = FixedQuaternion.Slerp(PreviousRotation, Rotation, t);
 
             worldScene.SetPositionAndRotation(Handle.Value, position, rotation);
 
@@ -205,22 +205,22 @@ public partial class BattleUnit
         }
     }
 
-    private Quaternion LookOtherUnitRotation(in BattleFrame frame)
+    private FixedQuaternion LookOtherUnitRotation(in BattleFrame frame)
     {
-        const float ROTATION_SNAP_THRESHOLD = 0.5f;
+        Fixed64 ROTATION_SNAP_THRESHOLD = new Fixed64(0.5d);
         var otherUnit = World.GetOtherUnit(ID);
-        var targetRotation = Quaternion.LookRotation(otherUnit.Position.ToXZ() - Position.ToXZ());
-        if (Quaternion.Angle(Rotation, targetRotation) < ROTATION_SNAP_THRESHOLD)
+        var targetRotation = FixedQuaternion.LookRotation(otherUnit.Position.ToXZ() - Position.ToXZ());
+        if (FixedQuaternion.Angle(Rotation, targetRotation) < ROTATION_SNAP_THRESHOLD)
         {
             return targetRotation;
         }
         else
         {
-            return Quaternion.Slerp(Rotation, targetRotation, frame.DeltaTime * 6.0f);
+            return FixedQuaternion.Slerp(Rotation, targetRotation, frame.DeltaTime * new Fixed64(6.0d));
         }
     }
 
-    private Vector3 AdvanceMoveState(in BattleFrame frame)
+    private Vector3d AdvanceMoveState(in BattleFrame frame)
     {
         switch (State.StateType)
         {
@@ -247,7 +247,7 @@ public partial class BattleUnit
             }
         }
 
-        return Vector3.zero;
+        return Vector3d.Zero;
     }
 
     private void AdvanceAttackState(in BattleFrame frame)
@@ -326,10 +326,10 @@ public partial class BattleUnit
 
     private (BattleUnitStateInfo StateInfo, int DirectionScale) AdjustMoveRightArrow()
     {
-        var cameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(Position);
+        var cameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(Position.ToVector3());
 
         var otherUnit = World.GetOtherUnit(ID);
-        var otherUnitCameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(otherUnit.Position);
+        var otherUnitCameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(otherUnit.Position.ToVector3());
 
         if (cameraLocalPosition.x > otherUnitCameraLocalPosition.x)
         {
@@ -343,10 +343,10 @@ public partial class BattleUnit
 
     private (BattleUnitStateInfo StateInfo, int DirectionScale) AdjustMoveLeftArrow()
     {
-        var cameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(Position);
+        var cameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(Position.ToVector3());
 
         var otherUnit = World.GetOtherUnit(ID);
-        var otherUnitCameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(otherUnit.Position);
+        var otherUnitCameraLocalPosition = World.WorldManager.Camera.transform.InverseTransformPoint(otherUnit.Position.ToVector3());
 
         if (cameraLocalPosition.x > otherUnitCameraLocalPosition.x)
         {
@@ -369,25 +369,25 @@ public partial class BattleUnit
 
     public void DoAttack1()
     {
-        AttackController.Initialize(0.233333f, 0.833f);
+        AttackController.Initialize(new Fixed64(0.233333d), new Fixed64(0.833d));
         State.SetNextStateInfo(BattleUnitStateInfo.ATTACK1);
     }
 
     public void DoAttack2()
     {
-        AttackController.Initialize(0.4f, 1.0f);
+        AttackController.Initialize(new Fixed64(0.4d), new Fixed64(1.0));
         State.SetNextStateInfo(BattleUnitStateInfo.ATTACK2);
     }
 
     public void DoAttack3()
     {
-        AttackController.Initialize(0.5f, 1.0f);
+        AttackController.Initialize(new Fixed64(0.5d), new Fixed64(1.0d));
         State.SetNextStateInfo(BattleUnitStateInfo.ATTACK2);
     }
 
     public void DoHit(int damage)
     {
-        HitMoveController.Initialize(Vector3.right, HIT_MOVE_AMOUNT, HIT_MOVE_TIME);
+        HitMoveController.Initialize(Vector3d.Right, HIT_MOVE_AMOUNT, HIT_MOVE_TIME);
         State.SetNextStateInfo(BattleUnitStateInfo.HIT);
     }
 
