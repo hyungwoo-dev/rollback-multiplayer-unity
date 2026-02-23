@@ -22,7 +22,7 @@ public partial class NetworkManager
 
     public void Connect(string address, int port)
     {
-        if(Status == NetworkStatus.CONNECTING || Status == NetworkStatus.CONNECTED)
+        if (Status == NetworkStatus.CONNECTING || Status == NetworkStatus.CONNECTED)
         {
             return;
         }
@@ -69,8 +69,6 @@ public partial class NetworkManager
     private void Send(CPacket msg)
     {
         if (Status != NetworkStatus.CONNECTED) return;
-
-        Debug.Log($"SendPacket Protocol ID: {msg.protocol_id}");
         this.Handler.Send(msg);
     }
 

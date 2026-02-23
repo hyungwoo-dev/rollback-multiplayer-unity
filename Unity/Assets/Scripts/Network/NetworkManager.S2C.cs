@@ -18,7 +18,6 @@ public partial class NetworkManager
 
     private void OnMessage(CPacket msg)
     {
-        Debug.Log($"OnMessage ProtocolID: {msg.protocol_id}");
         var protocol = (S2C_MSG)msg.pop_protocol_id();
         switch (protocol)
         {
@@ -92,7 +91,7 @@ public partial class NetworkManager
         if (msgFrameEvent.EventType != FrameEventType.NONE)
         {
             msgFrameEvent.UserIndex = packet.pop_byte();
-            msgFrameEvent.BattleTimeMillis= packet.pop_int32();
+            msgFrameEvent.BattleTimeMillis = packet.pop_int32();
         }
         else
         {
