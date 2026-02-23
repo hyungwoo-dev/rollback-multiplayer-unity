@@ -1,7 +1,6 @@
 ﻿using FixedMathSharp;
 using System.Collections.Generic;
 using System.Text;
-using UnityEngine;
 using UnityEngine.Pool;
 
 public partial class BattleWorld
@@ -289,15 +288,16 @@ public partial class BattleWorld
         DisposePool();
     }
 
-    public (Vector3d TargetPosition, FixedQuaternion TargetRotation) GetCameraTargetPositionAndRotation(Transform cameraTransform)
+    public (Vector3d TargetPosition, FixedQuaternion TargetRotation) GetCameraTargetPositionAndRotation(in Fixed4x4 cameraTransform)
     {
         Fixed64 CAMERA_DISTANCE_MIN = new Fixed64(5.0f);
         var unit1 = Units[0];
         var unit2 = Units[1];
 
         var averagePosition = (unit1.Position + unit2.Position) * new Fixed64(0.5d);
-        var cameraLocalPosition1 = cameraTransform.InverseTransformPoint(unit1.Position.ToVector3());
-        var cameraLocalPosition2 = cameraTransform.InverseTransformPoint(unit2.Position.ToVector3());
+
+        var cameraLocalPosition1 = cameraTransform.InverseTransformPoint(unit1.Position);
+        var cameraLocalPosition2 = cameraTransform.InverseTransformPoint(unit2.Position);
         var rightUnitPosition = cameraLocalPosition1.x > cameraLocalPosition2.x ? unit1.Position : unit2.Position;
         var rightUnitLocalPosition = rightUnitPosition - averagePosition;
 

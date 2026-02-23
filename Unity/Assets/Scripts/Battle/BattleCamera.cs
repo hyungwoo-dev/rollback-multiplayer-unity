@@ -16,11 +16,13 @@ public class BattleCamera : MonoBehaviour
 
     private Fixed64 InterpolatingTime { get; set; }
 
+    public Fixed4x4 FixedTransform => Fixed4x4.TranslateRotateScale(Position, Rotation, Vector3d.One);
+
     public void Initialize(BattleWorld world)
     {
         World = world;
 
-        var (targetPosition, targetRotation) = World.GetCameraTargetPositionAndRotation(transform);
+        var (targetPosition, targetRotation) = World.GetCameraTargetPositionAndRotation(FixedTransform);
 
         SetPositionAndRotation(targetPosition, targetRotation);
 
@@ -33,7 +35,7 @@ public class BattleCamera : MonoBehaviour
         Fixed64 INTERPOLATE_SCALE = new Fixed64(6.0d);
         InterpolatingTime = Fixed64.Zero;
 
-        var (targetPosition, targetRotation) = World.GetCameraTargetPositionAndRotation(transform);
+        var (targetPosition, targetRotation) = World.GetCameraTargetPositionAndRotation(FixedTransform);
 
         var nextPosition = Vector3d.Lerp(transform.position.ToVector3d(), targetPosition, frame.DeltaTime * INTERPOLATE_SCALE);
         var nextRotation = FixedQuaternion.Slerp(transform.rotation.ToFixedQuaternion(), targetRotation, frame.DeltaTime * INTERPOLATE_SCALE);
