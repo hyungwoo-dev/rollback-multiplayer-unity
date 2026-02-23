@@ -10,6 +10,8 @@ public partial class BattleUnitAttackController
     private Fixed64 Duration { get; set; }
     private Fixed64 ElapsedTime { get; set; }
 
+    public Fixed64 AttackOffset { get; private set; }
+    public Fixed64 AttackRange { get; private set; }
     public Fixed64 KnockbackAmount { get; private set; }
     public Fixed64 KnockbackDuration { get; private set; }
 
@@ -23,11 +25,13 @@ public partial class BattleUnitAttackController
         return ElapsedTime < Duration;
     }
 
-    public void Initialize(Fixed64 performTiming, Fixed64 duration, Fixed64 knockbackAmount, Fixed64 knockbackDuration)
+    public void Initialize(Fixed64 performTiming, Fixed64 duration, Fixed64 attackOffset, Fixed64 attackRange, Fixed64 knockbackAmount, Fixed64 knockbackDuration)
     {
         ElapsedTime = Fixed64.Zero;
         PerformTiming = performTiming;
         Duration = duration;
+        AttackOffset = attackOffset;
+        AttackRange = attackRange;
         KnockbackAmount = knockbackAmount;
         KnockbackDuration = knockbackDuration;
     }

@@ -346,13 +346,13 @@ public partial class BattleUnit
 
     public void DoAttack1()
     {
-        AttackController.Initialize(new Fixed64(0.233333d), new Fixed64(0.833d), new Fixed64(1.0d), new Fixed64(0.2d));
+        AttackController.Initialize(new Fixed64(0.233333d), new Fixed64(0.833d), Fixed64.One, Fixed64.One, new Fixed64(1.0d), new Fixed64(0.2d));
         State.SetNextStateInfo(BattleUnitStateInfo.ATTACK1);
     }
 
     public void DoAttack2()
     {
-        AttackController.Initialize(new Fixed64(0.4d), new Fixed64(1.0), new Fixed64(2.0d), new Fixed64(0.4d));
+        AttackController.Initialize(new Fixed64(0.4d), new Fixed64(1.0), Fixed64.One, new Fixed64(1.5d), new Fixed64(2.0d), new Fixed64(0.4d));
         State.SetNextStateInfo(BattleUnitStateInfo.ATTACK2);
     }
 
@@ -365,7 +365,7 @@ public partial class BattleUnit
     public void PerformAttack()
     {
         var otherUnit = World.GetOtherUnit(ID);
-        var attackCircle = BattleCircle.FromUnitForward(this, Fixed64.One, Fixed64.One);
+        var attackCircle = BattleCircle.FromUnitForward(this, AttackController.AttackOffset, AttackController.AttackRange);
         var otherUnitCircle = BattleCircle.FromUnit(otherUnit);
         if (BattleCircle.CheckCollision(attackCircle, otherUnitCircle, out _))
         {
