@@ -18,10 +18,10 @@ public partial class BattleWorld
 
     private Debug Debug = new(nameof(BattleWorld));
 
-    protected static readonly Vector3d LEFT_UNIT_START_POSITION = new(-4.5f, 0.0f, 0.0f);
+    protected static readonly Vector3d LEFT_UNIT_START_POSITION = new(-4.5d, 0.0d, 0.0d);
     protected static readonly FixedQuaternion LEFT_UNIT_ROTATION = FixedQuaternion.FromEulerAngles(new Fixed64(0.0).ToRadians(), new Fixed64(90.0d).ToRadians(), new Fixed64(0.0d).ToRadians());
 
-    protected static readonly Vector3d RIGHT_UNIT_START_POSITION = new(4.5f, 0.0f, 0.0f);
+    protected static readonly Vector3d RIGHT_UNIT_START_POSITION = new(4.5d, 0.0d, 0.0d);
     protected static readonly FixedQuaternion RIGHT_UNIT_ROTATION = FixedQuaternion.FromEulerAngles(new Fixed64(0.0d).ToRadians(), new Fixed64(-90.0d).ToRadians(), new Fixed64(0.0d).ToRadians());
 
     public BaseWorldManager WorldManager { get; private set; }
@@ -41,7 +41,7 @@ public partial class BattleWorld
         return hash;
     }
 
-    public void PerformAttack(BattleUnit attacker, int unitID)
+    public void PerformAttack(BattleUnit attacker, int unitID, Fixed64 knockbackAmount, Fixed64 knockbackDuration)
     {
         foreach (var unit in Units)
         {
@@ -50,7 +50,7 @@ public partial class BattleWorld
                 continue;
             }
 
-            unit.DoHit(1);
+            unit.DoHit(1, knockbackAmount, knockbackDuration);
         }
     }
 
@@ -238,22 +238,6 @@ public partial class BattleWorld
                 }
                 break;
             }
-            case BattleWorldInputEventType.FIRE:
-            {
-                if (unit.CanAttack())
-                {
-                    unit.DoAttack3();
-                }
-                break;
-            }
-            case BattleWorldInputEventType.JUMP:
-            {
-                if (unit.CanJump())
-                {
-                    unit.DoJump();
-                }
-                break;
-            }
         }
     }
 
@@ -290,7 +274,7 @@ public partial class BattleWorld
 
     public (Vector3d TargetPosition, FixedQuaternion TargetRotation) GetCameraTargetPositionAndRotation(in Fixed4x4 cameraTransform)
     {
-        Fixed64 CAMERA_DISTANCE_MIN = new Fixed64(5.0f);
+        Fixed64 CAMERA_DISTANCE_MIN = new Fixed64(5.0d);
         var unit1 = Units[0];
         var unit2 = Units[1];
 
@@ -304,8 +288,8 @@ public partial class BattleWorld
         var cameraDistance = MathUtils.Max((unit2.Position - unit1.Position).Magnitude * new Fixed64(0.9d), CAMERA_DISTANCE_MIN);
         var cameraForward = Vector3d.Cross(new Vector3d(rightUnitLocalPosition.x, new Fixed64(0.0d), rightUnitLocalPosition.z), Vector3d.Up).Normalize();
 
-        var cameraTargetRotation = FixedQuaternion.LookRotation(cameraForward) * FixedQuaternion.FromEulerAngles(new Fixed64(3.0f).ToRadians(), new Fixed64(0.0f).ToRadians(), new Fixed64(0.0f).ToRadians());
-        var cameraTargetPosition = (averagePosition + cameraForward * -cameraDistance) + new Vector3d(0.0f, 1.0f, 0.0f);
+        var cameraTargetRotation = FixedQuaternion.LookRotation(cameraForward) * FixedQuaternion.FromEulerAngles(new Fixed64(3.0d).ToRadians(), Fixed64.Zero.ToRadians(), Fixed64.Zero.ToRadians());
+        var cameraTargetPosition = (averagePosition + cameraForward * -cameraDistance) + Vector3d.Up;
         return (cameraTargetPosition, cameraTargetRotation);
     }
 
@@ -324,13 +308,7 @@ public partial class BattleWorld
     public ObjectPool<BattleUnitDashMoveController> UnitDashMoveControllerPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ObjectPool<BattleUnitJumpMove> UnitJumpMovePool { get; private set; }
-
-    [ManagedStateIgnore]
     public ObjectPool<BattleTimer> TimerPool { get; private set; }
-
-    [ManagedStateIgnore]
-    public ObjectPool<BattleUnitJumpController> UnitJumpControllerPool { get; private set; }
 
     [ManagedStateIgnore]
     public ObjectPool<BattleUnitAttackController> UnitAttackControllerPool { get; private set; }
@@ -341,8 +319,6 @@ public partial class BattleWorld
         UnitStatePool = new ObjectPool<BattleUnitState>(() => new BattleUnitState(this));
         UnitMoveControllerPool = new ObjectPool<BattleUnitMoveController>(() => new BattleUnitMoveController(this));
         UnitDashMoveControllerPool = new ObjectPool<BattleUnitDashMoveController>(() => new BattleUnitDashMoveController(this));
-        UnitJumpMovePool = new ObjectPool<BattleUnitJumpMove>(() => new BattleUnitJumpMove(this));
-        UnitJumpControllerPool = new ObjectPool<BattleUnitJumpController>(() => new BattleUnitJumpController(this));
         UnitAttackControllerPool = new ObjectPool<BattleUnitAttackController>(() => new BattleUnitAttackController(this));
         TimerPool = new ObjectPool<BattleTimer>(() => new BattleTimer(this));
     }
@@ -353,8 +329,6 @@ public partial class BattleWorld
         UnitStatePool.Dispose();
         UnitMoveControllerPool.Dispose();
         UnitDashMoveControllerPool.Dispose();
-        UnitJumpMovePool.Dispose();
-        UnitJumpControllerPool.Dispose();
         TimerPool.Dispose();
     }
 

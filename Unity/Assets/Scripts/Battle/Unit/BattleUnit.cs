@@ -6,9 +6,6 @@ public partial class BattleUnit
 {
     private static readonly Fixed64 MOVE_SPEED = new Fixed64(1.0d);
 
-    private static readonly Fixed64 HIT_MOVE_AMOUNT = new Fixed64(0.5f);
-    private static readonly Fixed64 HIT_MOVE_TIME = new Fixed64(1.167f);
-
     [ManagedStateIgnore]
     public BattleWorld World { get; set; }
     public int ID { get; private set; }
@@ -21,16 +18,14 @@ public partial class BattleUnit
 
     private BattleUnitState State { get; set; }
     private BattleUnitMoveController MoveController { get; set; }
-    private BattleUnitJumpController JumpController { get; set; }
     private BattleUnitAttackController AttackController { get; set; }
     private BattleUnitDashMoveController HitMoveController { get; set; }
     public BattleWorldSceneAnimationSampleInfo AnimationSampleInfo;
-    private Fixed64 InterpolatingTime { get; set; } = new Fixed64(0.0f);
+    private Fixed64 InterpolatingTime { get; set; } = new Fixed64(0.0d);
 
     public bool IsMoving() => State.StateType == BattleUnitStateType.MOVE_FORWARD || State.StateType == BattleUnitStateType.MOVE_BACK;
     public bool CanMove() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
     public bool CanAttack() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
-    public bool CanJump() => State.StateType == BattleUnitStateType.IDLE || IsMoving();
     public BattleUnitMoveSide InputMoveSide { get; private set; }
 
     public BattleUnit(BattleWorld world)
@@ -38,7 +33,6 @@ public partial class BattleUnit
         World = world;
         State = world.UnitStatePool.Get();
         MoveController = world.UnitMoveControllerPool.Get();
-        JumpController = world.UnitJumpControllerPool.Get();
         AttackController = world.UnitAttackControllerPool.Get();
         HitMoveController = world.UnitDashMoveControllerPool.Get();
     }
@@ -218,14 +212,6 @@ public partial class BattleUnit
             {
                 return MoveController.AdvanceTime(frame.DeltaTime, Rotation);
             }
-            case BattleUnitStateType.JUMPING:
-            {
-                if (JumpController.IsJumping())
-                {
-                    return JumpController.AdvanceTime(frame);
-                }
-                break;
-            }
             case BattleUnitStateType.HIT:
             {
                 if (HitMoveController.IsMoving())
@@ -360,32 +346,20 @@ public partial class BattleUnit
 
     public void DoAttack1()
     {
-        AttackController.Initialize(new Fixed64(0.233333d), new Fixed64(0.833d));
+        AttackController.Initialize(new Fixed64(0.233333d), new Fixed64(0.833d), new Fixed64(1.0d), new Fixed64(0.2d));
         State.SetNextStateInfo(BattleUnitStateInfo.ATTACK1);
     }
 
     public void DoAttack2()
     {
-        AttackController.Initialize(new Fixed64(0.4d), new Fixed64(1.0));
+        AttackController.Initialize(new Fixed64(0.4d), new Fixed64(1.0), new Fixed64(2.0d), new Fixed64(0.4d));
         State.SetNextStateInfo(BattleUnitStateInfo.ATTACK2);
     }
 
-    public void DoAttack3()
+    public void DoHit(int damage, Fixed64 knockbackAmount, Fixed64 knockbackDuration)
     {
-        AttackController.Initialize(new Fixed64(0.5d), new Fixed64(1.0d));
-        State.SetNextStateInfo(BattleUnitStateInfo.ATTACK2);
-    }
-
-    public void DoHit(int damage)
-    {
-        HitMoveController.Initialize(Vector3d.Right, HIT_MOVE_AMOUNT, HIT_MOVE_TIME);
+        HitMoveController.Initialize(Vector3d.Backward * Rotation, knockbackAmount, knockbackDuration);
         State.SetNextStateInfo(BattleUnitStateInfo.HIT);
-    }
-
-    public void DoJump()
-    {
-        JumpController.DoJump();
-        State.SetNextStateInfo(BattleUnitStateInfo.JUMP);
     }
 
     public void PerformAttack()
@@ -395,7 +369,7 @@ public partial class BattleUnit
         var otherUnitCircle = BattleCircle.FromUnit(otherUnit);
         if (BattleCircle.CheckCollision(attackCircle, otherUnitCircle, out _))
         {
-            World.PerformAttack(this, otherUnit.ID);
+            World.PerformAttack(this, otherUnit.ID, AttackController.KnockbackAmount, AttackController.KnockbackDuration);
         }
     }
 

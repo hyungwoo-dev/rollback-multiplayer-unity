@@ -46,24 +46,4 @@ public class BattleUnitMoveTest
 
         Assert.True((movedAmount - expectPosition).Magnitude.Abs() < new Fixed64(0.001d), $"Fail, Delta: {movedAmount}, Expect: {distance}");
     }
-
-    [Test]
-    [TestCaseSource(nameof(GetMoveTestSources))]
-    public static void JumpMoveTest(TestData value)
-    {
-        var unitMove = new BattleUnitJumpMove(new BattleWorld(new BattleWorldManager()));
-        var distance = value.Distance;
-        unitMove.Initialize(distance, value.Time);
-
-        var count = 90;
-        var deltaTime = value.Time / (Fixed64)count;
-
-        var movedAmount = Vector3d.Zero;
-        for (var i = 0; i < count; ++i)
-        {
-            movedAmount += unitMove.AdvanceTime(deltaTime);
-        }
-
-        Assert.True((movedAmount.Magnitude).Abs() < new Fixed64(0.001f), $"Fail, Delta: {movedAmount}, Expect: {distance}");
-    }
 }

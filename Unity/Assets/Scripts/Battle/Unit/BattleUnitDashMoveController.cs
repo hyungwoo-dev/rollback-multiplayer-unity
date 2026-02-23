@@ -40,7 +40,7 @@ public partial class BattleUnitDashMoveController
 
         // 일정 시간동안 일정 거리만큼 특정 방향으로 이동한다.
         // 속도는 중력가속도 법칙에 의해 줄어든다.
-        var moveDelta = (Velocity - (Deceleration * deltaTime * new Fixed64(0.5f))) * deltaTime;
+        var moveDelta = (Velocity - (Deceleration * deltaTime * new Fixed64(0.5d))) * deltaTime;
         Velocity -= Deceleration * deltaTime;
         return moveDelta * Direction;
     }

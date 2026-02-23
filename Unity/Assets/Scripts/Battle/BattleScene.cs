@@ -10,11 +10,6 @@ public class BattleScene : MonoBehaviour
 
     public static IEnumerator CoLoad(BattleSceneLoadContext context)
     {
-        var hertz = Mathf.CeilToInt((float)Screen.currentResolution.refreshRateRatio.value);
-        Application.targetFrameRate = hertz;
-        Physics.simulationMode = SimulationMode.Script;
-        Debug.Log($"디스플레이 하드웨어 주사율: {hertz}");
-
         var scene = SceneManager.LoadScene(SceneNames.BATTLE, new LoadSceneParameters()
         {
             loadSceneMode = LoadSceneMode.Additive,

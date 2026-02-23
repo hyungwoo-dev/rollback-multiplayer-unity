@@ -147,8 +147,6 @@ public abstract partial class BaseWorldManager
         InputManager.OnInputMoveRightArrowUp += OnPlayerInputMoveRightArrowUp;
         InputManager.OnInputAttack1 += OnPlayerInputAttack1;
         InputManager.OnInputAttack2 += OnPlayerInputAttack2;
-        InputManager.OnInputFire += OnPlayerInputFire;
-        InputManager.OnInputJump += OnPlayerInputJump;
     }
 
     private void OnPlayerInputMoveRightArrowDown()
@@ -181,16 +179,6 @@ public abstract partial class BaseWorldManager
         PerformWorldEventInfo(BattleWorldInputEventType.ATTACK2, PlayerID);
     }
 
-    private void OnPlayerInputFire()
-    {
-        PerformWorldEventInfo(BattleWorldInputEventType.FIRE, PlayerID);
-    }
-
-    private void OnPlayerInputJump()
-    {
-        PerformWorldEventInfo(BattleWorldInputEventType.JUMP, PlayerID);
-    }
-
     protected virtual void PerformWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId)
     {
         var eventInfo = WorldEventInfoPool.Get();
@@ -209,8 +197,6 @@ public abstract partial class BaseWorldManager
         InputManager.OnInputMoveRightArrowUp -= OnPlayerInputMoveRightArrowUp;
         InputManager.OnInputAttack1 -= OnPlayerInputAttack2;
         InputManager.OnInputAttack2 -= OnPlayerInputAttack2;
-        InputManager.OnInputFire -= OnPlayerInputFire;
-        InputManager.OnInputJump -= OnPlayerInputJump;
         InputManager.Dispose();
     }
 

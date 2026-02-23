@@ -246,14 +246,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             {
                 return FrameEventType.ATTACK2;
             }
-            case BattleWorldInputEventType.FIRE:
-            {
-                return FrameEventType.FIRE;
-            }
-            case BattleWorldInputEventType.JUMP:
-            {
-                return FrameEventType.JUMP;
-            }
             case BattleWorldInputEventType.NONE:
             default:
             {
@@ -289,14 +281,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             case FrameEventType.ATTACK2:
             {
                 return BattleWorldInputEventType.ATTACK2;
-            }
-            case FrameEventType.FIRE:
-            {
-                return BattleWorldInputEventType.FIRE;
-            }
-            case FrameEventType.JUMP:
-            {
-                return BattleWorldInputEventType.JUMP;
             }
             case FrameEventType.NONE:
             default:

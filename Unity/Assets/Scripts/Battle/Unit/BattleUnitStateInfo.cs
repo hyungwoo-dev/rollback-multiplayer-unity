@@ -12,8 +12,6 @@ public abstract class BattleUnitStateInfo
     public static readonly BattleUnitStateInfo ATTACK1 = new BattleUnitFiniteStateInfo(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK1, CROSS_FADE_IN_TIME, new Fixed64(0.833d), BattleUnitStateInfo.IDLE);
     public static readonly BattleUnitStateInfo ATTACK2 = new BattleUnitFiniteStateInfo(BattleUnitStateType.ATTACK, BattleUnitAnimationNames.ATTACK2, CROSS_FADE_IN_TIME, new Fixed64(1.0d), BattleUnitStateInfo.IDLE);
 
-    public static readonly BattleUnitStateInfo JUMP = new BattleUnitFiniteStateInfo(BattleUnitStateType.JUMPING, BattleUnitAnimationNames.JUMP, CROSS_FADE_IN_TIME, new Fixed64(1.0d), BattleUnitStateInfo.IDLE);
-
     public static readonly BattleUnitStateInfo HIT = new BattleUnitFiniteStateInfo(BattleUnitStateType.HIT, BattleUnitAnimationNames.HIT, CROSS_FADE_IN_TIME_ZERO, new Fixed64(0.53333d), BattleUnitStateInfo.IDLE);
 
     public abstract BattleUnitStateType StateType { get; }

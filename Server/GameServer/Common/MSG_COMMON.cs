@@ -7,6 +7,4 @@
     RIGHT_ARROW_UP = 4,
     ATTACK1 = 5,
     ATTACK2 = 6,
-    FIRE = 7,
-    JUMP = 8,
 }
