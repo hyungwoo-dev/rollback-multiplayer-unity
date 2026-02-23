@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Pool;
 
 [ManagedStateIgnore]
 public abstract partial class BaseWorldManager
@@ -130,7 +129,7 @@ public abstract partial class BaseWorldManager
             worldEventInfo.Release(this);
         }
 
-        ListPool<BattleWorldEventInfo>.Release(worldEventInfos);
+        ConcurrentListPool<BattleWorldEventInfo>.Release(worldEventInfos);
     }
 
     #region Input
@@ -204,13 +203,13 @@ public abstract partial class BaseWorldManager
 
     #region Pool
 
-    public ObjectPool<BattleWorld> WorldPool { get; private set; }
-    public ObjectPool<BattleWorldEventInfo> WorldEventInfoPool { get; private set; }
+    public ConcurrentPool<BattleWorld> WorldPool { get; private set; }
+    public ConcurrentPool<BattleWorldEventInfo> WorldEventInfoPool { get; private set; }
 
     private void InitializePool()
     {
-        WorldPool = new ObjectPool<BattleWorld>(createFunc: () => new BattleWorld(this), defaultCapacity: 2);
-        WorldEventInfoPool = new ObjectPool<BattleWorldEventInfo>(createFunc: () => new BattleWorldEventInfo(this), defaultCapacity: 128);
+        WorldPool = new ConcurrentPool<BattleWorld>(createFunc: () => new BattleWorld(this));
+        WorldEventInfoPool = new ConcurrentPool<BattleWorldEventInfo>(createFunc: () => new BattleWorldEventInfo(this));
     }
 
     private void DisposePool()

@@ -296,31 +296,31 @@ public partial class BattleWorld
     #region Pool
 
     [ManagedStateIgnore]
-    public ObjectPool<BattleUnit> UnitPool { get; private set; }
+    public ConcurrentPool<BattleUnit> UnitPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ObjectPool<BattleUnitState> UnitStatePool { get; private set; }
+    public ConcurrentPool<BattleUnitState> UnitStatePool { get; private set; }
 
     [ManagedStateIgnore]
-    public ObjectPool<BattleUnitMoveController> UnitMoveControllerPool { get; private set; }
+    public ConcurrentPool<BattleUnitMoveController> UnitMoveControllerPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ObjectPool<BattleUnitDashMoveController> UnitDashMoveControllerPool { get; private set; }
+    public ConcurrentPool<BattleUnitDashMoveController> UnitDashMoveControllerPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ObjectPool<BattleTimer> TimerPool { get; private set; }
+    public ConcurrentPool<BattleTimer> TimerPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ObjectPool<BattleUnitAttackController> UnitAttackControllerPool { get; private set; }
+    public ConcurrentPool<BattleUnitAttackController> UnitAttackControllerPool { get; private set; }
 
     private void InitializePool()
     {
-        UnitPool = new ObjectPool<BattleUnit>(() => new BattleUnit(this));
-        UnitStatePool = new ObjectPool<BattleUnitState>(() => new BattleUnitState(this));
-        UnitMoveControllerPool = new ObjectPool<BattleUnitMoveController>(() => new BattleUnitMoveController(this));
-        UnitDashMoveControllerPool = new ObjectPool<BattleUnitDashMoveController>(() => new BattleUnitDashMoveController(this));
-        UnitAttackControllerPool = new ObjectPool<BattleUnitAttackController>(() => new BattleUnitAttackController(this));
-        TimerPool = new ObjectPool<BattleTimer>(() => new BattleTimer(this));
+        UnitPool = new ConcurrentPool<BattleUnit>(() => new BattleUnit(this));
+        UnitStatePool = new ConcurrentPool<BattleUnitState>(() => new BattleUnitState(this));
+        UnitMoveControllerPool = new ConcurrentPool<BattleUnitMoveController>(() => new BattleUnitMoveController(this));
+        UnitDashMoveControllerPool = new ConcurrentPool<BattleUnitDashMoveController>(() => new BattleUnitDashMoveController(this));
+        UnitAttackControllerPool = new ConcurrentPool<BattleUnitAttackController>(() => new BattleUnitAttackController(this));
+        TimerPool = new ConcurrentPool<BattleTimer>(() => new BattleTimer(this));
     }
 
     private void DisposePool()

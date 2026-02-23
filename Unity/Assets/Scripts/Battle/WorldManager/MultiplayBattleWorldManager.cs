@@ -114,11 +114,11 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     {
         base.ExecuteWorldEventInfos(frame, worldEventInfos);
 
-        var newWorldEventInfos = ListPool<BattleWorldEventInfo>.Get();
+        var newWorldEventInfos = ConcurrentListPool<BattleWorldEventInfo>.Get();
         newWorldEventInfos.AddRange(worldEventInfos);
         LocalWorldEventInfos.Add(frame, newWorldEventInfos);
 
-        var serverFrameEvents = ListPool<C2S_MSG_FRAME_EVENT>.Get();
+        var serverFrameEvents = ConcurrentListPool<C2S_MSG_FRAME_EVENT>.Get();
 
         foreach (var worldEventInfo in worldEventInfos)
         {
@@ -141,7 +141,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         }
         serverFrameEvents.Clear();
 
-        ListPool<C2S_MSG_FRAME_EVENT>.Release(serverFrameEvents);
+        ConcurrentListPool<C2S_MSG_FRAME_EVENT>.Release(serverFrameEvents);
         NetworkManager.C2S_FrameEventsPool.Release(frameEvents);
     }
 
@@ -203,7 +203,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     private void HandleOnFrameEvent(int frame, List<S2C_MSG_FRAME_EVENT> msgFrameEvents)
     {
-        var worldEventInfos = ListPool<BattleWorldEventInfo>.Get();
+        var worldEventInfos = ConcurrentListPool<BattleWorldEventInfo>.Get();
         foreach (var msgFrameEvent in msgFrameEvents)
         {
             if (TryCreateWorldEvnetInfo(msgFrameEvent, frame, out var worldEventInfo))
