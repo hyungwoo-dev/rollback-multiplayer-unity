@@ -56,7 +56,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     public override void AdvanceFrame(in BattleFrame frame)
     {
-        AdvanceServerWorld(frame, ServerWorld.NextFrame, out var rewind);
+        AdvanceServerWorld(frame, out var rewind);
         if (rewind)
         {
             RewindFuture(frame);
@@ -65,12 +65,13 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         base.AdvanceFrame(frame);
     }
 
-    private void AdvanceServerWorld(BattleFrame frame, int serverWorldNextFrame, out bool rewind)
+    private void AdvanceServerWorld(BattleFrame frame, out bool rewind)
     {
         rewind = false;
 
-        while (TryPopServerWorldEventInfos(serverWorldNextFrame, out var serverWorldEventInfos))
+        while (TryPopServerWorldEventInfos(ServerWorld.NextFrame, out var serverWorldEventInfos))
         {
+            var serverWorldNextFrame = ServerWorld.NextFrame;
             ServerWorld.ExecuteWorldEventInfos(serverWorldEventInfos);
             ServerWorld.AdvanceFrame(frame);
 
