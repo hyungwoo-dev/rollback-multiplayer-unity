@@ -42,8 +42,11 @@ namespace GameServer
 
         public void OnEnterWorld(int userIndex)
         {
-            // 경합이 없으므로, Lock을 걸지 않음
-            _enterWorldFlags[userIndex] = true;
+            lock (_enterWorldFlags)
+            {
+                _enterWorldFlags[userIndex] = true;
+            }
+            
             if (IsAllUsersWorldEntered())
             {
                 const long START_DELAY = 1500;
@@ -236,13 +239,16 @@ namespace GameServer
             }
         }
 
-        private bool IsAllUsersWorldEntered()
+        public bool IsAllUsersWorldEntered()
         {
-            foreach (var enterWorldFlag in _enterWorldFlags)
+            lock (_enterWorldFlags)
             {
-                if (!enterWorldFlag)
+                foreach (var enterWorldFlag in _enterWorldFlags)
                 {
-                    return false;
+                    if (!enterWorldFlag)
+                    {
+                        return false;
+                    }
                 }
             }
 

@@ -25,7 +25,7 @@ namespace GameServer
         {
             lock (_syncLock)
             {
-                if (_roomList.Count == 0 || _roomList.Last.Value.IsFull())
+                if (_roomList.Count == 0 || _roomList.Last.Value.IsFull() || _roomList.Last.Value.IsAllUsersWorldEntered())
                 {
                     var roomID = RoomID.Generate();
                     var room = new GameRoom(roomID);
