@@ -205,7 +205,7 @@ public partial class BattleUnit
         }
         else
         {
-            return FixedQuaternion.Slerp(Rotation, targetRotation, frame.DeltaTime * new Fixed64(6.0d));
+            return FixedQuaternion.Slerp(Rotation, targetRotation, frame.DeltaTime * new Fixed64(12.0d));
         }
     }
 
