@@ -4,15 +4,15 @@ using UnityEngine.Pool;
 
 public partial class NetworkManager
 {
-    private ObjectPool<S2C_MSG_GAME_START> GameStartMessagePool = new(() => new S2C_MSG_GAME_START());
+    private Pool<S2C_MSG_GAME_START> GameStartMessagePool = new(() => new S2C_MSG_GAME_START());
     public delegate void S2C_GAME_START_DELEGATE(S2C_MSG_GAME_START msgGameStart);
     public event S2C_GAME_START_DELEGATE OnGameStart = null;
 
-    private ObjectPool<S2C_MSG_FRAME_EVENT> FrameEventMessagePool = new(() => new S2C_MSG_FRAME_EVENT());
+    private Pool<S2C_MSG_FRAME_EVENT> FrameEventMessagePool = new(() => new S2C_MSG_FRAME_EVENT());
     public delegate void S2C_FRAME_EVENT_DELEGATE(int frame, List<S2C_MSG_FRAME_EVENT> msgFrameEvent);
     public event S2C_FRAME_EVENT_DELEGATE OnFrameEvent = null;
 
-    private ObjectPool<S2C_MSG_INVALIDATE_HASH> InvalidateHashMessagePool = new(() => new S2C_MSG_INVALIDATE_HASH());
+    private Pool<S2C_MSG_INVALIDATE_HASH> InvalidateHashMessagePool = new(() => new S2C_MSG_INVALIDATE_HASH());
     public delegate void S2C_FRAME_INVALIDATE_HASH_DELEGATE(S2C_MSG_INVALIDATE_HASH msgInvalidateHash);
     public event S2C_FRAME_INVALIDATE_HASH_DELEGATE OnFrameInvalidateHash = null;
 
@@ -78,6 +78,7 @@ public partial class NetworkManager
     {
         var msgFrameInvalidateHash = InvalidateHashMessagePool.Get();
 
+        msgFrameInvalidateHash.Frame = packet.pop_int32();
         msgFrameInvalidateHash.PlayerHash = packet.pop_int32();
         msgFrameInvalidateHash.OpponentPlayerHash = packet.pop_int32();
         OnFrameInvalidateHash?.Invoke(msgFrameInvalidateHash);

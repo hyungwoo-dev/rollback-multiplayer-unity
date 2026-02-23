@@ -1,7 +1,6 @@
 ﻿using FixedMathSharp;
 using System.Collections.Generic;
 using System.Text;
-using UnityEngine.Pool;
 
 public partial class BattleWorld
 {
@@ -30,6 +29,7 @@ public partial class BattleWorld
     public int NextFrame => CurrentFrame + 1;
 
     private List<BattleUnit> Units { get; set; } = new();
+    private List<BattleWorldEventInfo> WorldEventInfos { get; set; } = new(16);
 
     public int GetWorldHash()
     {
@@ -39,6 +39,26 @@ public partial class BattleWorld
             hash ^= unit.GetUnitHash();
         }
         return hash;
+    }
+
+    public void PerformWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId, int battleTimeMillis)
+    {
+        var eventInfo = WorldEventInfoPool.Get();
+        eventInfo.WorldInputEventType = inputEventType;
+        eventInfo.UnitID = unitId;
+        eventInfo.TargetFrame = NextFrame;
+        eventInfo.BattleTimeMillis = battleTimeMillis;
+        WorldEventInfos.Add(eventInfo);
+    }
+
+    public void ReleaseWorldEventInfos(List<BattleWorldEventInfo> worldEventInfos)
+    {
+        foreach (var worldEventInfo in worldEventInfos)
+        {
+            worldEventInfo.Release(this);
+        }
+
+        WorldEventInfoListPool.Release(worldEventInfos);
     }
 
     public void PerformAttack(BattleUnit attacker, int unitID, Fixed64 knockbackAmount, Fixed64 knockbackDuration)
@@ -123,6 +143,25 @@ public partial class BattleWorld
         foreach (var unit in Units)
         {
             unit.Interpolate(frame, worldScene);
+        }
+    }
+
+    public void ApplyWorldEventInfos(List<BattleWorldEventInfo> outWorldEventInfos)
+    {
+        if (WorldEventInfos.Count == 0)
+        {
+            PerformWorldEventInfo(BattleWorldInputEventType.NONE, WorldManager.PlayerID, WorldManager.BattleTimeMillis);
+        }
+
+        ExecuteWorldEventInfos(WorldEventInfos);
+        foreach (var worldEventInfo in WorldEventInfos)
+        {
+            outWorldEventInfos.Add(worldEventInfo);
+        }
+
+        if (WorldEventInfos.Count > 0)
+        {
+            WorldEventInfos.Clear();
         }
     }
 
@@ -251,6 +290,13 @@ public partial class BattleWorld
             var clone = unit.Clone(this);
             Units.Add(clone);
         }
+
+        WorldEventInfos.Clear();
+        foreach (var worldEventInfo in other.WorldEventInfos)
+        {
+            var clone = worldEventInfo.Clone(this);
+            WorldEventInfos.Add(clone);
+        }
     }
 
     public void Release()
@@ -262,6 +308,12 @@ public partial class BattleWorld
             unit.Release(this);
         }
         Units.Clear();
+
+        foreach (var worldEventInfo in WorldEventInfos)
+        {
+            worldEventInfo.Release(this);
+        }
+        WorldEventInfos.Clear();
 
         WorldManager.WorldPool.Release(this);
     }
@@ -296,31 +348,39 @@ public partial class BattleWorld
     #region Pool
 
     [ManagedStateIgnore]
-    public ConcurrentPool<BattleUnit> UnitPool { get; private set; }
+    public Pool<BattleUnit> UnitPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ConcurrentPool<BattleUnitState> UnitStatePool { get; private set; }
+    public Pool<BattleUnitState> UnitStatePool { get; private set; }
 
     [ManagedStateIgnore]
-    public ConcurrentPool<BattleUnitMoveController> UnitMoveControllerPool { get; private set; }
+    public Pool<BattleUnitMoveController> UnitMoveControllerPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ConcurrentPool<BattleUnitDashMoveController> UnitDashMoveControllerPool { get; private set; }
+    public Pool<BattleUnitDashMoveController> UnitDashMoveControllerPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ConcurrentPool<BattleTimer> TimerPool { get; private set; }
+    public Pool<BattleTimer> TimerPool { get; private set; }
 
     [ManagedStateIgnore]
-    public ConcurrentPool<BattleUnitAttackController> UnitAttackControllerPool { get; private set; }
+    public Pool<BattleUnitAttackController> UnitAttackControllerPool { get; private set; }
+
+    [ManagedStateIgnore]
+    public Pool<BattleWorldEventInfo> WorldEventInfoPool { get; private set; }
+
+    [ManagedStateIgnore]
+    public Pool<List<BattleWorldEventInfo>> WorldEventInfoListPool { get; private set; }
 
     private void InitializePool()
     {
-        UnitPool = new ConcurrentPool<BattleUnit>(() => new BattleUnit(this));
-        UnitStatePool = new ConcurrentPool<BattleUnitState>(() => new BattleUnitState(this));
-        UnitMoveControllerPool = new ConcurrentPool<BattleUnitMoveController>(() => new BattleUnitMoveController(this));
-        UnitDashMoveControllerPool = new ConcurrentPool<BattleUnitDashMoveController>(() => new BattleUnitDashMoveController(this));
-        UnitAttackControllerPool = new ConcurrentPool<BattleUnitAttackController>(() => new BattleUnitAttackController(this));
-        TimerPool = new ConcurrentPool<BattleTimer>(() => new BattleTimer(this));
+        UnitPool = new Pool<BattleUnit>(() => new BattleUnit(this));
+        UnitStatePool = new Pool<BattleUnitState>(() => new BattleUnitState(this));
+        UnitMoveControllerPool = new Pool<BattleUnitMoveController>(() => new BattleUnitMoveController(this));
+        UnitDashMoveControllerPool = new Pool<BattleUnitDashMoveController>(() => new BattleUnitDashMoveController(this));
+        UnitAttackControllerPool = new Pool<BattleUnitAttackController>(() => new BattleUnitAttackController(this));
+        TimerPool = new Pool<BattleTimer>(() => new BattleTimer(this));
+        WorldEventInfoPool = new Pool<BattleWorldEventInfo>(createFunc: () => new BattleWorldEventInfo(this));
+        WorldEventInfoListPool = new Pool<List<BattleWorldEventInfo>>(() => new List<BattleWorldEventInfo>(), list => list.Clear());
     }
 
     private void DisposePool()
@@ -330,6 +390,8 @@ public partial class BattleWorld
         UnitMoveControllerPool.Dispose();
         UnitDashMoveControllerPool.Dispose();
         TimerPool.Dispose();
+        WorldEventInfoPool.Dispose();
+        WorldEventInfoListPool.Dispose();
     }
 
     #endregion Pool

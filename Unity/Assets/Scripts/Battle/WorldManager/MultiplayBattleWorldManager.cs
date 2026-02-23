@@ -1,18 +1,25 @@
 ﻿using System.Collections.Generic;
-using UnityEngine.Pool;
+using System.Threading;
 
 [ManagedStateIgnore]
 public class MultiplayBattleWorldManager : BaseWorldManager
 {
     private static Debug Debug = new(nameof(MultiplayBattleWorldManager));
 
+    private object _serverUpdateLock = new();
     private BattleWorld ServerWorld { get; set; }
+    private int LastCheckedServerWorldFrame { get; set; }
     private NetworkManager NetworkManager { get; set; }
     private Dictionary<int, List<BattleWorldEventInfo>> ReceivedWorldEventInfos { get; set; } = new();
     protected Dictionary<int, List<BattleWorldEventInfo>> LocalWorldEventInfos { get; private set; } = new();
     public long GameStartUnixTimeMillis { get; private set; } = -1;
     public override int BattleTimeMillis => (int)(TimeUtils.UtcNowUnixTimeMillis - GameStartUnixTimeMillis);
     public int OpponentPlayerID { get; private set; } = -1;
+
+    private bool Rewind { get; set; }
+
+    private long _disposeFlag;
+    private long _serverWorldRunningFlag;
 
     public MultiplayBattleWorldManager() : base()
     {
@@ -41,10 +48,39 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         });
     }
 
-    public override void Initialize(BattleCamera camera)
+    public override void Initialize(BattleCamera camera, in BattleFrame frame)
     {
-        base.Initialize(camera);
-        ServerWorld.Initialize();
+        base.Initialize(camera, frame);
+
+        var thread = new Thread(static state =>
+        {
+            var parameters = state as object[];
+            var worldManager = parameters[0] as MultiplayBattleWorldManager;
+            var fixedFrame = (BattleFrame)parameters[1];
+            Interlocked.Increment(ref worldManager._serverWorldRunningFlag);
+
+            worldManager.ServerWorld.Initialize();
+            while (Interlocked.Read(ref worldManager._disposeFlag) == 0)
+            {
+                worldManager.NetworkManager.ProcessPacket();
+
+                lock (worldManager._serverUpdateLock)
+                {
+                    worldManager.Rewind |= worldManager.AdvanceServerWorld(fixedFrame);
+                }
+
+                Thread.Sleep(1);
+            }
+
+            Interlocked.Decrement(ref worldManager._serverWorldRunningFlag);
+        });
+        thread.Priority = ThreadPriority.Highest;
+        thread.IsBackground = true;
+        thread.Start(new object[]
+        {
+            this,
+            frame
+        });
     }
 
     public override bool IsStarted()
@@ -56,29 +92,53 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     public override void AdvanceFrame(in BattleFrame frame)
     {
-        AdvanceServerWorld(frame, out var rewind);
-        if (rewind)
+        lock (_serverUpdateLock)
         {
-            RewindFuture(frame);
+            if (Rewind)
+            {
+                Rewind = false;
+                RewindFuture(frame);
+            }
+
+            if (LastCheckedServerWorldFrame != ServerWorld.NextFrame)
+            {
+                for (var i = LastCheckedServerWorldFrame; i < ServerWorld.NextFrame; ++i)
+                {
+                    if (!LocalWorldEventInfos.TryGetValue(i, out var worldEventInfos))
+                    {
+                        continue;
+                    }
+
+                    FutureWorld.ReleaseWorldEventInfos(worldEventInfos);
+                    LocalWorldEventInfos.Remove(i);
+                }
+            }
         }
 
         base.AdvanceFrame(frame);
     }
 
-    private void AdvanceServerWorld(BattleFrame frame, out bool rewind)
+    private bool AdvanceServerWorld(BattleFrame frame)
     {
-        rewind = false;
+        var rewind = false;
 
-        while (TryPopServerWorldEventInfos(ServerWorld.NextFrame, out var serverWorldEventInfos))
+        while (ReceivedWorldEventInfos.TryGetValue(ServerWorld.NextFrame, out var serverWorldEventInfos))
         {
             var serverWorldNextFrame = ServerWorld.NextFrame;
+            ReceivedWorldEventInfos.Remove(serverWorldNextFrame);
             ServerWorld.ExecuteWorldEventInfos(serverWorldEventInfos);
             ServerWorld.AdvanceFrame(frame);
 
-            var localHash = GetWorldEventInfosHash(LocalWorldEventInfos[serverWorldNextFrame]);
-            var serverHash = GetWorldEventInfosHash(serverWorldEventInfos);
+            foreach (var serverWorldEventInfo in serverWorldEventInfos)
+            {
+                if (serverWorldEventInfo.UnitID != PlayerID && serverWorldEventInfo.WorldInputEventType != BattleWorldInputEventType.NONE)
+                {
+                    rewind = true;
+                    break;
+                }
+            }
 
-            rewind |= localHash != serverHash;
+            ServerWorld.ReleaseWorldEventInfos(serverWorldEventInfos);
 
             var msg = new C2S_MSG_FRAME_HASH()
             {
@@ -86,14 +146,9 @@ public class MultiplayBattleWorldManager : BaseWorldManager
                 Hash = ServerWorld.GetWorldHash()
             };
             NetworkManager.C2S_FRAME_HASH(msg);
-
-            ReleaseWorldEventInfos(serverWorldEventInfos);
-            if (LocalWorldEventInfos.TryGetValue(serverWorldNextFrame, out var pastWorldEventInfos))
-            {
-                ReleaseWorldEventInfos(pastWorldEventInfos);
-                LocalWorldEventInfos.Remove(serverWorldNextFrame);
-            }
         }
+
+        return rewind;
     }
 
     private void RewindFuture(BattleFrame frame)
@@ -110,15 +165,15 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         }
     }
 
-    protected override void ExecuteWorldEventInfos(int frame, List<BattleWorldEventInfo> worldEventInfos)
+    protected override void OnExecuteWorldEventInfos(int frame, List<BattleWorldEventInfo> worldEventInfos)
     {
-        base.ExecuteWorldEventInfos(frame, worldEventInfos);
+        base.OnExecuteWorldEventInfos(frame, worldEventInfos);
 
-        var newWorldEventInfos = ConcurrentListPool<BattleWorldEventInfo>.Get();
+        var newWorldEventInfos = FutureWorld.WorldEventInfoListPool.Get();
         newWorldEventInfos.AddRange(worldEventInfos);
-        LocalWorldEventInfos.Add(frame, newWorldEventInfos);
+        LocalWorldEventInfos.TryAdd(frame, newWorldEventInfos);
 
-        var serverFrameEvents = ConcurrentListPool<C2S_MSG_FRAME_EVENT>.Get();
+        var serverFrameEvents = NetworkManager.C2S_FrameEventListPool.Get();
 
         foreach (var worldEventInfo in worldEventInfos)
         {
@@ -139,23 +194,8 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         {
             NetworkManager.C2S_FrameEventPool.Release(serverFrameEvent);
         }
-        serverFrameEvents.Clear();
-
-        ConcurrentListPool<C2S_MSG_FRAME_EVENT>.Release(serverFrameEvents);
+        NetworkManager.C2S_FrameEventListPool.Release(serverFrameEvents);
         NetworkManager.C2S_FrameEventsPool.Release(frameEvents);
-    }
-
-    private bool TryPopServerWorldEventInfos(int frame, out List<BattleWorldEventInfo> worldEventInfos)
-    {
-        lock (ReceivedWorldEventInfos)
-        {
-            if (ReceivedWorldEventInfos.TryGetValue(frame, out worldEventInfos))
-            {
-                ReceivedWorldEventInfos.Remove(frame);
-                return true;
-            }
-            return false;
-        }
     }
 
     public override void OnUpdate(in BattleFrame frame)
@@ -165,22 +205,29 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     public override void Dispose()
     {
-        ServerWorld.Release();
-        ServerWorld = null;
+        Interlocked.Increment(ref _disposeFlag);
+
+        while (Interlocked.Read(ref _serverWorldRunningFlag) > 0)
+        {
+            // 서버 월드 스레드가 종료될 떄 까지 대기한다.
+        }
 
         foreach (var worldEventInfos in LocalWorldEventInfos.Values)
         {
-            ReleaseWorldEventInfos(worldEventInfos);
+            FutureWorld.ReleaseWorldEventInfos(worldEventInfos);
         }
         LocalWorldEventInfos.Clear();
 
-        DisconnectNetworkManager();
-
         foreach (var worldEventInfos in ReceivedWorldEventInfos.Values)
         {
-            ReleaseWorldEventInfos(worldEventInfos);
+            ServerWorld.ReleaseWorldEventInfos(worldEventInfos);
         }
         ReceivedWorldEventInfos.Clear();
+
+        ServerWorld.Release();
+        ServerWorld = null;
+
+        DisconnectNetworkManager();
 
         base.Dispose();
     }
@@ -203,19 +250,16 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     private void HandleOnFrameEvent(int frame, List<S2C_MSG_FRAME_EVENT> msgFrameEvents)
     {
-        var worldEventInfos = ConcurrentListPool<BattleWorldEventInfo>.Get();
+        var worldEventInfos = ServerWorld.WorldEventInfoListPool.Get();
         foreach (var msgFrameEvent in msgFrameEvents)
         {
-            if (TryCreateWorldEvnetInfo(msgFrameEvent, frame, out var worldEventInfo))
+            if (TryCreateServerWorldEvnetInfo(msgFrameEvent, frame, out var worldEventInfo))
             {
                 worldEventInfos.Add(worldEventInfo);
             }
         }
 
-        lock (ReceivedWorldEventInfos)
-        {
-            ReceivedWorldEventInfos.Add(frame, worldEventInfos);
-        }
+        ReceivedWorldEventInfos.TryAdd(frame, worldEventInfos);
     }
 
     protected FrameEventType WorldEventToFrameEventType(BattleWorldInputEventType worldEventType)
@@ -290,10 +334,10 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         }
     }
 
-    private bool TryCreateWorldEvnetInfo(S2C_MSG_FRAME_EVENT msgFrameEvent, int frame, out BattleWorldEventInfo worldEventInfo)
+    private bool TryCreateServerWorldEvnetInfo(S2C_MSG_FRAME_EVENT msgFrameEvent, int frame, out BattleWorldEventInfo worldEventInfo)
     {
         var worldEventType = FrameEventTypeToWorldEventType(msgFrameEvent.EventType);
-        worldEventInfo = WorldEventInfoPool.Get();
+        worldEventInfo = ServerWorld.WorldEventInfoPool.Get();
         worldEventInfo.TargetFrame = frame;
         worldEventInfo.WorldInputEventType = worldEventType;
         worldEventInfo.UnitID = msgFrameEvent.UserIndex;

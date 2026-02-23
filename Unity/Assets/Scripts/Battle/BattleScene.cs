@@ -10,6 +10,8 @@ public class BattleScene : MonoBehaviour
 
     public static IEnumerator CoLoad(BattleSceneLoadContext context)
     {
+        AnimationDeltaInfos.EnsureInstance();
+
         var scene = SceneManager.LoadScene(SceneNames.BATTLE, new LoadSceneParameters()
         {
             loadSceneMode = LoadSceneMode.Additive,
@@ -65,9 +67,9 @@ public class BattleScene : MonoBehaviour
         WorldManager.OnSetupCompleted();
     }
 
-    private void Initialize()
+    private void Initialize(in BattleFrame frame)
     {
-        WorldManager.Initialize(_battleCamera);
+        WorldManager.Initialize(_battleCamera, frame);
         _battleCamera.Initialize(WorldManager.FutureWorld);
 
         IsInitialized = true;
@@ -81,7 +83,7 @@ public class BattleScene : MonoBehaviour
 
         if (!IsInitialized)
         {
-            Initialize();
+            Initialize(frame);
         }
 
         if (WorldManager.IsStarted())

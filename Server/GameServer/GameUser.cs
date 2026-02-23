@@ -66,6 +66,7 @@ namespace GameServer
         {
             var packet = new CPacket();
             packet.set_protocol((short)S2C_MSG.S2C_INVALIDATE_HASH);
+            packet.push(msg.Frame);
             packet.push(msg.PlayerHash);
             packet.push(msg.OpponentPlayerHash);
             send(packet);

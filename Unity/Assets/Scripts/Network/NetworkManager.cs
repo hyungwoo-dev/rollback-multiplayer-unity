@@ -1,6 +1,5 @@
 ﻿using FreeNet;
 using System.Threading;
-using System.Threading.Tasks;
 
 public partial class NetworkManager
 {
@@ -10,8 +9,6 @@ public partial class NetworkManager
 
     private NetworkHandler Handler { get; set; }
     public NetworkStatus Status => (NetworkStatus)Interlocked.Read(ref _statusIntValue);
-
-    private CancellationTokenSource _processPacketCancellationToken;
 
     public NetworkManager()
     {
@@ -28,10 +25,6 @@ public partial class NetworkManager
         }
 
         Handler.Connect(address, port);
-
-        var processPacketCancellationToken = new CancellationTokenSource();
-        Task.Run(() => ProcessPacket(this, processPacketCancellationToken));
-        _processPacketCancellationToken = processPacketCancellationToken;
     }
 
     public void Disconnect()
@@ -41,11 +34,6 @@ public partial class NetworkManager
             return;
         }
 
-        if (_processPacketCancellationToken != null)
-        {
-            _processPacketCancellationToken.Cancel();
-            _processPacketCancellationToken = null;
-        }
         Handler.Disconnect();
     }
 
@@ -72,16 +60,11 @@ public partial class NetworkManager
         this.Handler.Send(msg);
     }
 
-    private static void ProcessPacket(NetworkManager networkManager, CancellationTokenSource cancellationTokenSource)
+    public void ProcessPacket()
     {
-        while (!cancellationTokenSource.IsCancellationRequested)
+        if (Status == NetworkStatus.CONNECTED)
         {
-            if (networkManager.Status == NetworkStatus.CONNECTED)
-            {
-                networkManager.Handler.ProcessPacket();
-            }
-
-            Thread.Sleep(1);
+            Handler.ProcessPacket();
         }
     }
 }

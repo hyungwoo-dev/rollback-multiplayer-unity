@@ -1,11 +1,11 @@
 ﻿using FreeNet;
 using System.Collections.Generic;
-using UnityEngine.Pool;
 
 public partial class NetworkManager
 {
-    public ObjectPool<C2S_MSG_FRAME_EVENTS> C2S_FrameEventsPool = new ObjectPool<C2S_MSG_FRAME_EVENTS>(() => new C2S_MSG_FRAME_EVENTS());
-    public ObjectPool<C2S_MSG_FRAME_EVENT> C2S_FrameEventPool = new ObjectPool<C2S_MSG_FRAME_EVENT>(() => new C2S_MSG_FRAME_EVENT());
+    public Pool<C2S_MSG_FRAME_EVENTS> C2S_FrameEventsPool = new Pool<C2S_MSG_FRAME_EVENTS>(() => new C2S_MSG_FRAME_EVENTS());
+    public Pool<C2S_MSG_FRAME_EVENT> C2S_FrameEventPool = new Pool<C2S_MSG_FRAME_EVENT>(() => new C2S_MSG_FRAME_EVENT());
+    public Pool<List<C2S_MSG_FRAME_EVENT>> C2S_FrameEventListPool = new Pool<List<C2S_MSG_FRAME_EVENT>>(() => new List<C2S_MSG_FRAME_EVENT>(), (list) => list.Clear());
 
     public void C2S_ENTER_WORLD(C2S_MSG_ENTER_WORLD msgEnterWorld)
     {

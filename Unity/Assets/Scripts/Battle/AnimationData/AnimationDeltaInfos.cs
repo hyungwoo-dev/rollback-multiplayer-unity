@@ -15,19 +15,18 @@ public class AnimationDeltaInfo
 [Serializable]
 public class AnimationDeltaInfos : ISerializationCallbackReceiver
 {
-    private static AnimationDeltaInfos _instance;
-    public static AnimationDeltaInfos Shared
+    public static void EnsureInstance()
     {
-        get
+        if (Shared != null)
         {
-            if (_instance == null)
-            {
-                var json = Resources.Load<TextAsset>(FILE_NAME_WITHOUT_EXTENSIONS).text;
-                _instance = JsonUtility.FromJson<AnimationDeltaInfos>(json);
-            }
-            return _instance;
+            return;
         }
+
+        var json = Resources.Load<TextAsset>(FILE_NAME_WITHOUT_EXTENSIONS).text;
+        Shared = JsonUtility.FromJson<AnimationDeltaInfos>(json);
     }
+
+    public static AnimationDeltaInfos Shared { get; private set; }
 
     public const string FILE_NAME_WITHOUT_EXTENSIONS = "animation_delta_infos";
     public const string FILE_NAME = FILE_NAME_WITHOUT_EXTENSIONS + ".bytes";
