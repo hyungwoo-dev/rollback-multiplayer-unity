@@ -4,17 +4,6 @@ using System.Text;
 
 public partial class BattleWorld
 {
-    #region Record
-
-    private StringBuilder LogStringBuilder = new StringBuilder();
-
-    public void LogUnit(BattleUnit unit, Vector3d movePosition, FixedQuaternion moveRotation)
-    {
-        LogStringBuilder.Append($"[Frame: {CurrentFrame}]Unit - ID: {unit.ID}, MovePosition: {movePosition}, MoveRotation: {moveRotation}");
-    }
-
-    #endregion Record
-
     private Debug Debug = new(nameof(BattleWorld));
 
     protected static readonly Vector3d LEFT_UNIT_START_POSITION = new(-4.5d, 0.0d, 0.0d);
@@ -22,6 +11,9 @@ public partial class BattleWorld
 
     protected static readonly Vector3d RIGHT_UNIT_START_POSITION = new(4.5d, 0.0d, 0.0d);
     protected static readonly FixedQuaternion RIGHT_UNIT_ROTATION = FixedQuaternion.FromEulerAngles(new Fixed64(0.0d).ToRadians(), new Fixed64(-90.0d).ToRadians(), new Fixed64(0.0d).ToRadians());
+
+    protected static readonly Vector3d CAMERA_START_POSITION = new(0.0d, 1.0d, -9.1d);
+    public static readonly FixedQuaternion CAMERA_START_ROTATION = FixedQuaternion.FromEulerAngles(new Fixed64(3.0d).ToRadians(), Fixed64.Zero.ToRadians(), Fixed64.Zero.ToRadians());
 
     public BaseWorldManager WorldManager { get; private set; }
     public BattleWorldScene WorldScene { get; private set; }
@@ -31,6 +23,8 @@ public partial class BattleWorld
     private List<BattleUnit> Units { get; set; } = new();
     private List<BattleWorldEventInfo> WorldEventInfos { get; set; } = new(16);
 
+    public BattleCameraTransform CameraTransform { get; private set; } = new();
+
     public int GetWorldHash()
     {
         var hash = int.MaxValue;
@@ -38,6 +32,7 @@ public partial class BattleWorld
         {
             hash ^= unit.GetUnitHash();
         }
+        hash ^= CameraTransform.GetCameraHash();
         return hash;
     }
 
@@ -136,6 +131,7 @@ public partial class BattleWorld
     {
         AddUnit(0, LEFT_UNIT_START_POSITION, LEFT_UNIT_ROTATION);
         AddUnit(1, RIGHT_UNIT_START_POSITION, RIGHT_UNIT_ROTATION);
+        CameraTransform.Initialize(this, CAMERA_START_POSITION, CAMERA_START_ROTATION);
     }
 
     public void Interpolate(in BattleFrame frame, BattleWorldScene worldScene)
@@ -190,6 +186,8 @@ public partial class BattleWorld
         {
             unit.CheckCollisions(frame);
         }
+
+        CameraTransform.AdvanceFrame(frame);
     }
 
     private void AddUnit(int unitID, Vector3d position, FixedQuaternion rotation)
@@ -297,6 +295,8 @@ public partial class BattleWorld
             var clone = worldEventInfo.Clone(this);
             WorldEventInfos.Add(clone);
         }
+
+        CameraTransform.DeepCopyFrom(this, other.CameraTransform);
     }
 
     public void Release()
@@ -314,6 +314,8 @@ public partial class BattleWorld
             worldEventInfo.Release(this);
         }
         WorldEventInfos.Clear();
+
+        CameraTransform.Release(this);
 
         WorldManager.WorldPool.Release(this);
     }
@@ -340,7 +342,7 @@ public partial class BattleWorld
         var cameraDistance = MathUtils.Max((unit2.Position - unit1.Position).Magnitude * new Fixed64(0.9d), CAMERA_DISTANCE_MIN);
         var cameraForward = Vector3d.Cross(new Vector3d(rightUnitLocalPosition.x, new Fixed64(0.0d), rightUnitLocalPosition.z), Vector3d.Up).Normalize();
 
-        var cameraTargetRotation = FixedQuaternion.LookRotation(cameraForward) * FixedQuaternion.FromEulerAngles(new Fixed64(3.0d).ToRadians(), Fixed64.Zero.ToRadians(), Fixed64.Zero.ToRadians());
+        var cameraTargetRotation = FixedQuaternion.LookRotation(cameraForward) * CAMERA_START_ROTATION;
         var cameraTargetPosition = (averagePosition + cameraForward * -cameraDistance) + Vector3d.Up;
         return (cameraTargetPosition, cameraTargetRotation);
     }

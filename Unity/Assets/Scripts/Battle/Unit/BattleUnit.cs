@@ -301,11 +301,11 @@ public partial class BattleUnit
 
     private (BattleUnitStateInfo StateInfo, int DirectionScale) AdjustMoveRightArrow()
     {
-        var cameraTransform = World.WorldManager.Camera.FixedTransform;
-        var cameraLocalPosition = cameraTransform.InverseTransformPoint(Position);
+        var cameraFixedTransform = World.CameraTransform.FixedTransform;
+        var cameraLocalPosition = cameraFixedTransform.InverseTransformPoint(Position);
 
         var otherUnit = World.GetOtherUnit(ID);
-        var otherUnitCameraLocalPosition = cameraTransform.InverseTransformPoint(otherUnit.Position);
+        var otherUnitCameraLocalPosition = cameraFixedTransform.InverseTransformPoint(otherUnit.Position);
 
         if (cameraLocalPosition.x > otherUnitCameraLocalPosition.x)
         {
@@ -319,11 +319,11 @@ public partial class BattleUnit
 
     private (BattleUnitStateInfo StateInfo, int DirectionScale) AdjustMoveLeftArrow()
     {
-        var cameraTransform = World.WorldManager.Camera.FixedTransform;
-        var cameraLocalPosition = cameraTransform.InverseTransformPoint(Position);
+        var cameraFixedTransform = World.CameraTransform.FixedTransform;
+        var cameraLocalPosition = cameraFixedTransform.InverseTransformPoint(Position);
 
         var otherUnit = World.GetOtherUnit(ID);
-        var otherUnitCameraLocalPosition = cameraTransform.InverseTransformPoint(otherUnit.Position);
+        var otherUnitCameraLocalPosition = cameraFixedTransform.InverseTransformPoint(otherUnit.Position);
 
         if (cameraLocalPosition.x > otherUnitCameraLocalPosition.x)
         {

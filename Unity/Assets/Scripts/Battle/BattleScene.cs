@@ -69,9 +69,8 @@ public class BattleScene : MonoBehaviour
 
     private void Initialize(in BattleFrame frame)
     {
-        WorldManager.Initialize(_battleCamera, frame);
-        _battleCamera.Initialize(WorldManager.FutureWorld);
-
+        WorldManager.Initialize(frame);
+        _battleCamera.Initialize(WorldManager.FutureWorld.CameraTransform);
         IsInitialized = true;
     }
 
@@ -89,19 +88,20 @@ public class BattleScene : MonoBehaviour
         if (WorldManager.IsStarted())
         {
             WorldManager.AdvanceFrame(frame);
-            _battleCamera.OnFixedUpdate(frame);
         }
     }
 
     private void Update()
     {
+        if (!IsSetup) return;
         if (!IsInitialized) return;
         if (!WorldManager.IsStarted()) return;
 
         var deltaTime = Mathf.Min(Time.deltaTime, Time.time - Time.fixedTime);
         var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(deltaTime), new Fixed64(Time.fixedDeltaTime));
+
         WorldManager.OnUpdate(frame);
-        _battleCamera.Interpolate(frame);
+        _battleCamera.OnUpdate(WorldManager.FutureWorld.CameraTransform, frame);
     }
 
     private void OnDestroy()

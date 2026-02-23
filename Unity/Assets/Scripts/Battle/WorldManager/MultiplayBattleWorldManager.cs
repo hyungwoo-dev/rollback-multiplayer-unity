@@ -50,9 +50,9 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         });
     }
 
-    public override void Initialize(BattleCamera camera, in BattleFrame frame)
+    public override void Initialize(in BattleFrame frame)
     {
-        base.Initialize(camera, frame);
+        base.Initialize(frame);
 
         var thread = new Thread(static state =>
         {
@@ -116,7 +116,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
                 }
             }
 
-            Debug.Log($"FutureFrame: {FutureWorld.NextFrame}, ServerFrame: {ServerWorld.NextFrame}, Frame Difference: {FutureWorld.NextFrame - ServerWorld.NextFrame}");
+            // Debug.Log($"FutureFrame: {FutureWorld.NextFrame}, ServerFrame: {ServerWorld.NextFrame}, Frame Difference: {FutureWorld.NextFrame - ServerWorld.NextFrame}");
         }
 
         base.AdvanceFrame(frame);
@@ -205,7 +205,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     public override void OnUpdate(in BattleFrame frame)
     {
         base.OnUpdate(frame);
-
 
         // 서버와 SLOW_FRAME_THRESHOLD프레임을 초과해서 차이가 나면 슬로우가 시작되고, LOCK_FRAME_THRESHOLD에 도달하면 Lock에 걸린다.
         // Slow는 1단계 (낮은 슬로우)와 2단계 (프레임 차이가 벌어질수록 느려지는)가 있다.

@@ -8,8 +8,6 @@ public abstract partial class BaseWorldManager
 
     public BattleWorldScene LocalWorldScene { get; private set; }
     public BattleWorld FutureWorld { get; protected set; }
-    public BattleCamera Camera { get; private set; }
-
     public int PlayerID { get; protected set; } = 0;
 
     public abstract int BattleTimeMillis { get; }
@@ -41,9 +39,8 @@ public abstract partial class BaseWorldManager
 
     }
 
-    public virtual void Initialize(BattleCamera camera, in BattleFrame frame)
+    public virtual void Initialize(in BattleFrame frame)
     {
-        Camera = camera;
         LocalWorldScene.Initialize();
         FutureWorld.Initialize();
     }
