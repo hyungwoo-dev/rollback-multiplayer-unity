@@ -1,28 +1,26 @@
 # rollback-multiplayer-unity
 
-Translated by DeepL (https://www.deepl.com/)
+Unity 엔진으로 제작한 롤백 멀티플레이어 프로젝트입니다.
 
-This is a rollback multiplayer project built using the Unity engine.
+롤백 아키텍처 구현에 집중한 프로젝트로, 서버에서 처리되지 않은 예외 처리가 있을 수 있고, 클라이언트의 게임 플레이 로직은 단순합니다.
 
-This project focuses on implementing rollback architecture. There may be exceptions not handled on the server, and the client's gameplay logic is simple.
+## 아키텍처
 
-## Architecture
+서버는 각 클라이언트의 인풋을 전달하는 릴레이 서버이고, 클라이언트 측에서 전달받은 이벤트를 다른 플레이어에게 전달하는 역할입니다.
 
-The server acts as a relay server, transmitting input from each client and forwarding events received from the client side to other players.
-
-The client runs two games simultaneously.
+클라이언트는 두 개의 게임을 동시에 진행시킵니다.
 
 ### ServerWorld
 
-This is a game that progresses through events received from the server.
+서버로부터 받은 이벤트를 통해 진행시키는 게임입니다.
 
-By synchronizing state through deterministic game logic, both players share the same state within the same frame.
+결정론적인 게임 로직을 통해 상태를 동기화함으로써, 두 플레이어는 같은 프레임에 같은 상태를 공유합니다.
 
 ### FutureWorld
 
-This game applies player input in real time.
+플레이어의 인풋을 즉시 반영한 게임입니다.
 
-FutureWorld maintains a state where player input is applied instantly in ServerWorld, while also holding a state that predicts the future based on past data.
+FutureWorld는 ServerWorld 상태에 플레이어 입력을 즉시 반영한 상태로, 과거 데이터를 기반으로 미래를 예측한 상태를 가지고 있습니다.
 
                               +------------------------+
                               |         Server         |
@@ -44,15 +42,15 @@ FutureWorld maintains a state where player input is applied instantly in ServerW
         |  +-----------------------+  |         |  +-----------------------+  |
         +-----------------------------+         +-----------------------------+
         
-## Rollback
-Each client's ServerWorld receives events from the server and progresses deterministically, with each player maintaining the same state within the same frame.
+## 롤백
+각 클라이언트의 ServerWorld는 서버로부터 이벤트를 전달받아 결정론적으로 진행하기 때문에, 프레임 별로 같은 상태를 가집니다.
 
-However, the prediction-based FutureWorld experiences inconsistencies when the opponent's input events are transmitted. This is because the event conflicts with both the past state of the FutureWorld and the current state of the ServerWorld.
+하지만 예측이 반영된 FutureWorld는 상대방의 인풋 이벤트가 전달되면 FutureWolrd의 과거 상태와 ServerWorld의 상태에 불일치가 발생하게 됩니다.
 
-To resolve these inconsistencies, FutureWorld copies the ServerWorld state at the point where the inconsistency occurred. It then applies the player's input events to this copied ServerWorld state to synchronize it, subsequently generating a new predicted state.
+FutureWorld는 이런 불일치를 해결하기 위해 불일치가 발생한 시점의 ServerWorld 상태를 복사하고, 복사된 ServerWorld의 상태로부터 플레이어의 인풋 이벤트를 반영하여 동기화를 맞춘 상태에서 다시 예측된 상태를 만듭니다
 
 ```
-Time →
+시간 →
 Frame:   F10    F11    F12    F13    F14
 
 ServerWorld:
@@ -61,23 +59,23 @@ ServerWorld:
 FutureWorld:
           S10 -> S11 -> S12 -> P13 -> P14
                               ↑
-                       (Local input applied immediately)
+                       (Local Input 즉시 반영)
 
-Opponent Input Received (At F12)
+상대 Input 도착 (F12 시점)
             ↓
-FutureWorld Rollback:
- 1. ServerWorld S12 Copy
- 2. Local Input Reapply
- 3. Recalculate P13 and P14 again
+FutureWorld 롤백:
+ 1. ServerWorld S12 복사
+ 2. Local Input 재적용
+ 3. 다시 P13, P14 재계산
 ```
 
-##  Rendering Interpolation
+## 렌더링 보간
 
-FutureWorld is actually one frame ahead of what the player sees on screen.
+FutureWorld는 실제로 플레이어가 보는 화면보다 한 프레임 더 진행되어 있습니다.
 
-This is to interpolate the state between the fixed frame update loop and the render frame update loop.
+이는 고정 프레임 업데이트 루프와 렌더 프레임 업데이트 루프 간 상태를 보간하기 위함입니다.
 
-Therefore, what the player actually sees on screen is a frame interpolated from the previous frame's state in FutureWorld.
+따라서, 실제로 플레이어가 보는 화면은 한 프레임 이전 상태로부터 FutureWorld 상태를 보간한 화면입니다.
 
 ```
 Frame: F12 -> F13
@@ -108,13 +106,13 @@ Frame: F12 -> F13
 └──────────────────────────────────────────────┘
 ```
 
-## Delay Compensation
+## 지연 보정
 
-Gameplay speed may vary depending on the player's network environment or device specifications.
+플레이어는 네트워크 환경이나 기기 스펙에 따라 게임 진행 속도에 차이가 날 수 있습니다.
 
-When gameplay speeds differ, the system adjusts the speed of the faster player to compensate for the gap between the two players.
+게임 진행에 차이가 나는 경우, 더 앞선 플레이어의 진행 속도를 조절하는 방식으로 두 플레이어 간 진행 격차를 보정합니다.
 
-Below is a portion of the game speed compensation code.
+아래는 게임 속도 보정 코드의 일부입니다.
 
 ```
     private float AdjustSimulationSpeed(int frameDrift)
@@ -145,32 +143,32 @@ Below is a portion of the game speed compensation code.
     }
 ```
 
-## Others
+## 그 외
 
-### Mathematics Library
+### 수학 라이브러리
 
-Floating-point results may vary depending on the hardware environment.
+부동소수점은 하드웨어 환경에 따라 다른 결과를 낼 수 있습니다.
 
-To address this, we utilized the deterministic fixed-point math library *FixedMathSharp-Unity*.
+이를 해결하기 위해 결정론적 고정소수점 수학 라이브러리 *FixedMathSharp-Unity* 를 활용했습니다.
 
 https://github.com/mrdav30/FixedMathSharp-Unity
 
-### Root Motion
+### 루트 모션
 
-To deterministically calculate the position and rotation values of Unity engine's root motion, separate animation data was created.
+Unity 엔진의 루트 모션의 위치, 회전 값을 결정론적으로 계산하기 위해 별도의 애니메이션 데이터를 제작했습니다.
 
-Animation progresses according to the FixedDeltaTime cycle, and the amount of movement and rotation per frame is converted into data to implement movement within the game logic.
+FixedDeltaTime 주기에 맞춰 애니메이션을 진행하고, 진행한 프레임의 이동량과 회전량을 데이터로 전환하여 게임 로직에서 움직임을 수행하도록 구현했습니다.
 
-### Build execution
+### 빌드 실행
 
-The Builds/ folder in the repository contains the Server and Unity build programs. (Windows environment)
+저장소 Builds/ 폴더에 Server와 Unity 빌드 프로그램이 포함되어 있습니다. (Windows 환경)
 
-You can run Builds/Server/GameServer.exe first, then run the two Builds/Unity/ActionGame.exe programs to test.
+Builds/Server/GameServer.exe를 먼저 실행하고, 두 개의 Builds/Unity/ActionGame.exe 프로그램을 실행해서 테스트할 수 있습니다.
 
-### Unity Test
+### Unity 테스트
 
-For single-player mode, run it in the Scenes/BattleTest.unity scene.
+싱글 플레이의 경우, Scenes/BattleTest.unity 씬에서 실행합니다.
 
-Starting from the Scenes/BattleStart.unity scene will attempt to connect to the server.
+Scenes/BattleStart.unity 씬에서 시작하면 서버에 연결을 시도합니다.
 
-This can be run alongside the build program for debugging and testing purposes.
+이는 디버깅 및 테스트를 위해 빌드 프로그램과 함께 실행할 수 있습니다.
