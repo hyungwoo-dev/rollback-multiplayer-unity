@@ -145,6 +145,16 @@ Below is a portion of the game speed compensation code.
     }
 ```
 
+## Parallelism
+
+The BattleWorld class is a pure logic object that does not depend on Unity.
+
+The game progression cycle of ServerWorld is independent of Unity's Update/FixedUpdate routines.
+Therefore, it runs the game in the background by creating a separate thread.
+
+This structure is designed to perform stable simulations unaffected by render frame fluctuations.
+It also serves as an optimization strategy to enhance input responsiveness and leverage multi-core environments.
+
 ## Others
 
 ### Mathematics Library
