@@ -88,10 +88,10 @@ Frame: F12 -> F13
             ▼
 ┌──────────────────────────────────────────────┐
 │  FixedUpdate Loop                            │
+│                                              │
 │    FutureWorld.ApplyTo(LocalWorldScene)      │
 │    FutureWorld.ApplyEvents()                 │
 │    FutureWorld.AdvanceFrame()                │
-│                                              │
 │  [F12] → [F13]                               │
 └──────────────────────────────────────────────┘
             │
@@ -104,7 +104,7 @@ Frame: F12 -> F13
 │      CurrentState[F13],                      │
 │      t (InterpolatingTime / FixedDeltaTime)  │
 │    )                                         │
-│    [F12] ~ [F13]                             │
+│  [F12] ~ [F13]                               │
 └──────────────────────────────────────────────┘
 ```
 
