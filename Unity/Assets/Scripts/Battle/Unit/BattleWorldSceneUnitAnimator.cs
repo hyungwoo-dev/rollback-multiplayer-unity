@@ -21,12 +21,12 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
 
     public void PlayInFixedTime(string animationName, int animationLayer, Fixed64 fixedTime)
     {
-        _animator.PlayInFixedTime(animationName, animationLayer, fixedTime.ToFormattedFloat());
+        _animator.PlayInFixedTime(animationName, animationLayer, fixedTime.ToPreciseFloat());
     }
 
     public void CrossFadeInFixedTime(string animationName, Fixed64 fixedTransitionDuration, int animationLayer, Fixed64 fixedTimeOffset, Fixed64 normalizedTransitionTime)
     {
-        _animator.CrossFadeInFixedTime(animationName, fixedTransitionDuration.ToFormattedFloat(), animationLayer, fixedTimeOffset.ToFormattedFloat(), normalizedTransitionTime.ToFormattedFloat());
+        _animator.CrossFadeInFixedTime(animationName, fixedTransitionDuration.ToPreciseFloat(), animationLayer, fixedTimeOffset.ToPreciseFloat(), normalizedTransitionTime.ToPreciseFloat());
     }
 
     public void ResetDelta()
@@ -38,7 +38,8 @@ public class BattleWorldSceneUnitAnimator : MonoBehaviour
 
     public (Vector3d DeltaPosition, FixedQuaternion DeltaRotation) UpdateAnimator(Fixed64 deltaTime)
     {
-        _animator.Update(deltaTime.ToFormattedFloat());
+        var deltaTimeF = deltaTime.ToPreciseFloat();
+        _animator.Update(deltaTimeF);
 
         var result = (DeltaPosition, DeltaRotation);
         DeltaPosition = Vector3d.Zero;
