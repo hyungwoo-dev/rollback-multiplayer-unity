@@ -206,42 +206,50 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     {
         base.OnUpdate(frame);
 
-        // 서버와 SLOW_FRAME_THRESHOLD프레임을 초과해서 차이가 나면 슬로우가 시작되고, LOCK_FRAME_THRESHOLD에 도달하면 Lock에 걸린다.
+        int serverNextFrame;
+        lock (_serverUpdateLock)
+        {
+            serverNextFrame = ServerWorld.NextFrame;
+        }
+
+        var frameDrift = FutureWorld.NextFrame - serverNextFrame;
+        var timeScale = AdjustSimulationSpeed(frameDrift);
+        Time.timeScale = timeScale;
+    }
+
+    private float AdjustSimulationSpeed(int frameDrift)
+    {
+        // 서버와 SLOW_LEVEL1_FRAME_THRESHOLD 프레임을 초과해서 차이가 나면 슬로우가 시작되고, LOCK_FRAME_THRESHOLD에 도달하면 Lock에 걸린다.
         // Slow는 1단계 (낮은 슬로우)와 2단계 (프레임 차이가 벌어질수록 느려지는)가 있다.
         const int SLOW_LEVEL1_FRAME_THRESHOLD = 2;
         const int SLOW_LEVEL2_FRAME_THRESHOLD = 3;
         const int LOCK_FRAME_THRESHOLD = 10;
         const float SLOW_LEVEL1_TIME_SCALE = 0.9f;
 
-        int serverNextFrame;
-        lock (_serverUpdateLock)
-        {
-            serverNextFrame = ServerWorld.NextFrame;
-        }
-        if (FutureWorld.NextFrame <= serverNextFrame + SLOW_LEVEL1_FRAME_THRESHOLD)
+        if (frameDrift <= SLOW_LEVEL1_FRAME_THRESHOLD)
         {
             // Unlock
-            Time.timeScale = 1.0f;
+            return 1.0f;
         }
-        else if (FutureWorld.NextFrame >= serverNextFrame + LOCK_FRAME_THRESHOLD)
+        else if (frameDrift >= LOCK_FRAME_THRESHOLD)
         {
             // Lock
-            Time.timeScale = 0.0f;
+            return 0.0f;
         }
         else
         {
             // Slow
-            if (FutureWorld.NextFrame < serverNextFrame + SLOW_LEVEL2_FRAME_THRESHOLD)
+            if (frameDrift <= SLOW_LEVEL2_FRAME_THRESHOLD)
             {
                 // Slow Level1
-                Time.timeScale = SLOW_LEVEL1_TIME_SCALE;
+                return SLOW_LEVEL1_TIME_SCALE;
             }
             else
             {
                 // Slow Level2
-                var t = (FutureWorld.NextFrame - serverNextFrame - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(LOCK_FRAME_THRESHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
+                var t = (frameDrift - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(LOCK_FRAME_THRESHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
                 var timeScale = Mathf.Lerp(SLOW_LEVEL1_TIME_SCALE, 0.0f, t);
-                Time.timeScale = timeScale;
+                return timeScale;
             }
         }
     }
