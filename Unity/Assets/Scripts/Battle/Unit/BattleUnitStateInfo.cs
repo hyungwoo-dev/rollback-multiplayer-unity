@@ -3,7 +3,7 @@
 public abstract class BattleUnitStateInfo
 {
     public static readonly Fixed64 CROSS_FADE_IN_TIME_ZERO = new Fixed64(0.0d);
-    public static readonly Fixed64 CROSS_FADE_IN_TIME = new Fixed64(0.1d);
+    public static readonly Fixed64 CROSS_FADE_IN_TIME = new Fixed64(0.3d);
 
     public static readonly BattleUnitStateInfo IDLE = new BattleUnitLoopStateInfo(BattleUnitStateType.IDLE, BattleUnitAnimationNames.IDLE, CROSS_FADE_IN_TIME);
     public static readonly BattleUnitStateInfo MOVE_BACK = new BattleUnitLoopStateInfo(BattleUnitStateType.MOVE_BACK, BattleUnitAnimationNames.MOVE_BACK, CROSS_FADE_IN_TIME);

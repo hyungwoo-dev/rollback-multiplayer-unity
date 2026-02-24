@@ -3,7 +3,7 @@
 
 public class BattleCamera : MonoBehaviour
 {
-    private const float POSITION_SMOOTH_TIME = 0.1f;
+    private const float POSITION_SMOOTH_TIME = 0.15f;
     private const float MAX_ROTATION_DEGREES = 45.0f;
 
     private Vector3 _currentVelocity;

@@ -57,11 +57,7 @@ public partial class BattleUnit
     public void AdvanceFrame(in BattleFrame frame)
     {
         InterpolatingTime = Fixed64.Zero;
-        AnimationSampleInfo = new BattleWorldSceneAnimationSampleInfo(State);
-
-        var (animationDeltaPosition, animationDeltaRotation) = SampleAnimation(AnimationSampleInfo);
         State.AdvanceFrame(frame.DeltaTime, out var isStateChanged);
-
         if (isStateChanged && State.StateType == BattleUnitStateType.IDLE)
         {
             // IDLE 상태로 전환된 경우, 이동 입력에 상태에 따라 다음 상태를 판단한다.
@@ -107,6 +103,8 @@ public partial class BattleUnit
             }
         }
 
+        AnimationSampleInfo = new BattleWorldSceneAnimationSampleInfo(State);
+        var (animationDeltaPosition, animationDeltaRotation) = SampleAnimation(AnimationSampleInfo);
         var stateDeltaPosition = isStateChanged ? Vector3d.Zero : AdvanceMoveState(frame);
         var moveDeltaPosition = animationDeltaPosition + stateDeltaPosition;
 
@@ -173,19 +171,7 @@ public partial class BattleUnit
         var rotation = FixedQuaternion.Slerp(PreviousRotation, Rotation, t);
 
         worldScene.SetPositionAndRotation(ID, position, rotation);
-
-        if (AnimationSampleInfo.NextStateInfo != null &&
-            AnimationSampleInfo.StateInfo is BattleUnitFiniteStateInfo finiteStateInfo &&
-            AnimationSampleInfo.ElapsedTime + InterpolatingTime > finiteStateInfo.Duration)
-        {
-            var elasedTime = AnimationSampleInfo.ElapsedTime + InterpolatingTime - finiteStateInfo.Duration;
-            AnimationSampleInfo = AnimationSampleInfo.SetNextInfo(elasedTime);
-            worldScene.SampleAnimation(ID, AnimationSampleInfo);
-        }
-        else
-        {
-            worldScene.UpdateAnimation(ID, frame.DeltaTime);
-        }
+        worldScene.UpdateAnimation(ID, frame.DeltaTime);
     }
 
     private FixedQuaternion LookOtherUnitRotation(in BattleFrame frame)
