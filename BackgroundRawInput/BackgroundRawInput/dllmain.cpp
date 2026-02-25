@@ -13,7 +13,12 @@
 
 enum class RawKey : uint16_t
 {
-    Unknown = 0
+    Unknown = 0,
+
+    LeftArrow = VK_LEFT,   // 0x25
+    UpArrow = VK_UP,     // 0x26
+    RightArrow = VK_RIGHT,  // 0x27
+    DownArrow = VK_DOWN,   // 0x28
 };
 
 enum class KeyEventType : uint8_t
