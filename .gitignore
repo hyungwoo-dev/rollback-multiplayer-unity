@@ -27,3 +27,7 @@ Server/GameServer/bin
 Server/GameServer/obj
 Unity/Build
 Unity/Assembly-CSharp.csproj.user
+BackgroundRawInput/.vs
+BackgroundRawInput/BackgroundRawInput/BackgroundRawInput.vcxproj.user
+BackgroundRawInput/BackgroundRawInput/x64
+BackgroundRawInput/x64

@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="BackgroundRawInput/BackgroundRawInput.vcxproj" Id="c0f73323-1630-4959-8f8f-a037037c7510" />
+</Solution>
