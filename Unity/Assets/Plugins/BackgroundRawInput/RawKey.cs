@@ -10,5 +10,10 @@
 
     Escape = 0x1B,
     Space = 0x20,
-    Enter = 0x0D
+    Enter = 0x0D,
+
+    LeftArrow = 0x25,
+    UpArrow = 0x26,
+    RightArrow = 0x27,
+    DownArrow = 0x28,
 }

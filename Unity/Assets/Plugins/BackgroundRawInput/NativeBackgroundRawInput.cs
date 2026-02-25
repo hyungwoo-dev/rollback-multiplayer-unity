@@ -1,5 +1,8 @@
 ﻿using AOT;
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 public static class NativeBackgroundRawInput
 {
@@ -20,24 +23,29 @@ public static class NativeBackgroundRawInput
         ulong handle);
 #endif
 
-    static KeyDelegate cached;
-    static ulong handle;
+    private static KeyDelegate _keyDelegate;
+    private static ulong _handle;
+    private static HashSet<RawKey> _keyDownRawKeys;
+
+    public static event Action<RawKey> OnKeyDown;
+    public static event Action<RawKey> OnKeyUp;
 
     public static void Initialize()
     {
 #if UNITY_STANDALONE_WIN
-        cached = OnNativeEvent;
-        handle = _InitializeRawInput(cached);
+        _keyDelegate = OnNativeEvent;
+        _handle = _InitializeRawInput(_keyDelegate);
+        _keyDownRawKeys = new();
 #endif
     }
 
     public static void Shutdown()
     {
 #if UNITY_STANDALONE_WIN
-        if (handle != 0)
+        if (_handle != 0)
         {
-            _StopRawInput(handle);
-            handle = 0;
+            _StopRawInput(_handle);
+            _handle = 0;
         }
 #endif
     }
@@ -48,6 +56,26 @@ public static class NativeBackgroundRawInput
         KeyEventType type,
         ulong timestamp)
     {
-        UnityEngine.Debug.Log($"[OnNativeEvent] Key: {key} Event: {type} Timestamp: {timestamp}");
+        switch (type)
+        {
+            case KeyEventType.Down:
+            {
+                if (_keyDownRawKeys.Add(key))
+                {
+                    Debug.Log($"KeyDown: {key}");
+                    OnKeyDown?.Invoke(key);
+                }
+                break;
+            }
+            case KeyEventType.Up:
+            {
+                if (_keyDownRawKeys.Remove(key))
+                {
+                    Debug.Log($"KeyUp: {key}");
+                    OnKeyUp?.Invoke(key);
+                }
+                break;
+            }
+        }
     }
 }
