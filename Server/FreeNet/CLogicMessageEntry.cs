@@ -31,6 +31,7 @@ namespace FreeNet
         public void start()
         {
             Thread logic = new Thread(this.do_logic);
+            logic.IsBackground = true;
             logic.Start();
         }
 
