@@ -56,6 +56,11 @@ public static class NativeBackgroundRawInput
         KeyEventType type,
         ulong timestamp)
     {
+        if (!NativeBackgroundRawInputFocusChecker.IsFocused)
+        {
+            return;
+        }
+
         switch (type)
         {
             case KeyEventType.Down:

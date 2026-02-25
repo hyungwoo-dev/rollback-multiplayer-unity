@@ -1,6 +1,12 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using InputManager = BattleInputManager;
+#elif UNITY_STANDALONE_WIN
+using InputManager = BattleWindowsInputManager;
+#endif
+
 [ManagedStateIgnore]
 public abstract partial class BaseWorldManager
 {
@@ -43,6 +49,7 @@ public abstract partial class BaseWorldManager
     {
         LocalWorldScene.Initialize();
         FutureWorld.Initialize();
+        InputManager.Initialize();
     }
 
     public virtual void AdvanceFrame(in BattleFrame frame)
@@ -64,7 +71,7 @@ public abstract partial class BaseWorldManager
 
     public virtual void OnUpdate(in BattleFrame frame)
     {
-        InputManager.OnUpdate(InputContext);
+        InputManager.OnUpdate();
         FutureWorld.Interpolate(frame, LocalWorldScene);
     }
 
@@ -88,8 +95,7 @@ public abstract partial class BaseWorldManager
 
     #region Input
 
-    private BattleInputManager InputManager { get; } = new BattleInputManager();
-    private BattleInputContext InputContext { get; } = new BattleInputContext();
+    private IBattleInputManager InputManager { get; } = new InputManager();
 
     private void InitalizeInputManager()
     {

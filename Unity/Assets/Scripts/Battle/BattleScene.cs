@@ -74,6 +74,11 @@ public class BattleScene : MonoBehaviour
         IsInitialized = true;
     }
 
+    private void Awake()
+    {
+        Application.targetFrameRate = 0;
+    }
+
     private void FixedUpdate()
     {
         if (!IsSetup) return;
@@ -105,6 +110,16 @@ public class BattleScene : MonoBehaviour
     }
 
     private void OnDestroy()
+    {
+        Dispose();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Dispose();
+    }
+
+    private void Dispose()
     {
         if (WorldManager != null)
         {

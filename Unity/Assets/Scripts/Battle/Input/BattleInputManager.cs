@@ -1,8 +1,10 @@
 ﻿using System;
 using UnityEngine;
 
-public class BattleInputManager
+public class BattleInputManager : IBattleInputManager
 {
+    private BattleInputContext InputContext { get; } = new BattleInputContext();
+
     public event Action OnInputMoveLeftArrowDown = null;
     public event Action OnInputMoveLeftArrowUp = null;
     public event Action OnInputMoveRightArrowDown = null;
@@ -10,9 +12,14 @@ public class BattleInputManager
     public event Action OnInputAttack1 = null;
     public event Action OnInputAttack2 = null;
 
-    public void OnUpdate(BattleInputContext context)
+    public void Initialize()
     {
-        UpdateInputEvents(context);
+
+    }
+
+    public void OnUpdate()
+    {
+        UpdateInputEvents(InputContext);
     }
 
     private void UpdateInputEvents(BattleInputContext context)
