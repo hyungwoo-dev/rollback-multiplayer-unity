@@ -4,6 +4,7 @@ using System.Collections.Generic;
 public partial class NetworkManager
 {
     public Pool<C2S_MSG_FRAME_EVENTS> C2S_FrameEventsPool = new Pool<C2S_MSG_FRAME_EVENTS>(() => new C2S_MSG_FRAME_EVENTS());
+    public Pool<C2S_MSG_INTERMIDIATE_FRAME_EVENT> C2S_IntermidiateFrameEventsPool = new Pool<C2S_MSG_INTERMIDIATE_FRAME_EVENT>(() => new C2S_MSG_INTERMIDIATE_FRAME_EVENT());
     public Pool<C2S_MSG_FRAME_EVENT> C2S_FrameEventPool = new Pool<C2S_MSG_FRAME_EVENT>(() => new C2S_MSG_FRAME_EVENT());
     public Pool<List<C2S_MSG_FRAME_EVENT>> C2S_FrameEventListPool = new Pool<List<C2S_MSG_FRAME_EVENT>>(() => new List<C2S_MSG_FRAME_EVENT>(), (list) => list.Clear());
 
@@ -28,6 +29,16 @@ public partial class NetworkManager
             packet.push(msgFrameEvents.Events[i].BattleTimeMillis);
         }
 
+        Send(packet);
+    }
+
+    public void C2S_INTERMIDIATE_FRAME_EVENT(C2S_MSG_INTERMIDIATE_FRAME_EVENT msgIntermidiateFrameEvent)
+    {
+        CPacket packet = new CPacket();
+        packet.set_protocol((short)C2S_MSG.INTERMIDIATE_FRAME_EVENT);
+        packet.push(msgIntermidiateFrameEvent.Frame);
+        packet.push((byte)msgIntermidiateFrameEvent.Event.EventType);
+        packet.push(msgIntermidiateFrameEvent.Event.BattleTimeMillis);
         Send(packet);
     }
 

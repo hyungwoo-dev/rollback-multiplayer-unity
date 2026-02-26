@@ -95,7 +95,7 @@ public abstract partial class BaseWorldManager
 
     #region Input
 
-    private IBattleInputManager InputManager { get; } = new InputManager();
+    protected IBattleInputManager InputManager { get; } = new InputManager();
 
     private void InitalizeInputManager()
     {
@@ -109,32 +109,32 @@ public abstract partial class BaseWorldManager
 
     private void OnPlayerInputMoveRightArrowDown()
     {
-        FutureWorld.PerformWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_DOWN, PlayerID, BattleTimeMillis);
+        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_DOWN, PlayerID, BattleTimeMillis);
     }
 
     private void OnPlayerInputMoveRightArrowUp()
     {
-        FutureWorld.PerformWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_UP, PlayerID, BattleTimeMillis);
+        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_UP, PlayerID, BattleTimeMillis);
     }
 
     private void OnPlayerInputMoveLeftArrowDown()
     {
-        FutureWorld.PerformWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_DOWN, PlayerID, BattleTimeMillis);
+        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_DOWN, PlayerID, BattleTimeMillis);
     }
 
     private void OnPlayerInputMoveLeftArrowUp()
     {
-        FutureWorld.PerformWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_UP, PlayerID, BattleTimeMillis);
+        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_UP, PlayerID, BattleTimeMillis);
     }
 
     private void OnPlayerInputAttack1()
     {
-        FutureWorld.PerformWorldEventInfo(BattleWorldInputEventType.ATTACK1, PlayerID, BattleTimeMillis);
+        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.ATTACK1, PlayerID, BattleTimeMillis);
     }
 
     private void OnPlayerInputAttack2()
     {
-        FutureWorld.PerformWorldEventInfo(BattleWorldInputEventType.ATTACK2, PlayerID, BattleTimeMillis);
+        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.ATTACK2, PlayerID, BattleTimeMillis);
     }
 
     private void DisposeInputManager()

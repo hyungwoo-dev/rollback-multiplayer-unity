@@ -17,6 +17,12 @@ public enum S2C_MSG : short
     /// </summary>
     S2C_FRAME_EVENT,
 
+
+    /// <summary>
+    /// 특정 프레임의 중간 인풋 이벤트 전송
+    /// </summary>
+    S2C_INTERMIDIATE_FRAME_EVENT,
+
     /// <summary>
     /// 특정 프레임의 상태 검증 실패
     /// </summary>
@@ -39,6 +45,22 @@ public class S2C_MSG_GAME_START
     /// 상대편 플레이어의 인덱스
     /// </summary>
     public byte OpponentPlayerIndex;
+}
+
+/// <summary>
+/// 순서가 확정되지 않은 상태의 중간 이벤트 정보
+/// </summary>
+public class S2C_MSG_INTERMIDIATE_FRAME_EVENT
+{
+    /// <summary>
+    /// 이벤트가 작동할 프레임
+    /// </summary>
+    public int Frame;
+
+    /// <summary>
+    /// 이 프레임에 적용할 이벤트
+    /// </summary>
+    public S2C_MSG_FRAME_EVENT FrameEvent;
 }
 
 public class S2C_MSG_FRAME_EVENTS
@@ -67,6 +89,11 @@ public class S2C_MSG_FRAME_EVENT
     /// 입력을 처리했던 시간 (Milliseconds)
     /// </summary>
     public int BattleTimeMillis;
+
+    public override string ToString()
+    {
+        return $"[FrameEventType: {EventType}, UserIndex: {UserIndex}, BattleTimeMillis: {BattleTimeMillis}]";
+    }
 }
 
 public class S2C_MSG_INVALIDATE_HASH

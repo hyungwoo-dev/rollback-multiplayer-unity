@@ -12,6 +12,10 @@ public partial class NetworkManager
     public delegate void S2C_FRAME_EVENT_DELEGATE(int frame, List<S2C_MSG_FRAME_EVENT> msgFrameEvent);
     public event S2C_FRAME_EVENT_DELEGATE OnFrameEvent = null;
 
+    private Pool<S2C_MSG_INTERMIDIATE_FRAME_EVENT> IntermidiateFrameEventMessagePool = new(() => new S2C_MSG_INTERMIDIATE_FRAME_EVENT());
+    public delegate void S2C_INTERMIDIATE_FRAME_EVENT_DELEGATE(S2C_MSG_INTERMIDIATE_FRAME_EVENT msgIntermidiateFrameEvent);
+    public event S2C_INTERMIDIATE_FRAME_EVENT_DELEGATE OnIntermidiateFrameEvent = null;
+
     private Pool<S2C_MSG_INVALIDATE_HASH> InvalidateHashMessagePool = new(() => new S2C_MSG_INVALIDATE_HASH());
     public delegate void S2C_FRAME_INVALIDATE_HASH_DELEGATE(S2C_MSG_INVALIDATE_HASH msgInvalidateHash);
     public event S2C_FRAME_INVALIDATE_HASH_DELEGATE OnFrameInvalidateHash = null;
@@ -24,6 +28,11 @@ public partial class NetworkManager
             case S2C_MSG.S2C_START_GAME:
             {
                 S2C_GAME_START(msg);
+                break;
+            }
+            case S2C_MSG.S2C_INTERMIDIATE_FRAME_EVENT:
+            {
+                S2C_INTERMIDIATE_FRAME_EVENT(msg);
                 break;
             }
             case S2C_MSG.S2C_FRAME_EVENT:
@@ -50,6 +59,19 @@ public partial class NetworkManager
         OnGameStart?.Invoke(msgStartGame);
 
         GameStartMessagePool.Release(msgStartGame);
+    }
+
+    private void S2C_INTERMIDIATE_FRAME_EVENT(CPacket packet)
+    {
+        var message = IntermidiateFrameEventMessagePool.Get();
+        message.Frame = packet.pop_int32();
+        message.FrameEvent = FrameEventMessagePool.Get();
+        ReadFrameEvent(packet, message.FrameEvent);
+
+        OnIntermidiateFrameEvent?.Invoke(message);
+
+        FrameEventMessagePool.Release(message.FrameEvent);
+        IntermidiateFrameEventMessagePool.Release(message);
     }
 
     private void S2C_FRAME_EVENTS(CPacket packet)

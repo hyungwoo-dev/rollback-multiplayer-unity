@@ -17,7 +17,7 @@ public partial class BattleWorld
 
     public BaseWorldManager WorldManager { get; private set; }
     public BattleWorldScene WorldScene { get; private set; }
-    public int CurrentFrame { get; private set; }
+    public int CurrentFrame;
     public int NextFrame => CurrentFrame + 1;
 
     private List<BattleUnit> Units { get; set; } = new();
@@ -36,7 +36,7 @@ public partial class BattleWorld
         return hash;
     }
 
-    public void PerformWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId, int battleTimeMillis)
+    public void AddWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId, int battleTimeMillis)
     {
         var eventInfo = WorldEventInfoPool.Get();
         eventInfo.WorldInputEventType = inputEventType;
@@ -146,7 +146,7 @@ public partial class BattleWorld
     {
         if (WorldEventInfos.Count == 0)
         {
-            PerformWorldEventInfo(BattleWorldInputEventType.NONE, WorldManager.PlayerID, WorldManager.BattleTimeMillis);
+            AddWorldEventInfo(BattleWorldInputEventType.NONE, WorldManager.PlayerID, WorldManager.BattleTimeMillis);
         }
 
         ExecuteWorldEventInfos(WorldEventInfos);
