@@ -39,7 +39,6 @@ namespace GameServer
         public void ProcessPacket(GameUser user, CPacket msg)
         {
             C2S_MSG protocol = (C2S_MSG)msg.pop_protocol_id();
-            Console.WriteLine($"[GameService::Process] protocol: {protocol.ToString()}");
 
             switch (protocol)
             {
@@ -70,6 +69,16 @@ namespace GameServer
                     }
 
                     _roomManager.OnReceiveFrameEvent(user, frame, frameEvents);
+                    break;
+                }
+                case C2S_MSG.INTERMIDIATE_FRAME_EVENT:
+                {
+                    var frame = msg.pop_int32();
+                    var eventType = (FrameEventType)msg.pop_byte();
+                    var battleTimeMillis = msg.pop_int32();
+                    Console.WriteLine($"[GameService::ProcessPacket] MSG: {protocol}, EventType: {eventType}, Frame: {frame}, BattleTimeMillis: {battleTimeMillis}");
+
+                    _roomManager.OnReceiveIntermidiateFrameEvent(user, frame, eventType, battleTimeMillis);
                     break;
                 }
                 case C2S_MSG.FRAME_HASH:

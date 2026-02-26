@@ -42,6 +42,17 @@ namespace GameServer
             send(packet);
         }
 
+        public void send(S2C_MSG_INTERMIDIATE_FRAME_EVENT msg)
+        {
+            var packet = new CPacket();
+            packet.set_protocol((short)S2C_MSG.S2C_INTERMIDIATE_FRAME_EVENT);
+            packet.push(msg.Frame);
+            packet.push((byte)msg.FrameEvent.EventType);
+            packet.push(msg.FrameEvent.UserIndex);
+            packet.push(msg.FrameEvent.BattleTimeMillis);
+            send(packet);
+        }
+
         public void send(S2C_MSG_FRAME_EVENTS msg)
         {
             var packet = new CPacket();

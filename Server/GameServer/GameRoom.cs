@@ -150,6 +150,34 @@ namespace GameServer
             }
         }
 
+        public void BroadcastIntermidiateFrameEventsExceptUser(int userIndex, int frame, FrameEventType eventType, int battleTimeMillis)
+        {
+            var msg = new S2C_MSG_INTERMIDIATE_FRAME_EVENT()
+            {
+                Frame = frame,
+                FrameEvent = new S2C_MSG_FRAME_EVENT()
+                {
+                    UserIndex = (byte)userIndex,
+                    EventType = eventType,
+                    BattleTimeMillis = battleTimeMillis
+                },
+            };
+
+            lock (_users)
+            {
+                foreach (var user in _users)
+                {
+                    if (user.RoomInfo.Index == userIndex)
+                    {
+                        continue;
+                    }
+
+                    user.send(msg);
+                    Console.WriteLine($"[GameRoom::BroadcastFrameEvents] Send To User: {user.RoomInfo.Index}, InputUserIndex: {userIndex}, Frame: {frame}, Input: {eventType}, BattleTimeMillis: {battleTimeMillis}");
+                }
+            }
+        }
+
         private List<S2C_MSG_FRAME_EVENT> GetFrameEvents(int frame)
         {
             lock (_frameEvents)

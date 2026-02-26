@@ -88,6 +88,17 @@ namespace GameServer
             }
         }
 
+        public void OnReceiveIntermidiateFrameEvent(GameUser user, int frame, FrameEventType eventType, int battleTimeMillis)
+        {
+            var gameRoom = _roomDictionary[user.RoomInfo.RoomID].Value;
+
+            // 경합이 없는 부분이라 Lock 걸지 않는다. 
+            if (gameRoom.IsFullFrameEvents(frame))
+            {
+                gameRoom.BroadcastIntermidiateFrameEventsExceptUser(user.RoomInfo.Index, frame, eventType, battleTimeMillis);
+            }
+        }
+
         public void OnReceiveHash(GameUser user, int frame, int hash)
         {
             lock (_syncLock)

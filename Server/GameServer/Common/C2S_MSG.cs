@@ -18,6 +18,11 @@ public enum C2S_MSG : short
     FRAME_EVENT,
 
     /// <summary>
+    /// 특정 프레임의 중간 인풋 이벤트 전송
+    /// </summary>
+    INTERMIDIATE_FRAME_EVENT,
+
+    /// <summary>
     /// 특정 프레임의 상태 검증을 위한 해시 전송
     /// </summary>
     FRAME_HASH,
@@ -28,6 +33,25 @@ public class C2S_MSG_ENTER_WORLD
     public long EnterUnixTimeMillis;
 }
 
+/// <summary>
+/// 순서가 확정되지 않은 상태의 중간 이벤트 정보
+/// </summary>
+public class C2S_MSG_INTERMIDIATE_FRAME_EVENT
+{
+    /// <summary>
+    /// 이벤트가 작동할 프레임
+    /// </summary>
+    public int Frame;
+
+    /// <summary>
+    /// 이 프레임에 적용할 이벤트
+    /// </summary>
+    public C2S_MSG_FRAME_EVENT Event;
+}
+
+/// <summary>
+/// 확정된 상태의 이벤트 정보
+/// </summary>
 public class C2S_MSG_FRAME_EVENTS
 {
     /// <summary>
