@@ -155,6 +155,12 @@ Therefore, it runs the game in the background by creating a separate thread.
 This structure is designed to perform stable simulations unaffected by render frame fluctuations.
 It also serves as an optimization strategy to enhance input responsiveness and leverage multi-core environments.
 
+## Input Thread
+
+When Unity's input system detects user input, it checks for input during the main thread's logic update timing.
+
+To enable faster input transmission, we implemented an input thread that sends input to the server independently of the logic update routine.
+
 ## Others
 
 ### Mathematics Library
