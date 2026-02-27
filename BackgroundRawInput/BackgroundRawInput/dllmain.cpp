@@ -2,23 +2,26 @@
 #include <windows.h>
 #include <thread>
 #include <atomic>
+#include <vector>
+#include <mutex>
 #include <chrono>
 #include <cstdint>
+#include <algorithm>
 
 #pragma comment(lib, "user32.lib")
 
-// ============================
+// =======================================================
 // ENUM
-// ============================
+// =======================================================
 
 enum class RawKey : uint16_t
 {
     Unknown = 0,
 
-    LeftArrow = VK_LEFT,   // 0x25
-    UpArrow = VK_UP,     // 0x26
-    RightArrow = VK_RIGHT,  // 0x27
-    DownArrow = VK_DOWN,   // 0x28
+    LeftArrow = VK_LEFT,
+    UpArrow = VK_UP,
+    RightArrow = VK_RIGHT,
+    DownArrow = VK_DOWN,
 };
 
 enum class KeyEventType : uint8_t
@@ -32,9 +35,19 @@ typedef void(__stdcall* KeyCallback)(
     KeyEventType type,
     uint64_t timestamp);
 
-// ============================
-// Context
-// ============================
+// =======================================================
+// Subscriber
+// =======================================================
+
+struct Subscriber
+{
+    uint64_t id;
+    KeyCallback callback;
+};
+
+// =======================================================
+// Context (프로세스당 단 하나)
+// =======================================================
 
 struct RawInputContext
 {
@@ -45,15 +58,18 @@ struct RawInputContext
     std::atomic<bool> running{ false };
     std::atomic<bool> stopping{ false };
 
-    KeyCallback callback = nullptr;
+    std::vector<Subscriber> subscribers;
+    std::mutex subMutex;
+
+    std::atomic<uint64_t> nextId{ 1 };
 };
 
-// 전역 컨텍스트 추적 (안전 종료용)
-static std::atomic<RawInputContext*> g_ctx{ nullptr };
+static RawInputContext g_ctx;
+static std::mutex g_initMutex;
 
-// ============================
-// 유틸
-// ============================
+// =======================================================
+// Time
+// =======================================================
 
 uint64_t GetUnixMillis()
 {
@@ -63,9 +79,9 @@ uint64_t GetUnixMillis()
     ).count();
 }
 
-// ============================
+// =======================================================
 // WindowProc
-// ============================
+// =======================================================
 
 LRESULT CALLBACK WindowProc(
     HWND hwnd,
@@ -76,55 +92,65 @@ LRESULT CALLBACK WindowProc(
     if (msg == WM_INPUT)
     {
         UINT size = 0;
-        GetRawInputData((HRAWINPUT)lParam,
+
+        GetRawInputData(
+            (HRAWINPUT)lParam,
             RID_INPUT,
             nullptr,
             &size,
             sizeof(RAWINPUTHEADER));
 
-        BYTE* buffer = new BYTE[size];
-
-        if (GetRawInputData((HRAWINPUT)lParam,
-            RID_INPUT,
-            buffer,
-            &size,
-            sizeof(RAWINPUTHEADER)) == size)
+        if (size > 0)
         {
-            RAWINPUT* raw = (RAWINPUT*)buffer;
+            std::vector<BYTE> buffer(size);
 
-            if (raw->header.dwType == RIM_TYPEKEYBOARD)
+            if (GetRawInputData(
+                (HRAWINPUT)lParam,
+                RID_INPUT,
+                buffer.data(),
+                &size,
+                sizeof(RAWINPUTHEADER)) == size)
             {
-                auto* ctx = (RawInputContext*)
-                    GetWindowLongPtr(hwnd, GWLP_USERDATA);
+                RAWINPUT* raw =
+                    reinterpret_cast<RAWINPUT*>(buffer.data());
 
-                if (ctx && ctx->callback && ctx->running)
+                if (raw->header.dwType == RIM_TYPEKEYBOARD)
                 {
                     USHORT vk = raw->data.keyboard.VKey;
+
                     bool isDown =
                         !(raw->data.keyboard.Flags & RI_KEY_BREAK);
 
-                    ctx->callback(
-                        (RawKey)vk,
-                        isDown ? KeyEventType::Down
-                        : KeyEventType::Up,
-                        GetUnixMillis());
+                    uint64_t timestamp = GetUnixMillis();
+
+                    std::lock_guard<std::mutex> lock(g_ctx.subMutex);
+
+                    for (auto& sub : g_ctx.subscribers)
+                    {
+                        if (sub.callback)
+                        {
+                            sub.callback(
+                                static_cast<RawKey>(vk),
+                                isDown ? KeyEventType::Down
+                                : KeyEventType::Up,
+                                timestamp);
+                        }
+                    }
                 }
             }
         }
-
-        delete[] buffer;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-// ============================
+// =======================================================
 // ThreadProc
-// ============================
+// =======================================================
 
-void ThreadProc(RawInputContext* ctx)
+void ThreadProc()
 {
-    ctx->threadId = GetCurrentThreadId();
+    g_ctx.threadId = GetCurrentThreadId();
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
 
@@ -133,121 +159,127 @@ void ThreadProc(RawInputContext* ctx)
     wc.hInstance = hInstance;
     wc.lpszClassName = L"BackgroundRawInputWindow";
 
-    RegisterClass(&wc);
+    if (!RegisterClass(&wc))
+    {
+        if (GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
+            return;
+    }
 
-    ctx->hwnd = CreateWindowEx(
+    g_ctx.hwnd = CreateWindowEx(
         0,
         wc.lpszClassName,
         L"",
-        0,
-        0, 0, 0, 0,
-        HWND_MESSAGE,
+        WS_OVERLAPPED,
+        0, 0, 1, 1,
+        nullptr,
         nullptr,
         hInstance,
         nullptr);
 
-    SetWindowLongPtr(ctx->hwnd,
-        GWLP_USERDATA,
-        (LONG_PTR)ctx);
+    if (!g_ctx.hwnd)
+        return;
+
+    ShowWindow(g_ctx.hwnd, SW_HIDE);
 
     RAWINPUTDEVICE rid = {};
-    rid.usUsagePage = 0x01;
-    rid.usUsage = 0x06;
-    rid.dwFlags = RIDEV_INPUTSINK;
-    rid.hwndTarget = ctx->hwnd;
+    rid.usUsagePage = 0x01;  // Generic Desktop Controls
+    rid.usUsage = 0x06;      // Keyboard
+    rid.dwFlags = RIDEV_EXINPUTSINK; // 🔥 멀티 프로세스 안정
+    rid.hwndTarget = g_ctx.hwnd;
 
-    RegisterRawInputDevices(&rid, 1, sizeof(rid));
+    if (!RegisterRawInputDevices(&rid, 1, sizeof(rid)))
+        return;
 
-    ctx->running = true;
+    g_ctx.running = true;
 
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0))
     {
-        if (ctx->stopping)
+        if (g_ctx.stopping)
             break;
 
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 
-    ctx->running = false;
+    g_ctx.running = false;
 
-    if (ctx->hwnd)
-        DestroyWindow(ctx->hwnd);
+    if (g_ctx.hwnd)
+    {
+        DestroyWindow(g_ctx.hwnd);
+        g_ctx.hwnd = nullptr;
+    }
 }
 
-// ============================
-// 안전 종료 함수
-// ============================
-
-void StopContext(RawInputContext* ctx)
-{
-    if (!ctx)
-        return;
-
-    if (ctx->stopping.exchange(true))
-        return; // 이미 종료 중
-
-    if (ctx->threadId != 0)
-    {
-        PostThreadMessage(ctx->threadId,
-            WM_QUIT, 0, 0);
-    }
-
-    // join 타임아웃 방어
-    if (ctx->worker.joinable())
-    {
-        auto start = std::chrono::steady_clock::now();
-
-        while (ctx->running)
-        {
-            std::this_thread::sleep_for(
-                std::chrono::milliseconds(10));
-
-            auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(
-                now - start).count() > 2)
-            {
-                break; // 2초 타임아웃
-            }
-        }
-
-        ctx->worker.join();
-    }
-
-    delete ctx;
-    g_ctx = nullptr;
-}
-
-// ============================
-// 외부 API
-// ============================
+// =======================================================
+// Initialize (구독 추가)
+// =======================================================
 
 extern "C"
 __declspec(dllexport)
 uint64_t __stdcall _InitializeRawInput(
     KeyCallback callback)
 {
-    auto* ctx = new RawInputContext();
-    ctx->callback = callback;
+    std::lock_guard<std::mutex> lock(g_initMutex);
 
-    g_ctx = ctx;
+    if (!g_ctx.running)
+    {
+        g_ctx.stopping = false;
+        g_ctx.worker = std::thread(ThreadProc);
+    }
 
-    ctx->worker = std::thread(ThreadProc, ctx);
+    uint64_t id = g_ctx.nextId++;
 
-    return (uint64_t)ctx;
+    {
+        std::lock_guard<std::mutex> subLock(g_ctx.subMutex);
+        g_ctx.subscribers.push_back({ id, callback });
+    }
+
+    return id;
 }
+
+// =======================================================
+// Stop (구독 제거)
+// =======================================================
 
 extern "C"
 __declspec(dllexport)
-void __stdcall _StopRawInput(uint64_t handle)
+void __stdcall _StopRawInput(uint64_t id)
 {
-    StopContext((RawInputContext*)handle);
+    std::lock_guard<std::mutex> lock(g_initMutex);
+
+    {
+        std::lock_guard<std::mutex> subLock(g_ctx.subMutex);
+
+        g_ctx.subscribers.erase(
+            std::remove_if(
+                g_ctx.subscribers.begin(),
+                g_ctx.subscribers.end(),
+                [id](const Subscriber& s)
+                {
+                    return s.id == id;
+                }),
+            g_ctx.subscribers.end());
+    }
+
+    if (g_ctx.subscribers.empty() && g_ctx.running)
+    {
+        g_ctx.stopping = true;
+
+        PostThreadMessage(
+            g_ctx.threadId,
+            WM_QUIT,
+            0,
+            0);
+
+        if (g_ctx.worker.joinable())
+            g_ctx.worker.join();
+    }
 }
 
-// ============================
-// DLL 종료 안전장치
-// ============================
+// =======================================================
+// DLL 안전 종료
+// =======================================================
 
 BOOL WINAPI DllMain(
     HINSTANCE hinstDLL,
@@ -256,10 +288,18 @@ BOOL WINAPI DllMain(
 {
     if (fdwReason == DLL_PROCESS_DETACH)
     {
-        RawInputContext* ctx = g_ctx.load();
-        if (ctx)
+        if (g_ctx.running)
         {
-            StopContext(ctx);
+            g_ctx.stopping = true;
+
+            PostThreadMessage(
+                g_ctx.threadId,
+                WM_QUIT,
+                0,
+                0);
+
+            if (g_ctx.worker.joinable())
+                g_ctx.worker.join();
         }
     }
 
