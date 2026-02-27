@@ -14,6 +14,8 @@ public class NativeBackgroundRawInputFocusChecker : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            Interlocked.Increment(ref _focusFlag);
+            NativeBackgroundRawInput.Initialize();
         }
         else
         {
@@ -33,11 +35,22 @@ public class NativeBackgroundRawInputFocusChecker : MonoBehaviour
     {
         if (focus)
         {
-            Interlocked.Increment(ref _focusFlag);
+            if (!IsFocused)
+            {
+                Interlocked.Increment(ref _focusFlag);
+                NativeBackgroundRawInput.Initialize();
+            }
         }
         else
         {
+            NativeBackgroundRawInput.Shutdown();
             Interlocked.Decrement(ref _focusFlag);
         }
+        Debug.Log($"OnApplicationFocus: {focus}");
+    }
+
+    private void OnApplicationQuit()
+    {
+        NativeBackgroundRawInput.Shutdown();
     }
 }

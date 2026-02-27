@@ -6,6 +6,7 @@ using UnityEngine;
 
 public static class NativeBackgroundRawInput
 {
+    private static object _lock = new();
 #if UNITY_STANDALONE_WIN
     const string DLL = "BackgroundRawInput";
 
@@ -24,11 +25,46 @@ public static class NativeBackgroundRawInput
 #endif
 
     private static KeyDelegate _keyDelegate;
-    private static ulong _handle;
+    private static ulong? _handle;
     private static HashSet<RawKey> _keyDownRawKeys;
 
-    public static event Action<RawKey> OnKeyDown;
-    public static event Action<RawKey> OnKeyUp;
+    private static Action<RawKey> _onKeyDown;
+    public static event Action<RawKey> OnKeyDown
+    {
+        add
+        {
+            lock (_lock)
+            {
+                _onKeyDown += value;
+            }
+        }
+        remove
+        {
+            lock (_lock)
+            {
+                _onKeyDown -= value;
+            }
+        }
+    }
+
+    public static event Action<RawKey> _onKeyUp;
+    public static event Action<RawKey> OnKeyUp
+    {
+        add
+        {
+            lock (_lock)
+            {
+                _onKeyUp += value;
+            }
+        }
+        remove
+        {
+            lock (_lock)
+            {
+                _onKeyUp -= value;
+            }
+        }
+    }
 
     public static void Initialize()
     {
@@ -42,10 +78,10 @@ public static class NativeBackgroundRawInput
     public static void Shutdown()
     {
 #if UNITY_STANDALONE_WIN
-        if (_handle != 0)
+        if (_handle != null)
         {
-            _StopRawInput(_handle);
-            _handle = 0;
+            _StopRawInput(_handle.Value);
+            _handle = null;
         }
 #endif
     }
@@ -61,25 +97,28 @@ public static class NativeBackgroundRawInput
             return;
         }
 
-        switch (type)
+        lock (_lock)
         {
-            case KeyEventType.Down:
+            switch (type)
             {
-                if (_keyDownRawKeys.Add(key))
+                case KeyEventType.Down:
                 {
-                    Debug.Log($"KeyDown: {key}");
-                    OnKeyDown?.Invoke(key);
+                    if (_keyDownRawKeys.Add(key))
+                    {
+                        Debug.Log($"KeyDown: {key}");
+                        _onKeyDown?.Invoke(key);
+                    }
+                    break;
                 }
-                break;
-            }
-            case KeyEventType.Up:
-            {
-                if (_keyDownRawKeys.Remove(key))
+                case KeyEventType.Up:
                 {
-                    Debug.Log($"KeyUp: {key}");
-                    OnKeyUp?.Invoke(key);
+                    if (_keyDownRawKeys.Remove(key))
+                    {
+                        Debug.Log($"KeyUp: {key}");
+                        _onKeyUp?.Invoke(key);
+                    }
+                    break;
                 }
-                break;
             }
         }
     }

@@ -17,7 +17,6 @@ public class BattleWindowsInputManager : IBattleInputManager
     {
         NativeBackgroundRawInput.OnKeyDown += HandleOnKeyDown;
         NativeBackgroundRawInput.OnKeyUp += HandleOnKeyUp;
-        NativeBackgroundRawInput.Initialize();
     }
 
     public void OnUpdate()
@@ -87,7 +86,6 @@ public class BattleWindowsInputManager : IBattleInputManager
 
     public void Dispose()
     {
-        NativeBackgroundRawInput.Shutdown();
         NativeBackgroundRawInput.OnKeyDown -= HandleOnKeyDown;
         NativeBackgroundRawInput.OnKeyUp -= HandleOnKeyUp;
     }
