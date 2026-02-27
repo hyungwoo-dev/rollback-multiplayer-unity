@@ -9,4 +9,11 @@ public class BattleWorldManager : BaseWorldManager
         base.Setup();
         StartUnixTimeMillis = TimeUtils.UtcNowUnixTimeMillis;
     }
+
+    public override void AdvanceFrame(in BattleFrame frame)
+    {
+        base.AdvanceFrame(frame);
+
+        LocalWorldEventInfos.Remove(FutureWorld.CurrentFrame - 1);
+    }
 }

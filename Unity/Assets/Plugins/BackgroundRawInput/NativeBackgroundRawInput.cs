@@ -69,9 +69,13 @@ public static class NativeBackgroundRawInput
     public static void Initialize()
     {
 #if UNITY_STANDALONE_WIN
-        _keyDelegate = OnNativeEvent;
-        _handle = _InitializeRawInput(_keyDelegate);
-        _keyDownRawKeys = new();
+        if (_handle == null)
+        {
+            _keyDelegate = OnNativeEvent;
+            _handle = _InitializeRawInput(_keyDelegate);
+            _keyDownRawKeys = new();
+            Debug.Log("[NativeBackgroundRawInput::Initialize]");
+        }
 #endif
     }
 
@@ -82,6 +86,7 @@ public static class NativeBackgroundRawInput
         {
             _StopRawInput(_handle.Value);
             _handle = null;
+            Debug.Log("[NativeBackgroundRawInput::Shutdown]");
         }
 #endif
     }

@@ -21,7 +21,6 @@ public partial class BattleWorld
     public int NextFrame => CurrentFrame + 1;
 
     private List<BattleUnit> Units { get; set; } = new();
-    private List<BattleWorldEventInfo> WorldEventInfos { get; set; } = new(16);
 
     public BattleCameraTransform CameraTransform { get; private set; } = new();
 
@@ -34,16 +33,6 @@ public partial class BattleWorld
         }
         hash ^= CameraTransform.GetCameraHash();
         return hash;
-    }
-
-    public void AddWorldEventInfo(BattleWorldInputEventType inputEventType, int unitId, int battleTimeMillis)
-    {
-        var eventInfo = WorldEventInfoPool.Get();
-        eventInfo.WorldInputEventType = inputEventType;
-        eventInfo.UnitID = unitId;
-        eventInfo.TargetFrame = NextFrame;
-        eventInfo.BattleTimeMillis = battleTimeMillis;
-        WorldEventInfos.Add(eventInfo);
     }
 
     public void ReleaseWorldEventInfos(List<BattleWorldEventInfo> worldEventInfos)
@@ -139,25 +128,6 @@ public partial class BattleWorld
         foreach (var unit in Units)
         {
             unit.Interpolate(frame, worldScene);
-        }
-    }
-
-    public void ApplyWorldEventInfos(List<BattleWorldEventInfo> outWorldEventInfos)
-    {
-        if (WorldEventInfos.Count == 0)
-        {
-            AddWorldEventInfo(BattleWorldInputEventType.NONE, WorldManager.PlayerID, WorldManager.BattleTimeMillis);
-        }
-
-        ExecuteWorldEventInfos(WorldEventInfos);
-        foreach (var worldEventInfo in WorldEventInfos)
-        {
-            outWorldEventInfos.Add(worldEventInfo);
-        }
-
-        if (WorldEventInfos.Count > 0)
-        {
-            WorldEventInfos.Clear();
         }
     }
 
@@ -289,13 +259,6 @@ public partial class BattleWorld
             Units.Add(clone);
         }
 
-        WorldEventInfos.Clear();
-        foreach (var worldEventInfo in other.WorldEventInfos)
-        {
-            var clone = worldEventInfo.Clone(this);
-            WorldEventInfos.Add(clone);
-        }
-
         CameraTransform.DeepCopyFrom(this, other.CameraTransform);
     }
 
@@ -308,12 +271,6 @@ public partial class BattleWorld
             unit.Release(this);
         }
         Units.Clear();
-
-        foreach (var worldEventInfo in WorldEventInfos)
-        {
-            worldEventInfo.Release(this);
-        }
-        WorldEventInfos.Clear();
 
         CameraTransform.Release(this);
 

@@ -14,12 +14,22 @@ public class NativeBackgroundRawInputFocusChecker : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            Interlocked.Increment(ref _focusFlag);
-            NativeBackgroundRawInput.Initialize();
         }
         else
         {
             Destroy(this);
+        }
+    }
+
+    private void Start()
+    {
+        if (Instance == this && Application.isFocused)
+        {
+            if (!IsFocused)
+            {
+                Interlocked.Increment(ref _focusFlag);
+            }
+            NativeBackgroundRawInput.Initialize();
         }
     }
 

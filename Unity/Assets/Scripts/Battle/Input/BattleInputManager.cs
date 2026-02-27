@@ -1,65 +1,83 @@
 ﻿using System;
-using UnityEngine;
 
-public class BattleInputManager : IBattleInputManager
+public class BattleInputManager
 {
-    private BattleInputContext InputContext { get; } = new BattleInputContext();
-
-    public event Action OnInputMoveLeftArrowDown = null;
-    public event Action OnInputMoveLeftArrowUp = null;
-    public event Action OnInputMoveRightArrowDown = null;
-    public event Action OnInputMoveRightArrowUp = null;
-    public event Action OnInputAttack1 = null;
-    public event Action OnInputAttack2 = null;
+    public event Action<BattleWorldInputEventType> OnFrameEventImmediately;
 
     public void Initialize()
     {
-
+        NativeBackgroundRawInput.OnKeyDown += HandleOnKeyDown;
+        NativeBackgroundRawInput.OnKeyUp += HandleOnKeyUp;
     }
 
-    public void OnUpdate()
+    private void HandleOnKeyDown(RawKey obj)
     {
-        UpdateInputEvents(InputContext);
+        var frameEventType = GetFrameEventType(obj, KeyEventType.Down);
+        if (frameEventType != BattleWorldInputEventType.NONE)
+        {
+            OnFrameEventImmediately?.Invoke(frameEventType);
+        }
     }
 
-    private void UpdateInputEvents(BattleInputContext context)
+    private void HandleOnKeyUp(RawKey obj)
     {
-        if (Input.GetKeyDown(context.MoveLeftArrowKeyCode))
+        var frameEventType = GetFrameEventType(obj, KeyEventType.Up);
+        if (frameEventType != BattleWorldInputEventType.NONE)
         {
-            OnInputMoveLeftArrowDown?.Invoke();
-        }
-
-        if (Input.GetKeyUp(context.MoveLeftArrowKeyCode))
-        {
-            OnInputMoveLeftArrowUp?.Invoke();
-        }
-
-        if (Input.GetKeyDown(context.MoveRightArrowKeyCode))
-        {
-            OnInputMoveRightArrowDown?.Invoke();
-        }
-
-        if (Input.GetKeyUp(context.MoveRightArrowKeyCode))
-        {
-            OnInputMoveRightArrowUp?.Invoke();
-        }
-
-        if (Input.GetKeyDown(context.Attack1KeyCode))
-        {
-            OnInputAttack1?.Invoke();
-        }
-
-        if (Input.GetKeyDown(context.Attack2KeyCode))
-        {
-            OnInputAttack2?.Invoke();
+            OnFrameEventImmediately?.Invoke(frameEventType);
         }
     }
 
     public void Dispose()
     {
-        OnInputMoveLeftArrowDown = null;
-        OnInputMoveLeftArrowUp = null;
-        OnInputAttack1 = null;
-        OnInputAttack2 = null;
+        NativeBackgroundRawInput.OnKeyDown -= HandleOnKeyDown;
+        NativeBackgroundRawInput.OnKeyUp -= HandleOnKeyUp;
+    }
+
+    private static BattleWorldInputEventType GetFrameEventType(RawKey key, KeyEventType eventType)
+    {
+        switch (eventType)
+        {
+            case KeyEventType.Down:
+            {
+                switch (key)
+                {
+                    case RawKey.A:
+                    {
+                        return BattleWorldInputEventType.ATTACK1;
+                    }
+                    case RawKey.S:
+                    {
+                        return BattleWorldInputEventType.ATTACK2;
+                    }
+                    case RawKey.LeftArrow:
+                    {
+                        return BattleWorldInputEventType.MOVE_LEFT_ARROW_DOWN;
+                    }
+                    case RawKey.RightArrow:
+                    {
+                        return BattleWorldInputEventType.MOVE_RIGHT_ARROW_DOWN;
+                    }
+                }
+                break;
+            }
+            case KeyEventType.Up:
+            {
+                switch (key)
+                {
+                    case RawKey.LeftArrow:
+                    {
+                        return BattleWorldInputEventType.MOVE_LEFT_ARROW_UP;
+                    }
+                    case RawKey.RightArrow:
+                    {
+                        return BattleWorldInputEventType.MOVE_RIGHT_ARROW_UP;
+                    }
+                }
+                break;
+            }
+        }
+
+        return BattleWorldInputEventType.NONE;
     }
 }

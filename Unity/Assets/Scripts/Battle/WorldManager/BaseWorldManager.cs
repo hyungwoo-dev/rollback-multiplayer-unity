@@ -1,23 +1,18 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using InputManager = BattleInputManager;
-#elif UNITY_STANDALONE_WIN
-using InputManager = BattleWindowsInputManager;
-#endif
-
 [ManagedStateIgnore]
 public abstract partial class BaseWorldManager
 {
     private static Debug Debug = new(nameof(BaseWorldManager));
 
+    private object _updateLock = new();
     public BattleWorldScene LocalWorldScene { get; private set; }
     public BattleWorld FutureWorld { get; protected set; }
     public int PlayerID { get; protected set; } = 0;
 
     public abstract int BattleTimeMillis { get; }
-
+    protected Dictionary<int, List<BattleWorldEventInfo>> LocalWorldEventInfos { get; private set; } = new();
 
     public BaseWorldManager()
     {
@@ -54,24 +49,46 @@ public abstract partial class BaseWorldManager
 
     public virtual void AdvanceFrame(in BattleFrame frame)
     {
-        FutureWorld.ApplyTo(LocalWorldScene);
-
-        var executeWorldEventInfos = FutureWorld.WorldEventInfoListPool.Get();
-        FutureWorld.ApplyWorldEventInfos(executeWorldEventInfos);
-        OnExecuteWorldEventInfos(FutureWorld.NextFrame, executeWorldEventInfos);
-        FutureWorld.WorldEventInfoListPool.Release(executeWorldEventInfos);
-
-        FutureWorld.AdvanceFrame(frame);
+        lock (_updateLock)
+        {
+            FutureWorld.ApplyTo(LocalWorldScene);
+            FutureWorld.AdvanceFrame(frame);
+        }
     }
 
-    protected virtual void OnExecuteWorldEventInfos(int frame, List<BattleWorldEventInfo> worldEventInfos)
+    protected virtual void HandleOnFrameEventImmediately(BattleWorldInputEventType worldInputEventType)
     {
+        lock (_updateLock)
+        {
+            var worldEventInfo = CreateIntermidiateWorldEventInfo(worldInputEventType, FutureWorld.NextFrame, PlayerID, BattleTimeMillis);
+            FutureWorld.ExecuteWorldEventInfo(worldEventInfo);
 
+            if (LocalWorldEventInfos.TryGetValue(worldEventInfo.TargetFrame, out var list))
+            {
+                list.Add(worldEventInfo);
+            }
+            else
+            {
+                list = FutureWorld.WorldEventInfoListPool.Get();
+                list.Add(worldEventInfo);
+                LocalWorldEventInfos.Add(worldEventInfo.TargetFrame, list);
+            }
+        }
     }
+
+    protected BattleWorldEventInfo CreateIntermidiateWorldEventInfo(BattleWorldInputEventType worldEventType, int frame, int userIndex, int battleTimeMillis)
+    {
+        var worldEventInfo = FutureWorld.WorldEventInfoPool.Get();
+        worldEventInfo.TargetFrame = frame;
+        worldEventInfo.WorldInputEventType = worldEventType;
+        worldEventInfo.UnitID = userIndex;
+        worldEventInfo.BattleTimeMillis = battleTimeMillis;
+        return worldEventInfo;
+    }
+
 
     public virtual void OnUpdate(in BattleFrame frame)
     {
-        InputManager.OnUpdate();
         FutureWorld.Interpolate(frame, LocalWorldScene);
     }
 
@@ -95,56 +112,17 @@ public abstract partial class BaseWorldManager
 
     #region Input
 
-    protected IBattleInputManager InputManager { get; } = new InputManager();
+    protected BattleInputManager InputManager { get; } = new BattleInputManager();
 
     private void InitalizeInputManager()
     {
-        InputManager.OnInputMoveLeftArrowDown += OnPlayerInputMoveLeftArrowDown;
-        InputManager.OnInputMoveLeftArrowUp += OnPlayerInputMoveLeftArrowUp;
-        InputManager.OnInputMoveRightArrowDown += OnPlayerInputMoveRightArrowDown;
-        InputManager.OnInputMoveRightArrowUp += OnPlayerInputMoveRightArrowUp;
-        InputManager.OnInputAttack1 += OnPlayerInputAttack1;
-        InputManager.OnInputAttack2 += OnPlayerInputAttack2;
-    }
-
-    private void OnPlayerInputMoveRightArrowDown()
-    {
-        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_DOWN, PlayerID, BattleTimeMillis);
-    }
-
-    private void OnPlayerInputMoveRightArrowUp()
-    {
-        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_RIGHT_ARROW_UP, PlayerID, BattleTimeMillis);
-    }
-
-    private void OnPlayerInputMoveLeftArrowDown()
-    {
-        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_DOWN, PlayerID, BattleTimeMillis);
-    }
-
-    private void OnPlayerInputMoveLeftArrowUp()
-    {
-        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.MOVE_LEFT_ARROW_UP, PlayerID, BattleTimeMillis);
-    }
-
-    private void OnPlayerInputAttack1()
-    {
-        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.ATTACK1, PlayerID, BattleTimeMillis);
-    }
-
-    private void OnPlayerInputAttack2()
-    {
-        FutureWorld.AddWorldEventInfo(BattleWorldInputEventType.ATTACK2, PlayerID, BattleTimeMillis);
+        InputManager.OnFrameEventImmediately += HandleOnFrameEventImmediately;
+        InputManager.Initialize();
     }
 
     private void DisposeInputManager()
     {
-        InputManager.OnInputMoveLeftArrowDown -= OnPlayerInputMoveLeftArrowDown;
-        InputManager.OnInputMoveLeftArrowUp -= OnPlayerInputMoveLeftArrowUp;
-        InputManager.OnInputMoveRightArrowDown -= OnPlayerInputMoveRightArrowDown;
-        InputManager.OnInputMoveRightArrowUp -= OnPlayerInputMoveRightArrowUp;
-        InputManager.OnInputAttack1 -= OnPlayerInputAttack2;
-        InputManager.OnInputAttack2 -= OnPlayerInputAttack2;
+        InputManager.OnFrameEventImmediately -= HandleOnFrameEventImmediately;
         InputManager.Dispose();
     }
 

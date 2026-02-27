@@ -17,7 +17,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     private object _futureUpdateLock = new();
     private Dictionary<int, List<BattleWorldEventInfo>> ReceivedIntermidiateWorldEventInfos { get; set; } = new();
     private Dictionary<int, List<BattleWorldEventInfo>> ReceivedServerWorldEventInfos { get; set; } = new();
-    protected Dictionary<int, List<BattleWorldEventInfo>> LocalWorldEventInfos { get; private set; } = new();
+
     public long GameStartUnixTimeMillis { get; private set; } = -1;
     public override int BattleTimeMillis => (int)(TimeUtils.UtcNowUnixTimeMillis - GameStartUnixTimeMillis);
     public int OpponentPlayerID { get; private set; } = -1;
@@ -58,11 +58,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     public override void Initialize(in BattleFrame frame)
     {
         base.Initialize(frame);
-
-        if (InputManager is BattleWindowsInputManager windowsInputManager)
-        {
-            windowsInputManager.OnFrameEventImmediately += HandleOnFrameEventImmediately;
-        }
 
         var thread = new Thread(static state =>
         {
@@ -229,37 +224,37 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         }
     }
 
-    protected override void OnExecuteWorldEventInfos(int frame, List<BattleWorldEventInfo> worldEventInfos)
-    {
-        base.OnExecuteWorldEventInfos(frame, worldEventInfos);
-
-        var newWorldEventInfos = FutureWorld.WorldEventInfoListPool.Get();
-        newWorldEventInfos.AddRange(worldEventInfos);
-        LocalWorldEventInfos.TryAdd(frame, newWorldEventInfos);
-    }
-
     private void SendInputEvents(int frame)
     {
         var serverFrameEvents = NetworkManager.C2S_FrameEventListPool.Get();
-
-        if (!LocalWorldEventInfos.TryGetValue(frame, out var worldEventInfos))
-        {
-            return;
-        }
-
-        foreach (var worldEventInfo in worldEventInfos)
-        {
-            var frameEventType = WorldEventToFrameEventType(worldEventInfo.WorldInputEventType);
-            var msgFrameEvent = NetworkManager.C2S_FrameEventPool.Get();
-            msgFrameEvent.EventType = frameEventType;
-            msgFrameEvent.BattleTimeMillis = BattleTimeMillis;
-            serverFrameEvents.Add(msgFrameEvent);
-        }
-
         var frameEvents = NetworkManager.C2S_FrameEventsPool.Get();
-        frameEvents.Frame = frame;
-        frameEvents.Events = serverFrameEvents;
-        NetworkManager.C2S_FRAME_EVENTS(frameEvents);
+
+        if (LocalWorldEventInfos.TryGetValue(frame, out var worldEventInfos))
+        {
+            foreach (var worldEventInfo in worldEventInfos)
+            {
+                var frameEventType = WorldEventToFrameEventType(worldEventInfo.WorldInputEventType);
+                var msgFrameEvent = NetworkManager.C2S_FrameEventPool.Get();
+                msgFrameEvent.EventType = frameEventType;
+                msgFrameEvent.BattleTimeMillis = BattleTimeMillis;
+                serverFrameEvents.Add(msgFrameEvent);
+            }
+
+            frameEvents.Frame = frame;
+            frameEvents.Events = serverFrameEvents;
+            NetworkManager.C2S_FRAME_EVENTS(frameEvents);
+
+        }
+        else
+        {
+            var msgFrameEvent = NetworkManager.C2S_FrameEventPool.Get();
+            msgFrameEvent.EventType = FrameEventType.NONE;
+            serverFrameEvents.Add(msgFrameEvent);
+
+            frameEvents.Frame = frame;
+            frameEvents.Events = serverFrameEvents;
+            NetworkManager.C2S_FRAME_EVENTS(frameEvents);
+        }
 
         // Release
         foreach (var serverFrameEvent in serverFrameEvents)
@@ -329,11 +324,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         while (Interlocked.Read(ref _serverWorldRunningFlag) > 0)
         {
             // 서버 월드 스레드가 종료될 떄 까지 대기한다.
-        }
-
-        if (InputManager is BattleWindowsInputManager windowsInputManager)
-        {
-            windowsInputManager.OnFrameEventImmediately -= HandleOnFrameEventImmediately;
         }
 
         foreach (var worldEventInfos in ReceivedIntermidiateWorldEventInfos.Values)
@@ -474,17 +464,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         return worldEventInfo;
     }
 
-    private BattleWorldEventInfo CreateIntermidiateWorldEventInfo(FrameEventType eventType, int frame, int userIndex, int battleTimeMillis)
-    {
-        var worldEventType = FrameEventTypeToWorldEventType(eventType);
-        var worldEventInfo = FutureWorld.WorldEventInfoPool.Get();
-        worldEventInfo.TargetFrame = frame;
-        worldEventInfo.WorldInputEventType = worldEventType;
-        worldEventInfo.UnitID = userIndex;
-        worldEventInfo.BattleTimeMillis = battleTimeMillis;
-        return worldEventInfo;
-    }
-
     private void HandleOnFrameInvalidateHash(S2C_MSG_INVALIDATE_HASH msgInvalidateHash)
     {
         Debug.LogError($"S2C_MSG_INVALIDATE_HASH, Frame: {msgInvalidateHash.Frame}, PlayerHash: {msgInvalidateHash.PlayerHash}, OpponentPlayerHash: {msgInvalidateHash.OpponentPlayerHash}");
@@ -502,8 +481,9 @@ public class MultiplayBattleWorldManager : BaseWorldManager
                 }
             }
 
+            var worldInputEventType = FrameEventTypeToWorldEventType(msgIntermidiateFrameEvent.FrameEvent.EventType);
             var worldEventInfo = CreateIntermidiateWorldEventInfo(
-                msgIntermidiateFrameEvent.FrameEvent.EventType,
+                worldInputEventType,
                 msgIntermidiateFrameEvent.Frame,
                 msgIntermidiateFrameEvent.FrameEvent.UserIndex,
                 msgIntermidiateFrameEvent.FrameEvent.BattleTimeMillis
@@ -536,8 +516,9 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         NetworkManager = null;
     }
 
-    private void HandleOnFrameEventImmediately(FrameEventType frameEventType)
+    protected override void HandleOnFrameEventImmediately(BattleWorldInputEventType worldInputEventType)
     {
+        var frameEventType = WorldEventToFrameEventType(worldInputEventType);
         var intermidiateFrameEvent = NetworkManager.C2S_IntermidiateFrameEventsPool.Get();
         var frameEvent = NetworkManager.C2S_FrameEventPool.Get();
         frameEvent.EventType = frameEventType;
@@ -552,19 +533,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
         lock (_futureUpdateLock)
         {
-            var worldEventInfo = CreateIntermidiateWorldEventInfo(frameEventType, FutureWorld.NextFrame, PlayerID, BattleTimeMillis);
-            FutureWorld.ExecuteWorldEventInfo(worldEventInfo);
-
-            if (LocalWorldEventInfos.TryGetValue(worldEventInfo.TargetFrame, out var list))
-            {
-                list.Add(worldEventInfo);
-            }
-            else
-            {
-                list = FutureWorld.WorldEventInfoListPool.Get();
-                list.Add(worldEventInfo);
-                LocalWorldEventInfos.Add(worldEventInfo.TargetFrame, list);
-            }
+            base.HandleOnFrameEventImmediately(worldInputEventType);
         }
     }
 }
