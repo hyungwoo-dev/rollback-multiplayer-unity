@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "HolePunchServer/1.0.0": {
+        "dependencies": {
+          "LiteNetLib": "2.0.2"
+        },
+        "runtime": {
+          "HolePunchServer.dll": {}
+        }
+      },
+      "LiteNetLib/2.0.2": {
+        "runtime": {
+          "LiteNetLib.dll": {
+            "assemblyVersion": "2.0.2.0",
+            "fileVersion": "2.0.2.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "HolePunchServer/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "LiteNetLib/2.0.2": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
