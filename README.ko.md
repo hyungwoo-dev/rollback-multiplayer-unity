@@ -106,6 +106,16 @@ Frame: F12 -> F13
 └──────────────────────────────────────────────┘
 ```
 
+## P2P 홀펀칭
+
+상대방과 통신할 때, 최소한의 지연으로 통신하기 위해 P2P 홀펀칭을 선택했습니다.
+
+호스트 없는 P2P 통신으로, 플레이어는 각자 자신의 정보를 상대방에게 전달하고 상태를 결정론적으로 동기화합니다.
+
+서버 라이브러리는 LiteNetLib을 사용했습니다.
+
+https://github.com/RevenantX/LiteNetLib
+
 ## 지연 보정
 
 플레이어는 네트워크 환경이나 기기 스펙에 따라 게임 진행 속도에 차이가 날 수 있습니다.
@@ -179,7 +189,9 @@ FixedDeltaTime 주기에 맞춰 애니메이션을 진행하고, 진행한 프�
 
 저장소 Builds/ 폴더에 Server와 Unity 빌드 프로그램이 포함되어 있습니다. (Windows 환경)
 
-Builds/Server/GameServer.exe를 먼저 실행하고, 두 개의 Builds/Unity/ActionGame.exe 프로그램을 실행해서 테스트할 수 있습니다.
+Builds/Server/HolePunchServer.exe를 먼저 실행하고, 두 개의 Builds/Unity/ActionGame.exe 프로그램을 실행해서 테스트할 수 있습니다.
+
+서버 프로그램과 클라이언트 프로그램 실행 시, 네트워크 허용 팝업에서 허용을 선택하세요.
 
 ### Unity 테스트
 
