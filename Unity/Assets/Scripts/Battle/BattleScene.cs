@@ -41,6 +41,7 @@ public class BattleScene : MonoBehaviour
     private BaseWorldManager WorldManager { get; set; }
     private bool IsInitialized { get; set; } = false;
     private bool IsSetup { get; set; } = false;
+    private bool IsStarted { get; set; } = false;
 
     public void Setup(BattlePlayMode playMode)
     {
@@ -92,6 +93,11 @@ public class BattleScene : MonoBehaviour
 
         if (WorldManager.IsStarted())
         {
+            if (!IsStarted)
+            {
+                IsStarted = true;
+                WorldManager.OnStart();
+            }
             WorldManager.AdvanceFrame(frame);
         }
     }

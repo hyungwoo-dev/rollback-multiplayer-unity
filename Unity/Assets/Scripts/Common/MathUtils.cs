@@ -48,4 +48,9 @@ public static class MathUtils
     {
         return a > b ? a : b;
     }
+
+    public static long Max(long a, long b)
+    {
+        return a > b ? a : b;
+    }
 }

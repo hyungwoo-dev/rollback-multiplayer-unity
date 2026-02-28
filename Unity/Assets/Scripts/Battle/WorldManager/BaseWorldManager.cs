@@ -110,6 +110,11 @@ public abstract partial class BaseWorldManager
         return true;
     }
 
+    public virtual void OnStart()
+    {
+
+    }
+
     #region Input
 
     protected BattleInputManager InputManager { get; } = new BattleInputManager();

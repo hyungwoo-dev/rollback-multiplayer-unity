@@ -1,6 +1,7 @@
 ﻿using FixedMathSharp;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 public partial class BattleWorld
 {
@@ -17,7 +18,8 @@ public partial class BattleWorld
 
     public BaseWorldManager WorldManager { get; private set; }
     public BattleWorldScene WorldScene { get; private set; }
-    public int CurrentFrame;
+
+    public volatile int CurrentFrame;
     public int NextFrame => CurrentFrame + 1;
 
     private List<BattleUnit> Units { get; set; } = new();
@@ -133,7 +135,7 @@ public partial class BattleWorld
 
     public void AdvanceFrame(in BattleFrame frame)
     {
-        CurrentFrame += 1;
+        Interlocked.Increment(ref CurrentFrame);
 
         foreach (var unit in Units)
         {
@@ -264,7 +266,7 @@ public partial class BattleWorld
 
     public void Release()
     {
-        CurrentFrame = 0;
+        Interlocked.Exchange(ref CurrentFrame, 0);
 
         foreach (var unit in Units)
         {

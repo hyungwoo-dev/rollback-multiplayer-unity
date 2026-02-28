@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using UnityEngine;
 
 public static class NativeBackgroundRawInput
 {
@@ -74,7 +73,6 @@ public static class NativeBackgroundRawInput
             _keyDelegate = OnNativeEvent;
             _handle = _InitializeRawInput(_keyDelegate);
             _keyDownRawKeys = new();
-            Debug.Log("[NativeBackgroundRawInput::Initialize]");
         }
 #endif
     }
@@ -86,7 +84,6 @@ public static class NativeBackgroundRawInput
         {
             _StopRawInput(_handle.Value);
             _handle = null;
-            Debug.Log("[NativeBackgroundRawInput::Shutdown]");
         }
 #endif
     }
@@ -110,7 +107,6 @@ public static class NativeBackgroundRawInput
                 {
                     if (_keyDownRawKeys.Add(key))
                     {
-                        Debug.Log($"KeyDown: {key}");
                         _onKeyDown?.Invoke(key);
                     }
                     break;
@@ -119,7 +115,6 @@ public static class NativeBackgroundRawInput
                 {
                     if (_keyDownRawKeys.Remove(key))
                     {
-                        Debug.Log($"KeyUp: {key}");
                         _onKeyUp?.Invoke(key);
                     }
                     break;

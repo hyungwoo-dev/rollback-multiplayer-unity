@@ -41,6 +41,9 @@ public partial class BattleUnit
     {
         ID = unitID;
 
+        PreviousPosition = position;
+        PreviousRotation = rotation;
+
         Position = position;
         Rotation = rotation;
 
