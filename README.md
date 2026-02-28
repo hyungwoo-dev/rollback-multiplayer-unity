@@ -108,6 +108,16 @@ Frame: F12 -> F13
 └──────────────────────────────────────────────┘
 ```
 
+## Peer-to-Peer Hole Punching
+
+We selected the peer-to-peer hole punching method to communicate with opponents with minimal latency.
+
+This is a hostless P2P communication system where each player transmits their own information to opponents and deterministically synchronizes state.
+
+The server library used is LiteNetLib.
+
+https://github.com/RevenantX/LiteNetLib
+
 ## Delay Compensation
 
 Gameplay speed may vary depending on the player's network environment or device specifications.
@@ -181,7 +191,7 @@ Animation progresses according to the FixedDeltaTime cycle, and the amount of mo
 
 The Builds/ folder in the repository contains the Server and Unity build programs. (Windows environment)
 
-You can run Builds/Server/GameServer.exe first, then run the two Builds/Unity/ActionGame.exe programs to test.
+You can run Builds/Server/HolePunchServer.exe first, then run the two Builds/Unity/ActionGame.exe programs to test.
 
 ### Unity Test
 
