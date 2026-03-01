@@ -14,6 +14,6 @@ public class BattleWorldManager : BaseWorldManager
     {
         base.AdvanceFrame(frame);
 
-        LocalWorldEventInfos.Remove(FutureWorld.CurrentFrame - 1);
+        LocalWorldEventInfos.Remove(FutureWorld.CurrentFrame, out var _);
     }
 }

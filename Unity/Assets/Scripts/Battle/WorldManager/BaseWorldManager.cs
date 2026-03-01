@@ -6,7 +6,6 @@ public abstract partial class BaseWorldManager
 {
     private static Debug Debug = new(nameof(BaseWorldManager));
 
-    private object _updateLock = new();
     public BattleWorldScene LocalWorldScene { get; private set; }
     public BattleWorld FutureWorld { get; protected set; }
     public int PlayerID { get; protected set; } = 0;
@@ -49,30 +48,24 @@ public abstract partial class BaseWorldManager
 
     public virtual void AdvanceFrame(in BattleFrame frame)
     {
-        lock (_updateLock)
-        {
-            FutureWorld.ApplyTo(LocalWorldScene);
-            FutureWorld.AdvanceFrame(frame);
-        }
+        FutureWorld.ApplyTo(LocalWorldScene);
+        FutureWorld.AdvanceFrame(frame);
     }
 
     protected virtual void HandleOnFrameEventImmediately(BattleWorldInputEventType worldInputEventType)
     {
-        lock (_updateLock)
-        {
-            var worldEventInfo = CreateIntermidiateWorldEventInfo(worldInputEventType, FutureWorld.NextFrame, PlayerID, BattleTimeMillis);
-            FutureWorld.ExecuteWorldEventInfo(worldEventInfo);
+        var worldEventInfo = CreateIntermidiateWorldEventInfo(worldInputEventType, FutureWorld.NextFrame, PlayerID, BattleTimeMillis);
+        FutureWorld.ExecuteWorldEventInfo(worldEventInfo);
 
-            if (LocalWorldEventInfos.TryGetValue(worldEventInfo.TargetFrame, out var list))
-            {
-                list.Add(worldEventInfo);
-            }
-            else
-            {
-                list = FutureWorld.WorldEventInfoListPool.Get();
-                list.Add(worldEventInfo);
-                LocalWorldEventInfos.Add(worldEventInfo.TargetFrame, list);
-            }
+        if (LocalWorldEventInfos.TryGetValue(worldEventInfo.TargetFrame, out var list))
+        {
+            list.Add(worldEventInfo);
+        }
+        else
+        {
+            list = FutureWorld.WorldEventInfoListPool.Get();
+            list.Add(worldEventInfo);
+            LocalWorldEventInfos.Add(worldEventInfo.TargetFrame, list);
         }
     }
 
@@ -85,7 +78,6 @@ public abstract partial class BaseWorldManager
         worldEventInfo.BattleTimeMillis = battleTimeMillis;
         return worldEventInfo;
     }
-
 
     public virtual void OnUpdate(in BattleFrame frame)
     {

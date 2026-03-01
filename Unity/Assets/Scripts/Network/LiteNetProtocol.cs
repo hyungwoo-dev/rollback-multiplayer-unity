@@ -155,7 +155,7 @@ public struct P2P_FRAME_HASH : INetSerializable
     /// <summary>
     /// 검증할 프레임의 상태 해시
     /// </summary>
-    public int Hash;
+    public long Hash;
 
     public void Serialize(NetDataWriter writer)
     {
@@ -166,6 +166,6 @@ public struct P2P_FRAME_HASH : INetSerializable
     public void Deserialize(NetDataReader reader)
     {
         Frame = reader.GetInt();
-        Hash = reader.GetInt();
+        Hash = reader.GetLong();
     }
 }

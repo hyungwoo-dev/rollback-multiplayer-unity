@@ -26,9 +26,9 @@ public partial class BattleWorld
 
     public BattleCameraTransform CameraTransform { get; private set; } = new();
 
-    public int GetWorldHash()
+    public long GetWorldHash()
     {
-        var hash = int.MaxValue;
+        var hash = long.MaxValue;
         foreach (var unit in Units)
         {
             hash ^= unit.GetUnitHash();

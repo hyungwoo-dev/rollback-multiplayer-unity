@@ -362,7 +362,7 @@ public partial class BattleUnit
         }
     }
 
-    public int GetUnitHash()
+    public long GetUnitHash()
     {
         long longHash = long.MaxValue;
         longHash ^= Position.x.m_rawValue;
@@ -372,9 +372,7 @@ public partial class BattleUnit
         longHash ^= Rotation.y.m_rawValue;
         longHash ^= Rotation.z.m_rawValue;
         longHash ^= Rotation.w.m_rawValue;
-        var uinthash = (uint)(longHash % uint.MaxValue);
-        var intHash = (int)uinthash;
-        return intHash;
+        return longHash;
     }
 
     public BattleUnit Clone(BattleWorld context)

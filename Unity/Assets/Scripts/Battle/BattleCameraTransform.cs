@@ -34,7 +34,7 @@ public partial class BattleCameraTransform
         UpdatePositionAndRotation(nextPosition, nextRotation);
     }
 
-    public int GetCameraHash()
+    public long GetCameraHash()
     {
         long longHash = long.MaxValue;
         longHash ^= Position.x.m_rawValue;
@@ -53,9 +53,7 @@ public partial class BattleCameraTransform
         longHash ^= NextRotation.z.m_rawValue;
         longHash ^= NextRotation.w.m_rawValue;
 
-        var uinthash = (uint)(longHash % uint.MaxValue);
-        var intHash = (int)uinthash;
-        return intHash;
+        return longHash;
     }
 
     private void SetPositionAndRotation(Vector3d position, FixedQuaternion rotation)
