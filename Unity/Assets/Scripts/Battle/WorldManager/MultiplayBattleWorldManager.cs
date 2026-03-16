@@ -366,28 +366,21 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     const float SLOW_LEVEL1_TIME_SCALE = 0.9f;
     const float SLOW_LEVEL2_TIME_SCALE = 0.3f;
 
-    private bool _isSlowdownAttempted;
-    private Fixed64 _slowdownElapsedTime;
-
     private float AdjustSimulationSpeed(int frameDrift, in BattleFrame frame)
     {
         // 서버와 SLOW_LEVEL1_FRAME_THRESHOLD 프레임을 초과해서 차이가 나면 슬로우가 시작된다.
         // Slow는 1단계 (낮은 슬로우)와 2단계 (프레임 차이가 벌어질수록 느려지는)가 있다.
-        // 일정 프레임을 지난 경우를 경험했거나, slowdown을 경험한 시간이 특정 지점을 넘었다면, 그 다음부턴 Slow상태에 걸리지 않는다.
-        // -> 환경이 일정하게 좋은 플레이어가 정상적인 시간으로 게임을 진행하도록 함
-        if (_isSlowdownAttempted || frameDrift <= SLOW_LEVEL1_FRAME_THRESHOLD)
+        // 일정 프레임을 지난 경우를 경험했다면, 그 다음부턴 Slow상태에 걸리지 않는다.
+        // -> 중간에 끊김으로 인한 경우에 대해 플레이어가 앞서 진행하도록 함
+        if (frameDrift <= SLOW_LEVEL1_FRAME_THRESHOLD)
         {
-            _slowdownElapsedTime = Fixed64.Zero;
             return 1.0f;
         }
         else
         {
-            _slowdownElapsedTime += frame.UnscaledDeltaTime;
-
-            if (_slowdownElapsedTime > Fixed64.One || frameDrift >= SLOWDOWN_RELEASE_FRAME_THREASHOLD)
+            if (frameDrift >= SLOWDOWN_RELEASE_FRAME_THREASHOLD)
             {
                 // 이 시점에 도달하면 프레임에 차이가 나더라도 더이상 느려지지 않는다.
-                _isSlowdownAttempted = true;
                 return 1.0f;
             }
             else
