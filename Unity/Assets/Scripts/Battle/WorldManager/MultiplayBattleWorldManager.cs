@@ -46,7 +46,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     private long _rewindFlag;
     private long _disposeFlag;
     private long _serverWorldRunningFlag;
-
+    private bool _slowdownAttempted;
     private List<BattleWorldEventInfo> _serverWorldEventInfos = new();
 
     public MultiplayBattleWorldManager() : base()
@@ -350,18 +350,23 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         // Slow는 1단계 (낮은 슬로우)와 2단계 (프레임 차이가 벌어질수록 느려지는)가 있다.
         const int SLOW_LEVEL1_FRAME_THRESHOLD = 2;
         const int SLOW_LEVEL2_FRAME_THRESHOLD = 3;
-        const int LOCK_FRAME_THRESHOLD = 10;
-        const float SLOW_LEVEL1_TIME_SCALE = 0.9f;
+        const int SLOWDOWN_RELEASE_FRAME_THREASHOLD = 10;
+        const float SLOW_LEVEL1_TIME_SCALE = 0.3f;
+
+        if (_slowdownAttempted)
+        {
+            return 1.0f;
+        }
 
         if (frameDrift <= SLOW_LEVEL1_FRAME_THRESHOLD)
         {
-            // Unlock
             return 1.0f;
         }
-        else if (frameDrift >= LOCK_FRAME_THRESHOLD)
+        else if (frameDrift >= SLOWDOWN_RELEASE_FRAME_THREASHOLD)
         {
-            // Lock
-            return 0.0f;
+            // 이 시점에 도달하면 프레임에 차이가 나더라도 더이상 느려지지 않는다.
+            _slowdownAttempted = true;
+            return 1.0f;
         }
         else
         {
@@ -374,7 +379,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             else
             {
                 // Slow Level2
-                var t = (frameDrift - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(LOCK_FRAME_THRESHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
+                var t = (frameDrift - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(SLOWDOWN_RELEASE_FRAME_THREASHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
                 var timeScale = Mathf.Lerp(SLOW_LEVEL1_TIME_SCALE, 0.0f, t);
                 return timeScale;
             }
