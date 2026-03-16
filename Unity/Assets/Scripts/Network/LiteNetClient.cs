@@ -130,16 +130,14 @@ public class LiteNetClient
                 var peer = _netManager.Connect(point, ConnectionKey);
                 Debug.Log($"[LiteNetClient] NatIntroductionSuccess. Connecting to point: {point}, type: {addrType}, connection created: {peer != null}");
             };
-            natPunchListener.NatIntroductionRequest += (targetEndPoint, type, token) =>
-            {
-                Debug.Log($"[LiteNetClient] NatIntroductionRequest - TargetEndPoint: {targetEndPoint}, type: {type}, token: {token}");
-            };
+
+
             _netManager.NatPunchModule.Init(natPunchListener);
             _netManager.Start();
 
             _netManager.NatPunchModule.SendNatIntroduceRequest(address, serverPort, token);
 
-            while (CurrentState != LiteNetState.P2P_CONNECTED)
+            while (CurrentState == LiteNetState.P2P_HOLE_PUNCHING)
             {
                 PollEvents();
 
@@ -151,6 +149,11 @@ public class LiteNetClient
                         {
                             SetState(LiteNetState.P2P_CONNECTED);
                         }
+                        break;
+                    }
+                    default:
+                    {
+                        Thread.Sleep(1);
                         break;
                     }
                 }
