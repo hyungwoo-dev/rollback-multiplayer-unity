@@ -7,6 +7,7 @@ public abstract partial class BaseWorldManager
     private static Debug Debug = new(nameof(BaseWorldManager));
 
     public BattleWorldScene LocalWorldScene { get; private set; }
+
     public BattleWorld FutureWorld { get; protected set; }
     public int PlayerID { get; protected set; } = 0;
 

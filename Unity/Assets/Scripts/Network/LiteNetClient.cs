@@ -131,7 +131,6 @@ public class LiteNetClient
                 Debug.Log($"[LiteNetClient] NatIntroductionSuccess. Connecting to point: {point}, type: {addrType}, connection created: {peer != null}");
             };
 
-
             _netManager.NatPunchModule.Init(natPunchListener);
             _netManager.Start();
 

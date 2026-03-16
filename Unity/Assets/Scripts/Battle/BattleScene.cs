@@ -84,7 +84,7 @@ public class BattleScene : MonoBehaviour
     {
         if (!IsSetup) return;
 
-        var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(Time.deltaTime), new Fixed64(Time.fixedDeltaTime));
+        var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(Time.deltaTime), new Fixed64(Time.fixedDeltaTime), new Fixed64(Time.unscaledDeltaTime));
 
         if (!IsInitialized)
         {
@@ -109,7 +109,7 @@ public class BattleScene : MonoBehaviour
         if (!WorldManager.IsStarted()) return;
 
         var deltaTime = Mathf.Min(Time.deltaTime, Time.time - Time.fixedTime);
-        var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(deltaTime), new Fixed64(Time.fixedDeltaTime));
+        var frame = new BattleFrame(Time.inFixedTimeStep, new Fixed64(deltaTime), new Fixed64(Time.fixedDeltaTime), new Fixed64(Time.unscaledDeltaTime));
 
         WorldManager.OnUpdate(frame);
         _battleCamera.OnUpdate(WorldManager.FutureWorld.CameraTransform, frame);
@@ -123,6 +123,29 @@ public class BattleScene : MonoBehaviour
     private void OnApplicationQuit()
     {
         Dispose();
+    }
+
+    void OnGUI()
+    {
+        switch (WorldManager)
+        {
+            case BattleWorldManager battleWorldManager:
+            {
+                GUI.Label(
+                    new Rect(10, 10, 250, 40),
+                    $"FutureWorld Frame: {WorldManager.FutureWorld.NextFrame}\nTimeScale: {Time.timeScale:F2}"
+                );
+                break;
+            }
+            case MultiplayBattleWorldManager multiplayBattleWorldManager:
+            {
+                GUI.Label(
+                    new Rect(10, 10, 250, 60),
+                    $"FutureWorld Frame: {WorldManager.FutureWorld.NextFrame}\nServerWorld Frame: {multiplayBattleWorldManager.LastCheckedServerWorldFrame}\nTimeScale: {Time.timeScale:F2}"
+                );
+                break;
+            }
+        }
     }
 
     private void Dispose()

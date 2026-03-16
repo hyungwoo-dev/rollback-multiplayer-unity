@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using FixedMathSharp;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -14,7 +16,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
     private Dictionary<int, long> PlayerHashes = new();
     private Dictionary<int, long> OpponentPlayerHashes = new();
 
-    private int LastCheckedServerWorldFrame { get; set; }
+    public int LastCheckedServerWorldFrame { get; private set; }
     private int LastHashCheckedServerWorldFrame { get; set; }
 
     private NetworkManager NetworkManager { get; set; }
@@ -40,13 +42,13 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             return MathUtils.Max(PlayerGameStartUnixTimeMillis.Value, OpponentPlayerGameStartUnixTimeMillis.Value) + 1000;
         }
     }
+
     public override int BattleTimeMillis => (int)(TimeUtils.UtcNowUnixTimeMillis - GameStartUnixTimeMillis);
     public int OpponentPlayerID { get; private set; } = -1;
 
     private long _rewindFlag;
     private long _disposeFlag;
     private long _serverWorldRunningFlag;
-    private bool _slowdownAttempted;
     private List<BattleWorldEventInfo> _serverWorldEventInfos = new();
 
     public MultiplayBattleWorldManager() : base()
@@ -107,6 +109,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
                         rewind = worldManager.AdvanceServerWorld(fixedFrame);
                     }
                 }
+
                 if (rewind)
                 {
                     Interlocked.Increment(ref worldManager._rewindFlag);
@@ -167,7 +170,6 @@ public class MultiplayBattleWorldManager : BaseWorldManager
                 }
                 completeFrame = ServerWorld.CurrentFrame;
             }
-
             if (LastCheckedServerWorldFrame != completeFrame)
             {
                 for (var i = LastCheckedServerWorldFrame; i <= completeFrame; ++i)
@@ -187,7 +189,7 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             }
 
             while (PlayerHashes.TryGetValue(LastHashCheckedServerWorldFrame, out var playerHash) &&
-                OpponentPlayerHashes.TryGetValue(LastHashCheckedServerWorldFrame, out var opponentPlayerHash))
+                   OpponentPlayerHashes.TryGetValue(LastHashCheckedServerWorldFrame, out var opponentPlayerHash))
             {
                 if (playerHash != opponentPlayerHash)
                 {
@@ -207,9 +209,18 @@ public class MultiplayBattleWorldManager : BaseWorldManager
 
     private bool AdvanceServerWorld(BattleFrame frame)
     {
+        var serverTargetFrame = FutureWorld.CurrentFrame;
         var rewind = false;
+        var receivedServerWorldEventFrames = ReceivedServerWorldEventInfos.Keys;
+        var maxReceivedServerWorldEventFrame = receivedServerWorldEventFrames.Count > 0 ? receivedServerWorldEventFrames.Max() : -1;
+        if (maxReceivedServerWorldEventFrame - SLOW_LEVEL2_FRAME_THRESHOLD > FutureWorld.CurrentFrame)
+        {
+            // Slow Level2 상태라면 즉시 서버 입력을 모두 진행한다.
+            serverTargetFrame = maxReceivedServerWorldEventFrame;
+            rewind = true;
+        }
 
-        while (ReceivedServerWorldEventInfos.TryGetValue(ServerWorld.NextFrame, out var serverWorldEventInfos) && ServerWorld.NextFrame < FutureWorld.CurrentFrame)
+        while (ReceivedServerWorldEventInfos.TryGetValue(ServerWorld.NextFrame, out var serverWorldEventInfos) && ServerWorld.NextFrame < serverTargetFrame)
         {
             var serverWorldNextFrame = ServerWorld.NextFrame;
 
@@ -247,6 +258,11 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             };
 
             NetworkManager.SendFrameHash(ref message);
+
+            if (ServerWorld.CurrentFrame >= FutureWorld.NextFrame)
+            {
+                SendInputEvents(ServerWorld.CurrentFrame);
+            }
 
             PlayerHashes.Add(serverCurrentFrame, hash);
         }
@@ -340,48 +356,54 @@ public class MultiplayBattleWorldManager : BaseWorldManager
         }
 
         var frameDrift = FutureWorld.NextFrame - serverNextFrame;
-        var timeScale = AdjustSimulationSpeed(frameDrift);
+        var timeScale = AdjustSimulationSpeed(frameDrift, frame);
         Time.timeScale = timeScale;
     }
 
-    private float AdjustSimulationSpeed(int frameDrift)
+    const int SLOW_LEVEL1_FRAME_THRESHOLD = 3;
+    const int SLOW_LEVEL2_FRAME_THRESHOLD = 4;
+    const int SLOWDOWN_RELEASE_FRAME_THREASHOLD = 10;
+    const float SLOW_LEVEL1_TIME_SCALE = 0.9f;
+    const float SLOW_LEVEL2_TIME_SCALE = 0.3f;
+
+    private bool _isSlowdownAttempted;
+    private Fixed64 _slowdownElapsedTime;
+
+    private float AdjustSimulationSpeed(int frameDrift, in BattleFrame frame)
     {
-        // 서버와 SLOW_LEVEL1_FRAME_THRESHOLD 프레임을 초과해서 차이가 나면 슬로우가 시작되고, LOCK_FRAME_THRESHOLD에 도달하면 Lock에 걸린다.
+        // 서버와 SLOW_LEVEL1_FRAME_THRESHOLD 프레임을 초과해서 차이가 나면 슬로우가 시작된다.
         // Slow는 1단계 (낮은 슬로우)와 2단계 (프레임 차이가 벌어질수록 느려지는)가 있다.
-        const int SLOW_LEVEL1_FRAME_THRESHOLD = 2;
-        const int SLOW_LEVEL2_FRAME_THRESHOLD = 3;
-        const int SLOWDOWN_RELEASE_FRAME_THREASHOLD = 10;
-        const float SLOW_LEVEL1_TIME_SCALE = 0.3f;
-
-        if (_slowdownAttempted)
+        // 일정 프레임을 지난 경우를 경험했거나, slowdown을 경험한 시간이 특정 지점을 넘었다면, 그 다음부턴 Slow상태에 걸리지 않는다.
+        // -> 환경이 일정하게 좋은 플레이어가 정상적인 시간으로 게임을 진행하도록 함
+        if (_isSlowdownAttempted || frameDrift <= SLOW_LEVEL1_FRAME_THRESHOLD)
         {
-            return 1.0f;
-        }
-
-        if (frameDrift <= SLOW_LEVEL1_FRAME_THRESHOLD)
-        {
-            return 1.0f;
-        }
-        else if (frameDrift >= SLOWDOWN_RELEASE_FRAME_THREASHOLD)
-        {
-            // 이 시점에 도달하면 프레임에 차이가 나더라도 더이상 느려지지 않는다.
-            _slowdownAttempted = true;
+            _slowdownElapsedTime = Fixed64.Zero;
             return 1.0f;
         }
         else
         {
-            // Slow
-            if (frameDrift <= SLOW_LEVEL2_FRAME_THRESHOLD)
+            _slowdownElapsedTime += frame.UnscaledDeltaTime;
+
+            if (_slowdownElapsedTime > Fixed64.One || frameDrift >= SLOWDOWN_RELEASE_FRAME_THREASHOLD)
             {
-                // Slow Level1
-                return SLOW_LEVEL1_TIME_SCALE;
+                // 이 시점에 도달하면 프레임에 차이가 나더라도 더이상 느려지지 않는다.
+                _isSlowdownAttempted = true;
+                return 1.0f;
             }
             else
             {
-                // Slow Level2
-                var t = (frameDrift - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(SLOWDOWN_RELEASE_FRAME_THREASHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
-                var timeScale = Mathf.Lerp(SLOW_LEVEL1_TIME_SCALE, 0.0f, t);
-                return timeScale;
+                if (frameDrift <= SLOW_LEVEL2_FRAME_THRESHOLD)
+                {
+                    // Slow Level1
+                    return SLOW_LEVEL1_TIME_SCALE;
+                }
+                else
+                {
+                    // Slow Level2
+                    var t = (frameDrift - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(SLOWDOWN_RELEASE_FRAME_THREASHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
+                    var timeScale = Mathf.Lerp(SLOW_LEVEL1_TIME_SCALE, SLOW_LEVEL2_TIME_SCALE, t);
+                    return timeScale;
+                }
             }
         }
     }
@@ -552,25 +574,26 @@ public class MultiplayBattleWorldManager : BaseWorldManager
                 {
                     return;
                 }
-            }
 
-            var worldInputEventType = FrameEventTypeToWorldEventType(message.FrameEvent.EventType);
-            var worldEventInfo = CreateIntermidiateWorldEventInfo(
-                worldInputEventType,
-                message.Frame,
-                OpponentPlayerID,
-                message.FrameEvent.BattleTimeMillis
-            );
+                var worldInputEventType = FrameEventTypeToWorldEventType(message.FrameEvent.EventType);
+                var worldEventInfo = CreateIntermidiateWorldEventInfo(
+                    worldInputEventType,
+                    message.Frame,
+                    OpponentPlayerID,
+                    message.FrameEvent.BattleTimeMillis
+                );
 
-            if (ReceivedIntermidiateWorldEventInfos.TryGetValue(message.Frame, out var list))
-            {
-                list.Add(worldEventInfo);
-            }
-            else
-            {
-                list = FutureWorld.WorldEventInfoListPool.Get();
-                list.Add(worldEventInfo);
-                ReceivedIntermidiateWorldEventInfos.Add(message.Frame, list);
+                if (ReceivedIntermidiateWorldEventInfos.TryGetValue(message.Frame, out var list))
+                {
+                    list.Add(worldEventInfo);
+                }
+                else
+                {
+                    list = FutureWorld.WorldEventInfoListPool.Get();
+                    list.Add(worldEventInfo);
+                    ReceivedIntermidiateWorldEventInfos.Add(message.Frame, list);
+
+                }
             }
         }
 
@@ -603,7 +626,10 @@ public class MultiplayBattleWorldManager : BaseWorldManager
             intermidiateFrameEvent.FrameEvent = frameEvent;
             NetworkManager.SendIntermidiateFrameEvent(ref intermidiateFrameEvent);
 
-            base.HandleOnFrameEventImmediately(worldInputEventType);
+            lock (_serverUpdateLock)
+            {
+                base.HandleOnFrameEventImmediately(worldInputEventType);
+            }
         }
     }
 }
