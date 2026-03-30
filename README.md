@@ -128,26 +128,31 @@ https://github.com/RevenantX/LiteNetLib
     private float AdjustSimulationSpeed(int frameDrift)
     {
         ...
-
         if (frameDrift <= SLOW_LEVEL1_FRAME_THRESHOLD)
         {
             return 1.0f;
         }
-        else if (frameDrift >= LOCK_FRAME_THRESHOLD)
-        {
-            return 0.0f;
-        }
         else
         {
-            if (frameDrift <= SLOW_LEVEL2_FRAME_THRESHOLD)
+            if (frameDrift >= SLOWDOWN_RELEASE_FRAME_THREASHOLD)
             {
-                return SLOW_LEVEL1_TIME_SCALE;
+                // 이 시점에 도달하면 프레임에 차이가 나더라도 더이상 느려지지 않는다.
+                return 1.0f;
             }
             else
             {
-                var t = (frameDrift - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(LOCK_FRAME_THRESHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
-                var timeScale = Mathf.Lerp(SLOW_LEVEL1_TIME_SCALE, 0.0f, t);
-                return timeScale;
+                if (frameDrift <= SLOW_LEVEL2_FRAME_THRESHOLD)
+                {
+                    // Slow Level1
+                    return SLOW_LEVEL1_TIME_SCALE;
+                }
+                else
+                {
+                    // Slow Level2
+                    var t = (frameDrift - SLOW_LEVEL2_FRAME_THRESHOLD) / (float)(SLOWDOWN_RELEASE_FRAME_THREASHOLD - SLOW_LEVEL2_FRAME_THRESHOLD);
+                    var timeScale = Mathf.Lerp(SLOW_LEVEL1_TIME_SCALE, SLOW_LEVEL2_TIME_SCALE, t);
+                    return timeScale;
+                }
             }
         }
     }
