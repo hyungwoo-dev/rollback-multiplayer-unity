@@ -8,15 +8,13 @@ This project focuses on implementing rollback architecture. There may be excepti
 
 ## Architecture
 
-The server acts as a relay server, transmitting input from each client and forwarding events received from the client side to other players.
-
-The client runs two games simultaneously.
+Each client sends and receives input data from one another, running both ServerWorld and FutureWorld simultaneously.
 
 ### ServerWorld
 
-This is a game that progresses through events received from the server.
+This is a game that progresses based on events received from the opponent.
 
-By synchronizing state through deterministic game logic, both players share the same state within the same frame.
+By synchronizing states through deterministic game logic, both players share the same state in the same frame.
 
 ### FutureWorld
 
@@ -24,25 +22,20 @@ This game applies player input in real time.
 
 FutureWorld maintains a state where player input is applied instantly in ServerWorld, while also holding a state that predicts the future based on past data.
 
-                              +------------------------+
-                              |         Server         |
-                              |      (Input Relay)     |
-                              +------------------------+
-                                     ↑           ↑                     
-                                     |           |
-        +-----------------------------+         +-----------------------------+
-        |           Client1           |         |           Client2           |
-        |                             |         |                             |
-        |  +-----------------------+  |         |  +-----------------------+  |
-        |  |      ServerWorld      |  |         |  |      ServerWorld      |  |
-        |  | (Deterministic State) |  |         |  | (Deterministic State) |  |
-        |  +-----------------------+  |         |  +-----------------------+  |
-        |              ↑              |         |              ↑              |
-        |  +-----------------------+  |         |  +-----------------------+  |
-        |  |      FutureWorld      |  |         |  |      FutureWorld      |  |
-        |  | (Predicted State)     |  |         |  | (Predicted State)     |  |
-        |  +-----------------------+  |         |  +-----------------------+  |
-        +-----------------------------+         +-----------------------------+
+     +------------------------+                 +------------------------+
+     |        Client1         |                 |        Client2         |
+     |                        |                 |                        |
+     |  +------------------+  |                 |  +------------------+  |
+     |  |   ServerWorld    |  |<---- Sync ----->|  |   ServerWorld    |  |
+     |  | (Deterministic   |  |  (Input/State)  |  | (Deterministic   |  |
+     |  |   Simulation)    |  |                 |  |   Simulation)    |  |
+     |  +------------------+  |                 |  +------------------+  |
+     |           ↑            |                 |           ↑            |
+     |  +------------------+  |                 |  +------------------+  |
+     |  |   FutureWorld    |  |                 |  |   FutureWorld    |  |
+     |  | (Predicted State)|  |                 |  | (Predicted State)|  |
+     |  +------------------+  |                 |  +------------------+  |
+     +------------------------+                 +------------------------+
         
 ## Rollback
 Each client's ServerWorld receives events from the server and progresses deterministically, with each player maintaining the same state within the same frame.
