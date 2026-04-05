@@ -1,4 +1,4 @@
-﻿SourceGenerator/.vs
+SourceGenerator/.vs
 SourceGenerator/SourceGenerator/bin
 SourceGenerator/SourceGenerator/obj
 Unity/Logs
@@ -31,3 +31,5 @@ BackgroundRawInput/.vs
 BackgroundRawInput/BackgroundRawInput/BackgroundRawInput.vcxproj.user
 BackgroundRawInput/BackgroundRawInput/x64
 BackgroundRawInput/x64
+Unity/.idea
+*.DS_Store
