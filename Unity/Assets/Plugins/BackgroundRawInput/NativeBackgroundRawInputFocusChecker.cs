@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class NativeBackgroundRawInputFocusChecker : MonoBehaviour
 {
+#if UNITY_STANDALONE_WIN
     private static NativeBackgroundRawInputFocusChecker Instance { get; set; }
     private static long _focusFlag = 0;
 
@@ -63,4 +64,5 @@ public class NativeBackgroundRawInputFocusChecker : MonoBehaviour
     {
         NativeBackgroundRawInput.Shutdown();
     }
+#endif // UNITY_STANDALONE_WIN
 }

@@ -1,18 +1,15 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_STANDALONE_WIN
+using BattleInputManager = BattleWindowsInputManager;
+#else
+using BattleInputManager = BattleUnityInputManager;
+#endif
+using System.Collections.Generic;
 using UnityEngine;
 
 [ManagedStateIgnore]
-public abstract partial class BaseWorldManager
+public abstract class BaseWorldManager
 {
     private static Debug Debug = new(nameof(BaseWorldManager));
-
-    public BattleWorldScene LocalWorldScene { get; private set; }
-
-    public BattleWorld FutureWorld { get; protected set; }
-    public int PlayerID { get; protected set; } = 0;
-
-    public abstract int BattleTimeMillis { get; }
-    protected Dictionary<int, List<BattleWorldEventInfo>> LocalWorldEventInfos { get; private set; } = new();
 
     public BaseWorldManager()
     {
@@ -20,6 +17,14 @@ public abstract partial class BaseWorldManager
         InitializePool();
         FutureWorld = WorldPool.Get();
     }
+
+    public BattleWorldScene LocalWorldScene { get; private set; }
+
+    public BattleWorld FutureWorld { get; protected set; }
+    public int PlayerID { get; protected set; } = 0;
+
+    public abstract int BattleTimeMillis { get; }
+    protected Dictionary<int, List<BattleWorldEventInfo>> LocalWorldEventInfos { get; } = new();
 
     public virtual void Setup()
     {
@@ -37,7 +42,6 @@ public abstract partial class BaseWorldManager
 
     public virtual void OnSetupCompleted()
     {
-
     }
 
     public virtual void Initialize(in BattleFrame frame)
@@ -55,7 +59,8 @@ public abstract partial class BaseWorldManager
 
     protected virtual void HandleOnFrameEventImmediately(BattleWorldInputEventType worldInputEventType)
     {
-        var worldEventInfo = CreateIntermidiateWorldEventInfo(worldInputEventType, FutureWorld.NextFrame, PlayerID, BattleTimeMillis);
+        var worldEventInfo =
+            CreateIntermidiateWorldEventInfo(worldInputEventType, FutureWorld.NextFrame, PlayerID, BattleTimeMillis);
         FutureWorld.ExecuteWorldEventInfo(worldEventInfo);
 
         if (LocalWorldEventInfos.TryGetValue(worldEventInfo.TargetFrame, out var list))
@@ -70,7 +75,8 @@ public abstract partial class BaseWorldManager
         }
     }
 
-    protected BattleWorldEventInfo CreateIntermidiateWorldEventInfo(BattleWorldInputEventType worldEventType, int frame, int userIndex, int battleTimeMillis)
+    protected BattleWorldEventInfo CreateIntermidiateWorldEventInfo(BattleWorldInputEventType worldEventType, int frame,
+        int userIndex, int battleTimeMillis)
     {
         var worldEventInfo = FutureWorld.WorldEventInfoPool.Get();
         worldEventInfo.TargetFrame = frame;
@@ -105,12 +111,11 @@ public abstract partial class BaseWorldManager
 
     public virtual void OnStart()
     {
-
     }
 
     #region Input
 
-    protected BattleInputManager InputManager { get; } = new BattleInputManager();
+    protected BattleInputManager InputManager { get; } = new();
 
     private void InitalizeInputManager()
     {
@@ -132,7 +137,7 @@ public abstract partial class BaseWorldManager
 
     private void InitializePool()
     {
-        WorldPool = new Pool<BattleWorld>(createFunc: () => new BattleWorld(this));
+        WorldPool = new Pool<BattleWorld>(() => new BattleWorld(this));
     }
 
     private void DisposePool()

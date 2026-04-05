@@ -1,6 +1,5 @@
-﻿using System;
-
-public class BattleInputManager
+#if UNITY_STANDALONE_WIN
+public class BattleWindowsInputManager//  : IInputManager
 {
     public event Action<BattleWorldInputEventType> OnFrameEventImmediately;
 
@@ -81,3 +80,5 @@ public class BattleInputManager
         return BattleWorldInputEventType.NONE;
     }
 }
+
+#endif // UNITY_STANDALONE_WIN

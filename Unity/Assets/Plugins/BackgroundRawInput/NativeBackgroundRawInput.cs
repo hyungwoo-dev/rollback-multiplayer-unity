@@ -3,10 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
+#if UNITY_STANDALONE_WIN
+
 public static class NativeBackgroundRawInput
 {
     private static object _lock = new();
-#if UNITY_STANDALONE_WIN
+
     const string DLL = "BackgroundRawInput";
 
     public delegate void KeyDelegate(
@@ -21,7 +23,6 @@ public static class NativeBackgroundRawInput
     [DllImport(DLL)]
     private static extern void _StopRawInput(
         ulong handle);
-#endif
 
     private static KeyDelegate _keyDelegate;
     private static ulong? _handle;
@@ -67,25 +68,21 @@ public static class NativeBackgroundRawInput
 
     public static void Initialize()
     {
-#if UNITY_STANDALONE_WIN
         if (_handle == null)
         {
             _keyDelegate = OnNativeEvent;
             _handle = _InitializeRawInput(_keyDelegate);
             _keyDownRawKeys = new();
         }
-#endif
     }
 
     public static void Shutdown()
     {
-#if UNITY_STANDALONE_WIN
         if (_handle != null)
         {
             _StopRawInput(_handle.Value);
             _handle = null;
         }
-#endif
     }
 
     [MonoPInvokeCallback(typeof(KeyDelegate))]
@@ -123,3 +120,5 @@ public static class NativeBackgroundRawInput
         }
     }
 }
+
+#endif // #if UNITY_STANDALONE_WIN
