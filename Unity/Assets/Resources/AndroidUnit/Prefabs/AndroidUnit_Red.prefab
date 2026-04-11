@@ -192,10 +192,10 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -9103484930961366303, guid: 922c398316b5be44482cc2026955c3e6, type: 3}
-  - {fileID: 6589931397243267998, guid: 922c398316b5be44482cc2026955c3e6, type: 3}
-  - {fileID: 3170531198488047425, guid: 922c398316b5be44482cc2026955c3e6, type: 3}
-  - {fileID: 7758450907621525012, guid: 922c398316b5be44482cc2026955c3e6, type: 3}
+  - {fileID: 2100000, guid: 8bb6b7418ac914bff86c795ddb484ed8, type: 2}
+  - {fileID: 2100000, guid: fd52f65efdacf4cdd8c69ff7583bed79, type: 2}
+  - {fileID: 2100000, guid: 01872d62fa9a24a8ea8f5a40868b1e92, type: 2}
+  - {fileID: 2100000, guid: f9280c4e972f94f818dfacac4f565210, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1161,7 +1161,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5230027743870871236}
   m_Layer: 0
-  m_Name: AndroidUnit
+  m_Name: AndroidUnit_Red
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

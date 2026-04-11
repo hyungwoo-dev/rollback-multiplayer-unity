@@ -1,13 +1,13 @@
-﻿using FixedMathSharp;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using FixedMathSharp;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public struct BattleCircle
 {
-    public Vector3d Position { get; private set; }
-    public Fixed64 Radius { get; private set; }
+    public Vector3d Position { get; }
+    public Fixed64 Radius { get; }
 
     public BattleCircle(Vector3d position, Fixed64 radius) : this()
     {
@@ -29,7 +29,7 @@ public struct BattleCircle
 
     public static bool CheckCollision(BattleCircle a, BattleCircle b, out Fixed64 overlapDistance)
     {
-        var sumRadius = (a.Radius + b.Radius);
+        var sumRadius = a.Radius + b.Radius;
         var distance = (a.Position - b.Position).Magnitude;
 
         if (distance > sumRadius)
@@ -44,9 +44,9 @@ public struct BattleCircle
 }
 
 [ManagedStateIgnore]
-public partial class BattleWorldScene
+public class BattleWorldScene
 {
-    private static Debug Debug = new(nameof(BattleWorldScene));
+    private static readonly Debug Debug = new(nameof(BattleWorldScene));
 
     private BaseWorldManager WorldManager { get; }
     private Scene Scene { get; set; }
@@ -81,11 +81,16 @@ public partial class BattleWorldScene
         return Scene.isLoaded;
     }
 
-    private Dictionary<int, GameObject> _units = new();
+    private readonly Dictionary<int, GameObject> _units = new();
 
     public void InstantiateUnit(int unitID, Vector3d position, FixedQuaternion rotation)
     {
-        var gameObject = Instantiate("AndroidUnit/Prefabs/AndroidUnit", position, rotation);
+        var gameObject = unitID switch
+        {
+            0 => Instantiate("AndroidUnit/Prefabs/AndroidUnit_Red", position, rotation),
+            1 => Instantiate("AndroidUnit/Prefabs/AndroidUnit_Blue", position, rotation),
+            _ => Instantiate("AndroidUnit/Prefabs/AndroidUnit_Red", position, rotation),
+        };
         _units.Add(unitID, gameObject);
     }
 
@@ -132,16 +137,16 @@ public partial class BattleWorldScene
                 if (isCrossFading)
                 {
                     animator.PlayInFixedTime(
-                        animationName: sampleInfo.PreviousAnimationName,
-                        animationLayer: 0,
-                        fixedTime: sampleInfo.PreviousAnimationElapsedTime);
+                        sampleInfo.PreviousAnimationName,
+                        0,
+                        sampleInfo.PreviousAnimationElapsedTime);
 
                     animator.CrossFadeInFixedTime(
-                        animationName: sampleInfo.AnimationName,
-                        fixedTransitionDuration: sampleInfo.CrossFadeInTime,
-                        animationLayer: 0,
-                        fixedTimeOffset: sampleInfo.PreviousElapsedTime,
-                        normalizedTransitionTime: sampleInfo.PreviousElapsedTime / sampleInfo.CrossFadeInTime);
+                        sampleInfo.AnimationName,
+                        sampleInfo.CrossFadeInTime,
+                        0,
+                        sampleInfo.PreviousElapsedTime,
+                        sampleInfo.PreviousElapsedTime / sampleInfo.CrossFadeInTime);
 
                     animator.ResetDelta();
                 }
@@ -154,10 +159,7 @@ public partial class BattleWorldScene
                 var deltaTime = sampleInfo.ElapsedTime - sampleInfo.PreviousElapsedTime;
                 return animator.UpdateAnimator(deltaTime);
             }
-            else
-            {
-                Debug.LogError($"{nameof(SampleAnimation)} Have Not Animator. Name: {gameObject.name}, UnitID: {unitID}");
-            }
+            Debug.LogError($"{nameof(SampleAnimation)} Have Not Animator. Name: {gameObject.name}, UnitID: {unitID}");
         }
         else
         {
@@ -176,10 +178,7 @@ public partial class BattleWorldScene
             {
                 return animator.UpdateAnimator(deltaTime);
             }
-            else
-            {
-                Debug.LogError($"{nameof(UpdateAnimation)} Have Not Animator. Name: {gameObject.name}, UnitID: {unitID}");
-            }
+            Debug.LogError($"{nameof(UpdateAnimation)} Have Not Animator. Name: {gameObject.name}, UnitID: {unitID}");
         }
         else
         {
